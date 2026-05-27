@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solanki Capital CRM</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f0f; color: #fff; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #161616; border-right: 1px solid #222; z-index: 100; display: flex; flex-direction: column; }
+  .logo { padding: 24px 20px 20px; border-bottom: 1px solid #222; }
+  .logo h2 { font-size: 15px; font-weight: 700; color: #fff; }
+  .logo p { font-size: 11px; color: #666; margin-top: 2px; }
+  .nav { padding: 12px 0; flex: 1; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 20px; cursor: pointer; font-size: 14px; color: #888; transition: all 0.15s; border-left: 3px solid transparent; }
+  .nav-item:hover { color: #fff; background: #1e1e1e; }
+  .nav-item.active { color: #fff; background: #1e1e1e; border-left-color: #4f8ef7; }
+  .nav-item .icon { font-size: 16px; width: 20px; }
+
+  /* MAIN */
+  .main { margin-left: 220px; padding: 28px; min-height: 100vh; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* HEADER */
+  .page-header { margin-bottom: 24px; }
+  .page-header h1 { font-size: 22px; font-weight: 700; }
+  .page-header p { color: #666; font-size: 13px; margin-top: 4px; }
+
+  /* STAT CARDS */
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .stat { background: #161616; border: 1px solid #222; border-radius: 12px; padding: 18px; }
+  .stat .val { font-size: 28px; font-weight: 700; }
+  .stat .lbl { font-size: 11px; color: #666; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat.blue .val { color: #4f8ef7; }
+  .stat.green .val { color: #34d399; }
+  .stat.orange .val { color: #fb923c; }
+  .stat.red .val { color: #f87171; }
+  .stat.purple .val { color: #a78bfa; }
+
+  /* SEARCH + FILTER */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .search-box { flex: 1; min-width: 200px; background: #161616; border: 1px solid #222; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none; }
+  .search-box:focus { border-color: #4f8ef7; }
+  .search-box::placeholder { color: #555; }
+  select.filter { background: #161616; border: 1px solid #222; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; outline: none; cursor: pointer; }
+  select.filter option { background: #1e1e1e; }
+
+  /* TABLE */
+  .table-wrap { background: #161616; border: 1px solid #222; border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1a1a1a; padding: 12px 16px; text-align: left; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  td { padding: 13px 16px; font-size: 13px; border-top: 1px solid #1e1e1e; vertical-align: top; }
+  tr:hover td { background: #1a1a1a; }
+  .name { font-weight: 600; color: #fff; }
+  .phone { color: #4f8ef7; font-size: 12px; }
+  .enquiry { color: #aaa; font-size: 12px; max-width: 200px; }
+  .project { color: #34d399; font-size: 12px; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-followup { background: #1e3a5f; color: #4f8ef7; }
+  .badge-dropped { background: #2d1515; color: #f87171; }
+  .badge-notanswered { background: #2a2a1a; color: #fb923c; }
+  .badge-interested { background: #1a3a2a; color: #34d399; }
+  .badge-notinterested { background: #2d1515; color: #f87171; }
+  .badge-default { background: #222; color: #888; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 60px; color: #555; }
+  .loading .spinner { width: 32px; height: 32px; border: 3px solid #222; border-top-color: #4f8ef7; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* PAGINATION */
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-top: 1px solid #1e1e1e; font-size: 13px; color: #666; flex-wrap: wrap; gap: 10px; }
+  .page-btns { display: flex; gap: 6px; }
+  .page-btn { background: #1e1e1e; border: 1px solid #333; color: #aaa; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .page-btn:hover { background: #2a2a2a; color: #fff; }
+  .page-btn.active { background: #4f8ef7; border-color: #4f8ef7; color: #fff; }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* REFRESH */
+  .refresh-btn { background: #1e1e1e; border: 1px solid #333; color: #aaa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .refresh-btn:hover { background: #4f8ef7; border-color: #4f8ef7; color: #fff; }
+
+  /* STATUS BREAKDOWN */
+  .status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .status-card { background: #161616; border: 1px solid #222; border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.15s; }
+  .status-card:hover { border-color: #4f8ef7; }
+  .status-card .sc-val { font-size: 24px; font-weight: 700; }
+  .status-card .sc-lbl { font-size: 12px; color: #666; margin-top: 4px; }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 16px; }
+    .hamburger { display: flex !important; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    table { font-size: 12px; }
+    th, td { padding: 10px 10px; }
+    .enquiry { display: none; }
+  }
+  .hamburger { display: none; align-items: center; justify-content: center; width: 40px; height: 40px; background: #161616; border: 1px solid #222; border-radius: 8px; cursor: pointer; font-size: 18px; }
+  .mobile-header { display: none; align-items: center; gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 768px) { .mobile-header { display: flex; } }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 99; }
+  .overlay.show { display: block; }
+
+  .sync-info { font-size: 12px; color: #555; margin-top: 8px; }
+  .error-msg { background: #2d1515; border: 1px solid #f87171; border-radius: 8px; padding: 16px; color: #f87171; margin-bottom: 20px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+  <div class="logo">
+    <h2>Solanki Capital</h2>
+    <p>Property CRM</p>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="showPage('contacts')"><span class="icon">👥</span> Contacts</div>
+    <div class="nav-item" onclick="showPage('followup')"><span class="icon">🔔</span> Follow-up</div>
+    <div class="nav-item" onclick="showPage('pipeline')"><span class="icon">🏆</span> Pipeline</div>
+  </nav>
+</div>
+
+<div class="main">
+  <div class="mobile-header">
+    <div class="hamburger" onclick="openSidebar()">☰</div>
+    <div>
+      <div style="font-weight:700;font-size:15px;">Solanki Capital</div>
+      <div style="font-size:11px;color:#666;">Property CRM</div>
+    </div>
+    <div style="margin-left:auto;">
+      <button class="refresh-btn" onclick="loadData()">↻ Sync</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1>Dashboard</h1>
+        <p id="dash-date"></p>
+        <p class="sync-info" id="sync-info">Loading data...</p>
+      </div>
+      <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    </div>
+    <div id="dash-loading" class="loading"><div class="spinner"></div><p>Loading from Google Sheets...</p></div>
+    <div id="dash-content" style="display:none;">
+      <div class="stats" id="stat-cards"></div>
+      <div class="page-header"><h1 style="font-size:16px;">Status Breakdown</h1></div>
+      <div class="status-grid" id="status-grid"></div>
+    </div>
+  </div>
+
+  <!-- CONTACTS -->
+  <div class="page" id="page-contacts">
+    <div class="page-header">
+      <h1>Contacts</h1>
+      <p id="contacts-count">Loading...</p>
+    </div>
+    <div class="toolbar">
+      <input class="search-box" placeholder="Search name, phone, enquiry..." oninput="filterContacts()" id="search-input">
+      <select class="filter" onchange="filterContacts()" id="status-filter">
+        <option value="">All Status</option>
+        <option>Followup is ongoing</option>
+        <option>Not Answered</option>
+        <option>Dropped</option>
+        <option>Not interested</option>
+        <option>Interested</option>
+      </select>
+    </div>
+    <div id="contacts-loading" class="loading"><div class="spinner"></div><p>Loading contacts...</p></div>
+    <div id="contacts-table-wrap" style="display:none;">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Enquiry</th><th>Project</th><th>Status</th></tr></thead>
+          <tbody id="contacts-tbody"></tbody>
+        </table>
+        <div class="pagination">
+          <span id="page-info">Showing 0 of 0</span>
+          <div class="page-btns">
+            <button class="page-btn" onclick="changePage(-1)" id="prev-btn">← Prev</button>
+            <button class="page-btn" onclick="changePage(1)" id="next-btn">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOLLOWUP -->
+  <div class="page" id="page-followup">
+    <div class="page-header">
+      <h1>Follow-up</h1>
+      <p>Contacts needing follow-up</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Enquiry</th><th>Project</th></tr></thead>
+        <tbody id="followup-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="page" id="page-pipeline">
+    <div class="page-header">
+      <h1>Pipeline</h1>
+      <p>Interested leads</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Enquiry</th><th>Project</th><th>Status</th></tr></thead>
+        <tbody id="pipeline-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = '1-6KMnASTnqmUt-GQmhV1nyc17mJPBCar4aNrqj4As5c';
+const SHEET_NAME = 'Lead';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+
+let allContacts = [];
+let filtered = [];
+let currentPage = 1;
+const PER_PAGE = 50;
+
+// Date
+document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+function parseCSV(text) {
+  const lines = text.split('\n');
+  const headers = parseCSVLine(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const vals = parseCSVLine(lines[i]);
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h.trim()] = (vals[idx] || '').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(cur); cur = ''; }
+    else { cur += ch; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function formatPhone(num) {
+  if (!num) return '';
+  const n = num.replace(/[^0-9]/g, '');
+  if (n.length > 10) return '+' + n;
+  return n;
+}
+
+function excelDateToStr(val) {
+  if (!val) return '';
+  const num = parseFloat(val);
+  if (isNaN(num)) return val;
+  const date = new Date((num - 25569) * 86400 * 1000);
+  return date.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function getBadge(status) {
+  if (!status) return `<span class="badge badge-default">—</span>`;
+  const s = status.toLowerCase();
+  if (s.includes('followup') || s.includes('follow-up') || s.includes('ongoing')) return `<span class="badge badge-followup">${status}</span>`;
+  if (s.includes('dropped')) return `<span class="badge badge-dropped">${status}</span>`;
+  if (s.includes('not answered')) return `<span class="badge badge-notanswered">${status}</span>`;
+  if (s.includes('not interested')) return `<span class="badge badge-notinterested">${status}</span>`;
+  if (s.includes('interested')) return `<span class="badge badge-interested">${status}</span>`;
+  return `<span class="badge badge-default">${status}</span>`;
+}
+
+async function loadData() {
+  document.getElementById('sync-info').textContent = 'Syncing...';
+  document.getElementById('dash-loading').style.display = 'block';
+  document.getElementById('dash-content').style.display = 'none';
+  document.getElementById('contacts-loading').style.display = 'block';
+  document.getElementById('contacts-table-wrap').style.display = 'none';
+
+  try {
+    const res = await fetch(CSV_URL + '&t=' + Date.now());
+    const text = await res.text();
+    const data = parseCSV(text);
+    allContacts = data.filter(r => r.Name || r.Number);
+    filtered = [...allContacts];
+    currentPage = 1;
+
+    renderDashboard();
+    renderContacts();
+    renderFollowup();
+    renderPipeline();
+
+    document.getElementById('sync-info').textContent = `Last synced: ${new Date().toLocaleTimeString()} • ${allContacts.length} contacts`;
+    document.getElementById('dash-loading').style.display = 'none';
+    document.getElementById('dash-content').style.display = 'block';
+    document.getElementById('contacts-loading').style.display = 'none';
+    document.getElementById('contacts-table-wrap').style.display = 'block';
+  } catch(e) {
+    document.getElementById('sync-info').textContent = 'Error loading data. Check internet connection.';
+    document.getElementById('dash-loading').innerHTML = '<p style="color:#f87171;">Failed to load. Make sure Google Sheet is published.</p>';
+  }
+}
+
+function renderDashboard() {
+  const total = allContacts.length;
+  const followup = allContacts.filter(r => (r.Status||'').toLowerCase().includes('followup') || (r.Status||'').toLowerCase().includes('ongoing')).length;
+  const dropped = allContacts.filter(r => (r.Status||'').toLowerCase().includes('dropped')).length;
+  const notAnswered = allContacts.filter(r => (r.Status||'').toLowerCase().includes('not answered')).length;
+  const interested = allContacts.filter(r => (r.Status||'').toLowerCase().includes('interested') && !(r.Status||'').toLowerCase().includes('not interested')).length;
+
+  document.getElementById('stat-cards').innerHTML = `
+    <div class="stat blue"><div class="val">${total}</div><div class="lbl">Total Contacts</div></div>
+    <div class="stat orange"><div class="val">${followup}</div><div class="lbl">Follow-up Ongoing</div></div>
+    <div class="stat red"><div class="val">${notAnswered}</div><div class="lbl">Not Answered</div></div>
+    <div class="stat red"><div class="val">${dropped}</div><div class="lbl">Dropped</div></div>
+    <div class="stat green"><div class="val">${interested}</div><div class="lbl">Interested</div></div>
+  `;
+
+  // Status breakdown
+  const statusMap = {};
+  allContacts.forEach(r => {
+    const s = r.Status || '(No Status)';
+    statusMap[s] = (statusMap[s] || 0) + 1;
+  });
+  const colors = ['#4f8ef7','#34d399','#fb923c','#f87171','#a78bfa','#fbbf24','#ec4899'];
+  let i = 0;
+  document.getElementById('status-grid').innerHTML = Object.entries(statusMap)
+    .sort((a,b) => b[1]-a[1])
+    .map(([s,c]) => `<div class="status-card" onclick="filterByStatus('${s}')"><div class="sc-val" style="color:${colors[i++%colors.length]}">${c}</div><div class="sc-lbl">${s}</div></div>`)
+    .join('');
+}
+
+function filterByStatus(status) {
+  showPage('contacts');
+  document.getElementById('status-filter').value = status;
+  filterContacts();
+}
+
+function renderContacts() {
+  const tbody = document.getElementById('contacts-tbody');
+  const start = (currentPage - 1) * PER_PAGE;
+  const end = start + PER_PAGE;
+  const page = filtered.slice(start, end);
+
+  tbody.innerHTML = page.map((r, i) => `
+    <tr>
+      <td style="color:#555">${start + i + 1}</td>
+      <td><div class="name">${r.Name || '—'}</div><div style="font-size:11px;color:#555">${excelDateToStr(r.Date)}</div></td>
+      <td><div class="phone">${formatPhone(r.Number)}</div></td>
+      <td><div class="enquiry">${r.Enquired || '—'}</div></td>
+      <td><div class="project">${r['Project shared'] || '—'}</div></td>
+      <td>${getBadge(r.Status)}</td>
+    </tr>
+  `).join('');
+
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / PER_PAGE);
+  document.getElementById('page-info').textContent = `Showing ${start+1}–${Math.min(end,total)} of ${total}`;
+  document.getElementById('contacts-count').textContent = `${total} contacts`;
+  document.getElementById('prev-btn').disabled = currentPage === 1;
+  document.getElementById('next-btn').disabled = currentPage >= totalPages;
+}
+
+function filterContacts() {
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
+  const s = (document.getElementById('status-filter').value || '').toLowerCase();
+  filtered = allContacts.filter(r => {
+    const matchQ = !q || (r.Name||'').toLowerCase().includes(q) || (r.Number||'').includes(q) || (r.Enquired||'').toLowerCase().includes(q);
+    const matchS = !s || (r.Status||'').toLowerCase().includes(s);
+    return matchQ && matchS;
+  });
+  currentPage = 1;
+  renderContacts();
+}
+
+function changePage(dir) {
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  currentPage = Math.max(1, Math.min(totalPages, currentPage + dir));
+  renderContacts();
+  window.scrollTo(0,0);
+}
+
+function renderFollowup() {
+  const rows = allContacts.filter(r => (r.Status||'').toLowerCase().includes('ongoing') || (r.Status||'').toLowerCase().includes('followup'));
+  document.getElementById('followup-tbody').innerHTML = rows.map((r,i) => `
+    <tr>
+      <td style="color:#555">${i+1}</td>
+      <td><div class="name">${r.Name||'—'}</div></td>
+      <td><div class="phone">${formatPhone(r.Number)}</div></td>
+      <td><div class="enquiry">${r.Enquired||'—'}</div></td>
+      <td><div class="project">${r['Project shared']||'—'}</div></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:#555;padding:40px">No follow-ups</td></tr>';
+}
+
+function renderPipeline() {
+  const rows = allContacts.filter(r => {
+    const s = (r.Status||'').toLowerCase();
+    return s.includes('interested') && !s.includes('not interested');
+  });
+  document.getElementById('pipeline-tbody').innerHTML = rows.map((r,i) => `
+    <tr>
+      <td style="color:#555">${i+1}</td>
+      <td><div class="name">${r.Name||'—'}</div></td>
+      <td><div class="phone">${formatPhone(r.Number)}</div></td>
+      <td><div class="enquiry">${r.Enquired||'—'}</div></td>
+      <td><div class="project">${r['Project shared']||'—'}</div></td>
+      <td>${getBadge(r.Status)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:#555;padding:40px">No pipeline contacts</td></tr>';
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => { if(n.textContent.toLowerCase().includes(name)) n.classList.add('active'); });
+  closeSidebar();
+}
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+loadData();
+</script>
+</body>
+</html>
