@@ -1,0 +1,3135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#25D366"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Solanki CRM"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<title>Solanki Capital CRM</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://eyckdvdxtnachqzellog.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_VcxbcS_k1WQVuNWIDpKU1w_mi8midI_';
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+window.saveToFirebase = async function(data) {
+  try {
+    await _sb.from('crm_data').upsert({
+      id: 'main',
+      contacts: data.contacts || [],
+      projects: data.projects || [],
+      settings: data.settings || {}
+    });
+  } catch(e) { console.error("Supabase save error:", e); }
+};
+
+window.loadFromFirebase = async function() {
+  try {
+    const { data, error } = await _sb.from('crm_data').select('*').eq('id','main').single();
+    if(data) return { contacts: data.contacts||[], projects: data.projects||[], settings: data.settings||{} };
+  } catch(e) { console.error("Supabase load error:", e); }
+  return null;
+};
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0a0a0a;--bg2:#141414;--bg3:#1a1a1a;--bg4:#222;--border:#252525;--border2:#2a2a2a;--text:#f5f5f5;--text2:#b0b0b0;--text3:#888;--green:#25D366;--blue:#60a5fa;--orange:#f59e0b;--red:#f87171;--purple:#a78bfa;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:var(--blue);text-decoration:none;}
+
+/* Layout */
+.sidebar{position:fixed;left:0;top:0;width:200px;height:100vh;background:var(--bg2);border-right:1px solid var(--border);padding:1rem;z-index:100;}
+.main{margin-left:200px;padding:1.5rem;}
+.logo{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;}
+.logo-sub{font-size:11px;color:var(--text3);margin-bottom:1.5rem;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13px;color:#bbb;cursor:pointer;margin-bottom:2px;transition:all 0.15s;border:none;background:transparent;width:100%;text-align:left;font-family:inherit;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:var(--bg4);color:var(--text);font-weight:500;}
+.nav-icon{font-size:15px;width:20px;}
+.page{display:none;} .page.active{display:block;}
+.bottom-nav{display:none;}
+
+/* Mobile */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .main{margin-left:0;padding:1rem;padding-bottom:80px;}
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;
+    background:var(--bg2);border-top:1px solid var(--border);
+    z-index:100;padding:6px 0 20px 0;
+  }
+  .bottom-nav button{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:transparent;border:none;color:var(--text3);cursor:pointer;
+    font-family:inherit;font-size:10px;padding:4px 0;transition:all 0.15s;
+  }
+  .bottom-nav button.active{color:var(--green);}
+  .bottom-nav .bnav-icon{font-size:20px;}
+  .row2{grid-template-columns:1fr!important;}
+  .row3{grid-template-columns:1fr 1fr!important;}
+  .stats-grid{grid-template-columns:1fr 1fr!important;}
+  #pipelineCols{grid-template-columns:repeat(5,85vw)!important;overflow-x:auto;display:flex!important;gap:10px;padding-bottom:12px;}
+  .pipeline{display:block!important;}
+  .tbl-wrap{font-size:12px;}
+  th,td{padding:6px 8px!important;}
+  .modal{width:95%!important;max-height:90vh!important;}
+  .col-map{grid-template-columns:1fr 1fr!important;}
+  .toolbar{gap:6px;}
+  .btn{padding:6px 10px;font-size:11px;}
+  h2{font-size:16px!important;}
+}
+
+/* Cards */
+.card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.card-title{font-size:12px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;font-weight:500;}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.25rem;}
+.stat-card{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:1rem;transition:border-color 0.15s,background 0.15s;}
+.stat-card:hover{border-color:#3a3a3a;background:var(--bg4);}
+
+/* Source Dashboard */
+.source-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;background:transparent;color:var(--text);}
+.source-card{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:8px 12px;border-radius:10px;background:linear-gradient(145deg,#171717,#101010);overflow:hidden;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;border:1px solid rgba(255,255,255,.07);box-shadow:0 4px 12px rgba(0,0,0,.18);}
+.source-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.18);box-shadow:0 8px 20px rgba(0,0,0,.35);}
+.source-left{display:flex;align-items:center;gap:8px;z-index:1;font-weight:600;font-size:12px;}
+.source-icon-wrap{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.22);flex:0 0 30px;}
+.source-icon-img{width:18px;height:18px;object-fit:contain;display:block;}
+.source-icon-fallback{font-size:13px;}
+.source-count{z-index:1;font-size:16px;font-weight:800;color:#fff;min-width:24px;text-align:right;}
+.source-fill{position:absolute;left:0;top:0;bottom:0;opacity:.18;min-width:0;background:linear-gradient(90deg,rgba(37,211,102,.7),rgba(96,165,250,.35));}
+.source-label{display:flex;flex-direction:column;gap:1px;}
+.source-label small{color:var(--text3);font-weight:500;font-size:9px;text-transform:uppercase;letter-spacing:.5px;}
+@media(max-width:768px){.source-grid{grid-template-columns:1fr 1fr!important;padding:8px;}.source-card{min-height:48px;padding:8px 10px;}.source-left{font-size:11px;}.source-icon-wrap{width:26px;height:26px;flex-basis:26px}.source-icon-img{width:16px;height:16px;}.source-count{font-size:14px;}}
+.stat-val{font-size:28px;font-weight:700;margin-bottom:2px;}
+.stat-lbl{font-size:12px;color:#aaa;}
+.stat-green .stat-val{color:var(--green);}
+.stat-blue .stat-val{color:var(--blue);}
+.stat-orange .stat-val{color:var(--orange);}
+.stat-red .stat-val{color:var(--red);}
+.stat-purple .stat-val{color:var(--purple);}
+
+/* Pipeline */
+.pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1.25rem;}
+.pipe-col{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;}
+.pipe-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+.pipe-count{font-size:22px;font-weight:700;margin-bottom:2px;}
+.pipe-bar{height:3px;border-radius:2px;margin-top:8px;}
+
+/* Forms */
+.lbl{display:block;font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;}
+input[type=text],input[type=password],input[type=date],input[type=search],select,textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;font-family:inherit;transition:border-color 0.15s;}
+input:focus,select:focus,textarea:focus{border-color:#3a3a3a;}
+select option{background:var(--bg3);}
+textarea{resize:vertical;min-height:60px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+/* Buttons */
+.btn{padding:7px 13px;font-size:12px;font-weight:500;border-radius:7px;border:none;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.btn:disabled{opacity:0.35;cursor:not-allowed;}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2);}
+.btn-ghost:hover:not(:disabled){border-color:#444;color:var(--text);}
+.btn-green{background:var(--green);color:#000;font-weight:600;}
+.btn-green:hover:not(:disabled){opacity:0.88;}
+.btn-blue{background:#1e3a5c;color:var(--blue);border:1px solid #1e4a7c;}
+.btn-red{background:#3a1515;color:var(--red);border:1px solid #5a2020;}
+.btn-orange{background:#2a1f0a;color:var(--orange);border:1px solid #3a2a0a;}
+.btn-purple{background:#1e1a3a;color:var(--purple);border:1px solid #2e2a5a;}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:5px;}
+
+/* Tags */
+.tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;}
+.tag-pending{background:var(--bg4);color:var(--text3);}
+.tag-contacted{background:#1a2a3a;color:var(--blue);border:1px solid #1e3a5c;}
+.tag-interested{background:#1e3a2f;color:var(--green);border:1px solid #2d5c45;}
+.tag-notinterested{background:#3a1515;color:var(--red);border:1px solid #5a2020;}
+.tag-callback{background:#2a1f0a;color:var(--orange);border:1px solid #3a2a0a;}
+.tag-closed{background:#1e1a3a;color:var(--purple);border:1px solid #2e2a5a;}
+.tag-alreadybought{background:#3a1515;color:var(--red);border:1px solid #5a2020;}
+.tag-repeat{background:#0a2a1a;color:#34d399;border:1px solid #0a4a2a;}
+.tag-hot{background:#3a1f0a;color:#fb923c;border:1px solid #5a2f0a;}
+.tag-warm{background:#2a2a0a;color:#fbbf24;border:1px solid #4a3a0a;}
+.tag-cold{background:#0a1a2a;color:#93c5fd;border:1px solid #0a2a4a;}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:8px 10px;font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap;}
+td{padding:8px 10px;border-bottom:1px solid #161616;vertical-align:middle;}
+tr:hover td{background:#161616;}
+
+/* Toolbar */
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.search-box{flex:1;min-width:200px;max-width:300px;position:relative;}
+.search-box input{padding-left:32px;}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;}
+
+/* Filter chips */
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
+.chip{padding:4px 12px;font-size:11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.chip.active{background:var(--bg4);color:var(--text);border-color:#3a3a3a;}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg3);border:1px solid var(--border2);border-radius:14px;padding:1.5rem;width:90%;max-width:550px;max-height:85vh;overflow-y:auto;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;}
+.modal-title{font-size:15px;font-weight:600;}
+.modal-close{background:transparent;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px;}
+
+/* Upload zone */
+.upload-zone{border:1px dashed var(--border2);border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;background:var(--bg2);transition:all 0.15s;}
+.upload-zone:hover{border-color:#444;}
+.upload-zone.loaded{border-color:#2d5c45;background:#1e3a2f18;}
+.upload-zone input{display:none;}
+
+/* Note */
+.note-bubble{background:var(--bg2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text2);margin-bottom:4px;border-left:3px solid var(--border2);}
+.note-time{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* Overdue */
+.overdue{color:var(--red);font-weight:500;}
+.due-soon{color:var(--orange);}
+
+/* Col map */
+.col-map{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;}
+.col-map .lbl2{font-size:10px;color:var(--text3);display:block;margin-bottom:3px;text-transform:uppercase;}
+
+/* Tone */
+.tone-row{display:flex;gap:6px;}
+.tone-btn{flex:1;padding:7px;font-size:12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.tone-btn.active{background:#1e3a2f;border-color:#2d5c45;color:var(--green);}
+
+.empty{text-align:center;padding:3rem;color:#999;font-size:13px;}
+/* Breaking News Ticker */
+.news-ticker-wrap{background:#1a0a0a;border:1px solid #5a2020;border-radius:8px;padding:0;overflow:hidden;margin-bottom:1.25rem;display:flex;align-items:center;}
+.news-ticker-label{background:#f87171;color:#000;font-size:11px;font-weight:700;padding:8px 12px;white-space:nowrap;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;}
+.news-ticker-scroll{overflow:hidden;flex:1;height:36px;position:relative;}
+.news-ticker-inner{display:flex;position:absolute;white-space:nowrap;animation:ticker 40s linear infinite;}
+.news-ticker-inner:hover{animation-play-state:paused;}
+.news-ticker-item{display:inline-block;padding:0 40px;font-size:12px;color:var(--text);line-height:36px;}
+.news-ticker-item a{color:#fbbf24;text-decoration:none;}
+.news-ticker-item a:hover{text-decoration:underline;}
+@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.spinner-sm{display:inline-block;width:10px;height:10px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.divider{height:1px;background:var(--border);margin:12px 0;}
+.bulk-bar{display:flex;gap:8px;align-items:center;background:var(--bg2);border-radius:8px;padding:8px 12px;border:1px solid var(--border);margin-bottom:10px;}
+.bulk-bar span{font-size:12px;color:var(--text3);white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="logo">Solanki Capital</div>
+  <div class="logo-sub">Property CRM • FINAL v8</div>
+  <button class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</button>
+  <button class="nav-item" onclick="nav('contacts',this)"><span class="nav-icon">👥</span> Contacts</button>
+  <button class="nav-item" onclick="nav('outreach',this)"><span class="nav-icon">💬</span> Outreach</button>
+  <button class="nav-item" onclick="nav('followup',this)"><span class="nav-icon">🔔</span> Follow-up</button>
+  <button class="nav-item" onclick="nav('pipeline',this)"><span class="nav-icon">🏆</span> Pipeline</button>
+  <button class="nav-item" onclick="nav('projects',this)"><span class="nav-icon">🏗️</span> Projects</button>
+  <button class="nav-item" onclick="nav('settings',this)"><span class="nav-icon">⚙️</span> Settings</button>
+  <div style="position:absolute;bottom:1rem;left:1rem;right:1rem;">
+    <button class="btn btn-ghost" style="width:100%;font-size:11px;" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+</div>
+
+<!-- Bottom Nav (Mobile) -->
+<div class="bottom-nav" id="bottomNav">
+  <button onclick="nav('dashboard',this);syncBottomNav('dashboard')" id="bnav-dashboard" class="active">
+    <span class="bnav-icon">📊</span><span>Dashboard</span>
+  </button>
+  <button onclick="nav('contacts',this);syncBottomNav('contacts')" id="bnav-contacts">
+    <span class="bnav-icon">👥</span><span>Contacts</span>
+  </button>
+  <button onclick="nav('outreach',this);syncBottomNav('outreach')" id="bnav-outreach">
+    <span class="bnav-icon">💬</span><span>Outreach</span>
+  </button>
+  <button onclick="nav('followup',this);syncBottomNav('followup')" id="bnav-followup">
+    <span class="bnav-icon">🔔</span><span>Follow-up</span>
+  </button>
+  <button onclick="nav('pipeline',this);syncBottomNav('pipeline')" id="bnav-pipeline">
+    <span class="bnav-icon">🏆</span><span>Pipeline</span>
+  </button>
+  <button onclick="nav('projects',this);syncBottomNav('projects')" id="bnav-projects">
+    <span class="bnav-icon">🏗️</span><span>Projects</span>
+  </button>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <!-- Breaking News Ticker -->
+  <div class="news-ticker-wrap" id="newsTickerWrap">
+    <div class="news-ticker-label">🔴 Breaking</div>
+    <div class="news-ticker-scroll">
+      <div class="news-ticker-inner" id="newsTicker">
+        <span class="news-ticker-item">Loading latest news...</span>
+      </div>
+    </div>
+  </div>
+  <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Dashboard <span style="font-size:11px;color:var(--green);font-weight:500;">FINAL v8</span></h2>
+  <p style="font-size:13px;color:var(--text3);margin-bottom:1.25rem;" id="dash-date"></p>
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;">
+      <div style="font-size:15px;font-weight:700;">Leads From Source <span id="sourceTotal" style="color:var(--text2);font-weight:600;"></span></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;">
+        <input type="checkbox" id="sourceAssociatedOnly" onchange="renderDashboard()"/> Associated Data
+      </label>
+    </div>
+    <div id="sourceGrid" class="source-grid"></div>
+  </div>
+  <div class="row2">
+    <div class="card">
+      <div class="card-title">Pipeline Overview</div>
+      <div id="pipelineChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔥 Hot Leads</div>
+      <div id="hotLeads"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔔 Follow-ups Due Today / Overdue</div>
+    <div id="dashFollowups"></div>
+  </div>
+
+  <!-- Market Updates -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div class="card-title" style="margin-bottom:0;">🌍 Market Updates</div>
+      <button class="btn btn-ghost btn-sm" onclick="loadMarketData()">↻ Refresh</button>
+    </div>
+
+    <!-- Currency Rates -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💱 AED Exchange Rates</div>
+      <div id="currencyRates" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;">
+        <div style="color:var(--text3);font-size:12px;">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Commodities -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⛽ Fuel & 🥇 Gold Prices</div>
+      <div id="commodityPrices" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;flex-wrap:nowrap;">
+        <div style="color:var(--text3);font-size:12px;">Loading...</div>
+      </div>
+    </div>
+
+    <!-- News -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📰 Latest News</div>
+      <div id="dubaiNews" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;"></div>
+    </div>
+
+    <!-- Quick Links -->
+    <div style="margin-bottom:0;">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🔗 Quick Links</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <a href="https://dubailand.gov.ae" target="_blank" class="btn btn-ghost btn-sm">🏛 DLD</a>
+        <a href="https://www.rta.ae" target="_blank" class="btn btn-ghost btn-sm">🚗 RTA</a>
+        <a href="https://www.dxbinteract.com" target="_blank" class="btn btn-ghost btn-sm">📊 DXB Interact</a>
+        <a href="https://mediaoffice.ae" target="_blank" class="btn btn-ghost btn-sm">📰 Dubai Media</a>
+        <a href="https://dldcube.com/en/" target="_blank" class="btn btn-ghost btn-sm">📦 DLD Cube</a>
+        <a href="https://dubailand.gov.ae/en/eservices/real-estate-project-status-landing/real-estate-project-status/#/" target="_blank" class="btn btn-ghost btn-sm">🏗 DLD Project Status</a>
+        <a href="https://dubailand.gov.ae/en/eservices/title-deed-verification-overview/title-deed-verification#/" target="_blank" class="btn btn-ghost btn-sm">📜 Title Deed Verify</a>
+        <a href="https://www.khaleejtimes.com/uae" target="_blank" class="btn btn-ghost btn-sm">🗞 Khaleej Times</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACTS -->
+<div id="page-contacts" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+    <h2 style="font-size:18px;font-weight:600;">Contacts</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="openAddContact()">+ Add Contact</button>
+      <button class="btn btn-ghost" onclick="openImport()">⬆ Import Excel</button>
+      <button class="btn btn-ghost" onclick="openCSVImport()">⬆ Import CSV</button>
+      <button class="btn btn-ghost" onclick="exportExcel()">⬇ Export Excel</button>
+      <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="search" id="searchInput" placeholder="Search name, phone, nationality..." oninput="renderContacts()"/>
+    </div>
+    <select id="filterStatus" onchange="renderContacts()" style="width:auto;">
+      <option value="">All Status</option>
+      <option value="pending">Pending</option>
+      <option value="contacted">Contacted</option>
+      <option value="interested">Interested</option>
+      <option value="notinterested">Not Interested</option>
+      <option value="callback">Callback</option>
+      <option value="closed">Closed</option>
+    </select>
+    <select id="filterPriority" onchange="renderContacts()" style="width:auto;">
+      <option value="">All Priority</option>
+      <option value="hot">🔥 Hot</option>
+      <option value="warm">🌤 Warm</option>
+      <option value="cold">❄️ Cold</option>
+    </select>
+    <select id="filterNat" onchange="renderContacts()" style="width:auto;" id="filterNat">
+      <option value="">All Nationalities</option>
+    </select>
+    <select id="filterSource" onchange="sourceBucketFilter='';renderContacts()" style="width:auto;">
+      <option value="">All Sources</option>
+    </select>
+  </div>
+  <div id="sourceFilterNotice" style="display:none;margin-bottom:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);">Source filter active <button class="btn btn-ghost btn-sm" onclick="clearSourceBucket()" style="margin-left:8px;">Clear</button></div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Name</th><th>Phone</th><th>Nationality</th><th>Community</th>
+          <th>Source File</th><th>Status</th><th>Priority</th><th>Last Contact</th><th>Callback</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="contactsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- OUTREACH -->
+<div id="page-outreach" class="page">
+  <h2 style="font-size:18px;font-weight:600;margin-bottom:1.25rem;">Outreach</h2>
+  <div class="row2" style="margin-bottom:1rem;">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Groq API Key</div>
+      <input type="password" id="apiKey" placeholder="gsk_..."/>
+      <p style="font-size:11px;color:var(--text3);margin-top:5px;">Free: <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a></p>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Message Settings</div>
+      <div class="row2" style="gap:8px;margin-bottom:8px;">
+        <div><label class="lbl">Language</label>
+          <select id="lang"><option>English</option><option>Arabic</option><option>Urdu</option></select></div>
+        <div><label class="lbl">Goal</label>
+          <select id="goal"><option value="both">Sell or Invest</option><option value="sell">Sell</option><option value="invest">Invest</option></select></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Bulk Community</div>
+    <div class="bulk-bar">
+      <span>Set community:</span>
+      <input type="text" id="bulkCom" placeholder="e.g. District One..." style="flex:1;"/>
+      <button class="btn btn-ghost btn-sm" onclick="applyBulkCom(false)">Apply to all</button>
+      <button class="btn btn-ghost btn-sm" onclick="applyBulkCom(true)">Apply to empty only</button>
+    </div>
+
+    <!-- Message Type Selector -->
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px;margin-bottom:10px;">
+      <label class="lbl" style="margin-bottom:8px;">Message Type</label>
+      <div class="row2" style="gap:8px;margin-bottom:0;">
+        <div>
+          <select id="msgType" style="width:100%;">
+            <option value="buyer">🛒 Buyer Approach — looking to invest</option>
+            <option value="seller">🏠 Seller Approach — have a property to sell</option>
+            <option value="general">📊 General Investment — market update</option>
+            <option value="followup">🔔 Follow-up — checking back in</option>
+          </select>
+        </div>
+        <div>
+          <select id="projectRef" style="width:100%;">
+            <option value="">-- No specific project --</option>
+            <option value="District One">District One, MBR City</option>
+            <option value="Downtown Dubai">Downtown Dubai</option>
+            <option value="Palm Jumeirah">Palm Jumeirah</option>
+            <option value="Business Bay">Business Bay</option>
+            <option value="Dubai Marina">Dubai Marina</option>
+            <option value="JVC">Jumeirah Village Circle (JVC)</option>
+            <option value="Dubai Hills">Dubai Hills Estate</option>
+            <option value="Arabian Ranches">Arabian Ranches</option>
+            <option value="DAMAC Hills">DAMAC Hills</option>
+            <option value="Emaar Beachfront">Emaar Beachfront</option>
+            <option value="Creek Harbour">Dubai Creek Harbour</option>
+            <option value="other">Other (use community field)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar" style="margin-bottom:8px;">
+      <button class="btn btn-ghost" onclick="genAll()" id="genAllBtn">⚡ Generate All</button>
+      <div style="position:relative;display:inline-block;">
+        <select onchange="handleBulkAction(this.value);this.value=''" style="width:auto;padding-right:24px;">
+          <option value="">🗑 Bulk Actions</option>
+          <option value="clearAll">Clear All Messages</option>
+          <option value="clearSelected">Clear Selected</option>
+          <option value="regenSelected">⚡ Generate Selected</option>
+          <option value="regenAll">⚡ Generate All Contacts</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Selection bar -->
+    <div id="selectionBar" style="display:none;gap:8px;align-items:center;background:#1e3a2f;border-radius:8px;padding:8px 12px;margin-bottom:10px;border:1px solid #2d5c45;">
+      <span id="selCount" style="font-size:12px;color:var(--green);font-weight:500;"></span>
+      <button class="btn btn-ghost btn-sm" onclick="document.querySelectorAll('.outreach-cb').forEach(c=>c.checked=false);updateSelectionBar()">Deselect All</button>
+    </div>
+    <div class="chips" id="outreachChips">
+      <button class="chip active" onclick="setOFilter('all',this)">All</button>
+      <button class="chip" onclick="setOFilter('pending',this)">Pending</button>
+      <button class="chip" onclick="setOFilter('generated',this)">Generated</button>
+      <button class="chip" onclick="setOFilter('contacted',this)">Sent</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th><input type="checkbox" onchange="selectAllOutreach(this)"/></th><th>Name</th><th>Phone</th><th>Community</th><th>Msg Status</th><th>Actions</th></tr></thead>
+        <tbody id="outreachBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- FOLLOW-UP -->
+<div id="page-followup" class="page">
+  <h2 style="font-size:18px;font-weight:600;margin-bottom:1.25rem;">Follow-up Tracker</h2>
+  <div class="chips">
+    <button class="chip active" onclick="setFUFilter('all',this)">All Contacted</button>
+    <button class="chip" onclick="setFUFilter('overdue',this)">🔴 Overdue</button>
+    <button class="chip" onclick="setFUFilter('today',this)">🟡 Due Today</button>
+    <button class="chip" onclick="setFUFilter('upcoming',this)">🟢 Upcoming</button>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Status</th><th>Last Contact</th><th>Callback Date</th><th>FU Count</th><th>Actions</th></tr></thead>
+        <tbody id="fuBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE -->
+<div id="page-pipeline" class="page">
+  <h2 style="font-size:18px;font-weight:600;margin-bottom:1.25rem;">Sales Pipeline</h2>
+  <div id="pipelineCols" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;"></div>
+</div>
+
+<!-- PROJECTS -->
+<div id="page-projects" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+    <h2 style="font-size:18px;font-weight:600;">🏗️ Project Library</h2>
+    <button class="btn btn-green" onclick="openAddProject()">+ Add Project</button>
+  </div>
+
+  <!-- Filter by developer -->
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;">
+    <select id="filterDeveloper" onchange="renderProjects()" style="width:auto;">
+      <option value="">All Developers</option>
+    </select>
+    <select id="filterPropType2" onchange="renderProjects()" style="width:auto;">
+      <option value="">All Types</option>
+      <option value="apartment">Apartment</option>
+      <option value="villa">Villa</option>
+      <option value="townhouse">Townhouse</option>
+      <option value="plot">Plot</option>
+      <option value="commercial">Commercial</option>
+    </select>
+  </div>
+
+  <div id="projectsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;"></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="page-settings" class="page">
+  <h2 style="font-size:18px;font-weight:600;margin-bottom:1.25rem;">Settings</h2>
+  <div class="card">
+    <div class="card-title">Agent Details</div>
+    <div class="row2">
+      <div><label class="lbl">Your name</label><input type="text" id="agentName" placeholder="Triloki Chaudhary" value="Triloki Chaudhary"/></div>
+      <div><label class="lbl">Company</label><input type="text" id="agentCompany" placeholder="Solanki Capital Properties LLC" value="Solanki Capital Properties LLC"/></div>
+    </div>
+    <div style="margin-top:10px;"><label class="lbl">Tagline</label><input type="text" id="agentTagline" placeholder="Your Trusted Property Advisor" value="Your Trusted Property Advisor"/></div>
+    <button class="btn btn-ghost" style="margin-top:12px;" onclick="saveSettings()">Save Settings</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Import from Google Sheets</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:10px;">Make Google Sheet public (Anyone with link → Viewer) → Paste link → Import → Then make private again.</p>
+    <label class="lbl">Google Sheet URL</label>
+    <input type="text" id="gsheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..."/>
+    <div class="row2" style="margin-top:8px;gap:8px;">
+      <div><label class="lbl">Sheet/Tab name (optional)</label><input type="text" id="gsheetTab" placeholder="Sheet1 (default)"/></div>
+      <div><label class="lbl">Default community</label><input type="text" id="gsheetCom" placeholder="e.g. District One"/></div>
+    </div>
+    <button class="btn btn-green" style="margin-top:10px;" onclick="importGSheet()">⬇ Import from Google Sheets</button>
+    <div id="gsheetStatus" style="font-size:12px;color:var(--text3);margin-top:8px;"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Data Management</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="exportExcel()">⬇ Export Excel</button>
+      <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-red" onclick="clearAllData()">🗑 Clear All Data</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Import Excel</div>
+    <button class="btn btn-ghost" onclick="openImport()">⬆ Import New Excel File</button>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<!-- Contact Detail Modal -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalName">Contact Details</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<!-- Message Generator Modal -->
+<div class="modal-overlay" id="msgGenModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="msgGenTitle">Generate Message</div>
+      <button class="modal-close" onclick="closeMsgGen()">✕</button>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Message Template</label>
+      <select id="mg_template" onchange="previewMsgGen()" style="width:100%;">
+        <option value="project_enquiry">📋 Project Enquiry — They asked about a project</option>
+        <option value="buyer">🛒 Buyer Approach — Looking to invest/buy</option>
+        <option value="seller">🏠 Seller Approach — Have a property to sell</option>
+        <option value="followup">🔔 Follow Up — Checking back in</option>
+        <option value="call_didnt_pick">📵 Call Didn't Pick — Left a message</option>
+        <option value="connect_later">📅 As You Said, Let's Connect Later</option>
+        <option value="dropping_wa">💬 Dropping a Quick WhatsApp</option>
+        <option value="staying_connected">🤝 Staying Connected for Future Opportunities</option>
+        <option value="general">📊 General Investment Opportunity</option>
+        <option value="contact_confirmation">✅ Contact Confirmation Required</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px;border-top:1px solid var(--border);padding-top:12px;">
+      <label class="lbl">➕ Create Custom Template</label>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <input type="text" id="custom_tmpl_name" placeholder="Template name (e.g. Meeting Follow Up)" style="flex:1;"/>
+      </div>
+      <textarea id="custom_tmpl_body" placeholder="Write message... use {name} for contact name, {agent} for your name" style="margin-top:8px;min-height:80px;font-size:12px;"></textarea>
+      <button class="btn btn-blue" onclick="saveCustomTemplate()" style="width:100%;margin-top:8px;">💾 Save Template</button>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Project (optional)</label>
+      <select id="mg_project" onchange="previewMsgGen()" style="width:100%;">
+        <option value="">-- No specific project --</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label class="lbl">📎 Attach Document Link (optional)</label>
+      <input type="text" id="mg_doc_link" placeholder="Google Drive / Dropbox link..." style="margin-bottom:6px;"/>
+      <input type="text" id="mg_doc_label" placeholder="Document label (e.g. Brochure, Factsheet, Floor Plan)" />
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Message Preview</label>
+      <button class="btn btn-ghost" onclick="previewMsgGen()" style="width:100%;margin-bottom:8px;">🔄 Generate Preview</button>
+      <div id="mg_preview" style="background:var(--bg2);border-radius:8px;padding:12px;font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text);min-height:120px;border:1px solid var(--border);"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="copyMsgGen()">📋 Copy</button>
+      <button class="btn btn-green" style="flex:1;" onclick="sendMsgGen()">↗ Send via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal-overlay" id="addProjectModal">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-header">
+      <div class="modal-title" id="projectModalTitle">Add Project</div>
+      <button class="modal-close" onclick="closeAddProject()">✕</button>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Developer Name *</label><input type="text" id="p_developer" placeholder="e.g. Sobha, Emaar, DAMAC"/></div>
+      <div><label class="lbl">Project Name *</label><input type="text" id="p_name" placeholder="e.g. Sobha Hartland 2"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Location / Community</label><input type="text" id="p_location" placeholder="e.g. MBR City, Dubai"/></div>
+      <div><label class="lbl">Property Type</label>
+        <select id="p_type">
+          <option value="apartment">Apartment</option>
+          <option value="villa">Villa</option>
+          <option value="townhouse">Townhouse</option>
+          <option value="plot">Plot</option>
+          <option value="commercial">Commercial</option>
+          <option value="mixed">Mixed</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Starting Price (AED)</label><input type="text" id="p_startPrice" placeholder="e.g. 1.2M"/></div>
+      <div><label class="lbl">Unit Types</label><input type="text" id="p_units" placeholder="e.g. Studio, 1BR, 2BR, 3BR"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Handover</label><input type="text" id="p_handover" placeholder="e.g. Q4 2026"/></div>
+      <div><label class="lbl">ROI / Yield</label><input type="text" id="p_roi" placeholder="e.g. 7-8% rental yield"/></div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Payment Plan</label>
+      <input type="text" id="p_payment" placeholder="e.g. 60/40, 10% booking, 1% monthly"/>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Key Highlights</label>
+      <textarea id="p_highlights" placeholder="e.g. Waterfront views, Lagoon access, Near metro..." style="min-height:60px;"></textarea>
+    </div>
+
+    <div class="card-title" style="margin-bottom:8px;">📎 Document Links (Google Drive / Dropbox)</div>
+    <div class="row2" style="margin-bottom:8px;">
+      <div><label class="lbl">Brochure Link</label><input type="text" id="p_brochure" placeholder="https://drive.google.com/..."/></div>
+      <div><label class="lbl">Factsheet Link</label><input type="text" id="p_factsheet" placeholder="https://drive.google.com/..."/></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Payment Plan Link</label><input type="text" id="p_paymentLink" placeholder="https://drive.google.com/..."/></div>
+      <div><label class="lbl">Developer Profile Link</label><input type="text" id="p_devProfile" placeholder="https://drive.google.com/..."/></div>
+    </div>
+    <input type="hidden" id="p_editId" value=""/>
+    <button class="btn btn-green" style="width:100%;" onclick="saveProject()">Save Project</button>
+  </div>
+</div>
+
+<!-- Send Project to Client Modal -->
+<div class="modal-overlay" id="sendProjectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Send Project Details</div>
+      <button class="modal-close" onclick="closeSendProject()">✕</button>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Select Contact</label>
+      <select id="sp_contact" style="width:100%;">
+        <option value="">-- Select contact --</option>
+      </select>
+    </div>
+    <div id="sp_preview" style="background:var(--bg2);border-radius:10px;padding:1rem;font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text);margin-bottom:12px;max-height:300px;overflow-y:auto;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" onclick="copyProjectMsg()">📋 Copy</button>
+      <button class="btn btn-green" style="flex:1;" onclick="sendProjectWA()">↗ Send via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Contact Modal -->
+<div class="modal-overlay" id="addContactModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Contact</div>
+      <button class="modal-close" onclick="closeAddContact()">✕</button>
+    </div>
+
+    <!-- Screenshot OCR -->
+    <div style="background:var(--bg2);border:1px dashed var(--border2);border-radius:10px;padding:12px;margin-bottom:14px;">
+      <label class="lbl" style="margin-bottom:6px;">📸 Auto-fill from Screenshot</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="file" id="ocrFile" accept="image/*" style="flex:1;font-size:12px;" onchange="extractFromImage(event)"/>
+        <span id="ocrStatus" style="font-size:11px;color:var(--text3);white-space:nowrap;"></span>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:5px;">Upload WhatsApp or business card screenshot — AI will auto-fill name, number, nationality</p>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Name *</label><input type="text" id="ac_name" placeholder="Full name"/></div>
+      <div><label class="lbl">Phone *</label><input type="text" id="ac_phone" placeholder="971501234567"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Nationality</label><input type="text" id="ac_nat" placeholder="e.g. Pakistani"/></div>
+      <div><label class="lbl">Community</label><input type="text" id="ac_com" placeholder="e.g. District One"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Status</label>
+        <select id="ac_status">
+          <option value="pending">Pending</option>
+          <option value="contacted">Contacted</option>
+          <option value="interested">Interested</option>
+          <option value="callback">Callback</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <div><label class="lbl">Priority</label>
+        <select id="ac_priority">
+          <option value="cold">❄️ Cold</option>
+          <option value="warm">🌤 Warm</option>
+          <option value="hot">🔥 Hot</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Project / Lead Source</label>
+      <div class="row2" style="gap:8px;">
+        <select id="ac_project" style="width:100%;">
+          <option value="">-- Select project --</option>
+          <option value="District One">District One, MBR City</option>
+          <option value="Downtown Dubai">Downtown Dubai</option>
+          <option value="Palm Jumeirah">Palm Jumeirah</option>
+          <option value="Business Bay">Business Bay</option>
+          <option value="Dubai Marina">Dubai Marina</option>
+          <option value="JVC">Jumeirah Village Circle (JVC)</option>
+          <option value="Dubai Hills">Dubai Hills Estate</option>
+          <option value="Arabian Ranches">Arabian Ranches</option>
+          <option value="DAMAC Hills">DAMAC Hills</option>
+          <option value="Emaar Beachfront">Emaar Beachfront</option>
+          <option value="Creek Harbour">Dubai Creek Harbour</option>
+          <option value="other">Other</option>
+        </select>
+        <select id="ac_leadtype" style="width:100%;">
+          <option value="buyer">🛒 Buyer Lead</option>
+          <option value="seller">🏠 Seller Lead</option>
+          <option value="investor">💰 Investor</option>
+          <option value="agent">🏢 Agent / Broker</option>
+          <option value="referral">🤝 Referral</option>
+          <option value="walkin">🚶 Walk-in</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Source</label>
+      <input type="text" id="ac_source" placeholder="e.g. Manual, Referral, Walk-in, Exhibition"/>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl">👤 Referred By</label>
+      <input type="text" id="ac_referredby" placeholder="e.g. John Smith, colleague name..."/>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label class="lbl">Notes</label>
+      <textarea id="ac_notes" placeholder="Any initial notes..."></textarea>
+    </div>
+    <button class="btn btn-green" style="width:100%;" onclick="saveAddContact()">Save Contact</button>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <div class="modal-title">Import Excel Files</div>
+      <button class="modal-close" onclick="closeImport()">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">Upload multiple files — duplicates are automatically skipped, source file is tracked.</p>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <p>📊 Click to upload one or multiple .xlsx files</p>
+      <p style="font-size:11px;margin-top:4px;color:var(--text3);">Required: Name, Phone columns</p>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" multiple onchange="handleFiles(event)"/>
+    </div>
+    <div id="filesList" style="margin-top:10px;"></div>
+    <div id="colMapSection" style="display:none;margin-top:12px;">
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <div style="flex:1;"><label class="lbl">Default community (optional)</label><input type="text" id="defCom" placeholder="e.g. District One — if not in sheet"/></div>
+        <button class="btn btn-green" onclick="loadContacts()">Import All Tabs →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Message Preview Modal -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Message Preview</div>
+      <button class="modal-close" onclick="closePreview()">✕</button>
+    </div>
+    <div id="previewContent" style="background:var(--bg2);border-radius:10px;padding:1rem;font-size:14px;line-height:1.85;white-space:pre-wrap;color:var(--text);margin-bottom:12px;"></div>
+    <textarea id="previewEdit" style="display:none;height:200px;font-size:13px;line-height:1.7;"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="toggleEdit()" id="editToggleBtn">✏️ Edit</button>
+      <button class="btn btn-ghost" onclick="copyPreview()">📋 Copy</button>
+      <button class="btn btn-green" onclick="sendPreview()" id="previewSendBtn">↗ Send via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────
+let contacts = [];
+let projects = [];
+let headers = [], rawRows = [], pendingFiles = [];
+let oFilter = 'all', fuFilter = 'all';
+let sourceBucketFilter = '';
+let previewContactId = null;
+let settings = { name:'Triloki Chaudhary', company:'Solanki Capital Properties LLC', tagline:'Your Trusted Property Advisor' };
+
+// Female name DB
+const femaleNames = new Set(['fatima','sara','sarah','maryam','mariam','aisha','ayesha','noor','layla','leila','iqra','hana','zara','zainab','noura','noora','reem','hessa','latifa','shaikha','maitha','afra','shamsa','meera','mira','priya','pooja','sneha','anjali','kavya','divya','deepa','sunita','anita','rita','sita','geeta','uma','asha','usha','neha','rekha','seema','reena','meena','lina','nina','dina','rina','hind','ghada','randa','rana','rania','dalia','abeer','amira','amina','asma','asmaa','basma','farah','hala','hanan','hayat','hiba','jihan','jumana','khadija','lamya','lubna','lujain','manal','maha','mais','maya','mona','muna','najla','najwa','nahla','nasrin','rahma','raghad','rasha','rola','ruba','safaa','safa','salma','sama','samia','samira','shirin','suhair','tahani','wafa','widad','wisam','yusra','zahra','zainab','zeina','zena','zineb','alice','emma','olivia','sophia','isabella','mia','charlotte','amelia','lily','grace','anna','victoria','elizabeth','jennifer','jessica','ashley','emily','amanda','melissa','nicole','stephanie','rachel','lauren','brittany','megan','chelsea','britney','courtney','taylor','amber','alexis','kayla','brooke','vanessa','cassandra','diana','naomi','claire','luna','ella','chloe','avery','aria','scarlett','aurora','violet','layla','zoey','lillian','nora','riley','stella','zoe']);
+
+function getGender(n){ const f=n.trim().split(/\s+/)[0].toLowerCase(); return femaleNames.has(f)?'female':'male'; }
+function getFirst(n){ return n.trim().split(/\s+/)[0]; }
+function salutation(n){ const g=getGender(n),f=getFirst(n); return g==='female'?'Dear Ms. '+f+',':'Dear Mr. '+f+','; }
+
+// ─── NAV ─────────────────────────────────────────────────────────────
+function syncBottomNav(p){
+  document.querySelectorAll('.bottom-nav button').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('bnav-'+p);
+  if(el) el.classList.add('active');
+}
+
+function nav(p, btn){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  btn.classList.add('active');
+  if(p==='dashboard') renderDashboard();
+  if(p==='contacts') renderContacts();
+  if(p==='outreach') renderOutreach();
+  if(p==='followup') renderFU();
+  if(p==='pipeline') renderPipeline();
+  if(p==='projects') renderProjects();
+}
+
+// ─── TOAST NOTIFICATION ──────────────────────────────────────────────
+function toast(msg, type='success'){
+  const existing = document.getElementById('toast');
+  if(existing) existing.remove();
+  const t = document.createElement('div');
+  t.id = 'toast';
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:${type==='success'?'#1e3a2f':type==='error'?'#3a1515':'#1a2a3a'};color:${type==='success'?'#4ade80':type==='error'?'#f87171':'#60a5fa'};border:1px solid ${type==='success'?'#2d5c45':type==='error'?'#5a2020':'#1e3a5c'};padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:opacity 0.3s;`;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2500);
+}
+
+// ─── STORAGE ─────────────────────────────────────────────────────────
+let _saveTimer = null;
+function save(){
+  try{
+    localStorage.setItem('sccrm_contacts', JSON.stringify(contacts));
+    localStorage.setItem('sccrm_settings', JSON.stringify(settings));
+    localStorage.setItem('sccrm_projects', JSON.stringify(projects));
+  }catch(e){}
+  // Debounce cloud save — only sync after 2 seconds of no changes
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(()=>{
+    try{ window.saveToFirebase({contacts, settings, projects}); }catch(e){}
+  }, 2000);
+}
+
+function load(){
+  try{
+    const c=localStorage.getItem('sccrm_contacts'); if(c) contacts=JSON.parse(c);
+    const s=localStorage.getItem('sccrm_settings'); if(s){ settings=JSON.parse(s); document.getElementById('agentName').value=settings.name; document.getElementById('agentCompany').value=settings.company; document.getElementById('agentTagline').value=settings.tagline; }
+    const p=localStorage.getItem('sccrm_projects'); if(p) projects=JSON.parse(p);
+  }catch(e){}
+}
+
+async function loadFromCloud(){
+  try {
+    const data = await window.loadFromFirebase();
+    if(data){
+      if(data.contacts && data.contacts.length > 0){
+        // Merge: cloud is source of truth but preserve local notes/status if contact exists
+        const localMap = {};
+        contacts.forEach(c => localMap[c.phone] = c);
+        contacts = data.contacts.map(c => {
+          const local = localMap[c.phone];
+          if(local && local.notes && local.notes.length > (c.notes||[]).length) {
+            return {...c, notes: local.notes, status: local.status, priority: local.priority, lastContact: local.lastContact, callbackDate: local.callbackDate};
+          }
+          return c;
+        });
+      }
+      if(data.projects) projects = data.projects;
+      if(data.settings){
+        settings = data.settings;
+        document.getElementById('agentName').value=settings.name||'Triloki Chaudhary';
+        document.getElementById('agentCompany').value=settings.company||'Solanki Capital Properties LLC';
+        document.getElementById('agentTagline').value=settings.tagline||'Your Trusted Property Advisor';
+      }
+      try{ localStorage.setItem('sccrm_contacts', JSON.stringify(contacts)); localStorage.setItem('sccrm_projects', JSON.stringify(projects)); }catch(e){}
+      renderDashboard();
+    }
+  } catch(e){ console.error('Cloud load error:', e); }
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────
+function navToContacts(status){
+  document.getElementById('filterStatus').value=status;
+  document.getElementById('filterPriority').value='';
+  const btn = document.querySelectorAll('.nav-item')[1] || document.querySelectorAll('.bottom-nav button')[1];
+  if(btn) nav('contacts', btn); else { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById('page-contacts').classList.add('active'); }
+  syncBottomNav('contacts');
+  renderContacts();
+}
+
+function navToContactsPriority(priority){
+  document.getElementById('filterStatus').value='';
+  document.getElementById('filterPriority').value=priority;
+  const btn = document.querySelectorAll('.nav-item')[1];
+  if(btn) nav('contacts', btn); else { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById('page-contacts').classList.add('active'); }
+  syncBottomNav('contacts');
+  renderContacts();
+}
+
+function navToFollowup(){
+  const btn = document.querySelectorAll('.nav-item')[3];
+  if(btn) nav('followup', btn); else { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById('page-followup').classList.add('active'); }
+  syncBottomNav('followup');
+  renderFU();
+}
+
+
+function sourceText(c){
+  return ((c.source||'')+' '+(c.leadSource||'')+' '+(c.channel||'')+' '+(c.notes||[]).map(n=>n.text||'').join(' ')).toLowerCase();
+}
+function sourceBucket(c){
+  const t = sourceText(c);
+  if(/facebook|fb\b/.test(t)) return 'facebook';
+  if(/linkedin/.test(t)) return 'linkedin';
+  if(/google|gads|ads/.test(t)) return 'googleads';
+  if(/gmail|email|mail/.test(t)) return 'gmail';
+  if(/whatsapp|wa\b/.test(t)) return 'whatsapp';
+  if(/youtube|yt\b/.test(t)) return 'youtube';
+  if(/instagram|insta|ig\b/.test(t)) return 'instagram';
+  if(/propertyfinder|property finder/.test(t)) return 'propertyfinder';
+  if(/bayut/.test(t)) return 'bayut';
+  if(/dubizzle/.test(t)) return 'dubizzle';
+  if(/webhook/.test(t)) return 'webhook';
+  if(/skyloov/.test(t)) return 'skyloov';
+  if(/direct/.test(t)) return 'direct';
+  if(/referral/.test(t)) return 'referral';
+  if(/walk\s?in|walk-in/.test(t)) return 'walkin';
+  if(/website|web site/.test(t)) return 'website';
+  if(/phonebook|phone book/.test(t)) return 'phonebook';
+  if(/call log|calllogs|call logs/.test(t)) return 'calllogs';
+  if(/qr/.test(t)) return 'qrcode';
+  if(/manual/.test(t)) return 'direct';
+  return 'direct';
+}
+function navToSourceBucket(bucket){
+  sourceBucketFilter = bucket;
+  document.getElementById('filterStatus').value='';
+  document.getElementById('filterPriority').value='';
+  document.getElementById('filterNat').value='';
+  document.getElementById('filterSource').value='';
+  document.getElementById('searchInput').value='';
+  const btn = document.querySelectorAll('.nav-item')[1];
+  if(btn) nav('contacts', btn); else { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById('page-contacts').classList.add('active'); }
+  syncBottomNav('contacts');
+  renderContacts();
+}
+function clearSourceBucket(){ sourceBucketFilter=''; renderContacts(); }
+function renderSourceDashboard(){
+  const iconBase='https://cdn-icons-png.flaticon.com/512/';
+  const defs=[
+    ['facebook','Facebook','733/733547.png','📘'], ['propertyfinder','PropertyFinder','GFAVICON','PF'], ['direct','Direct','1828/1828911.png','🚶'],
+    ['linkedin','LinkedIn','174/174857.png','in'], ['bayut','Bayut','6124/6124933.png','🟢'], ['referral','Referral','1006/1006657.png','🤝'],
+    ['googleads','Google Ads','300/300221.png','G'], ['dubizzle','Dubizzle','684/684908.png','D'], ['walkin','Walk In','854/854878.png','🚶'],
+    ['gmail','Gmail','732/732200.png','M'], ['webhook','Webhook','455/455705.png','🔗'], ['website','Website','1006/1006771.png','🌐'],
+    ['whatsapp','WhatsApp','733/733585.png','🟢'], ['skyloov','Skyloov','684/684908.png','🏘️'], ['phonebook','Phonebook','3095/3095583.png','📒'],
+    ['youtube','YouTube','1384/1384060.png','▶️'], ['calllogs','Call Logs','724/724664.png','📞'], ['qrcode','QR Code','1042/1042339.png','▦'],
+    ['instagram','Instagram','2111/2111463.png','📸']
+  ];
+  const associatedOnly = document.getElementById('sourceAssociatedOnly')?.checked;
+  const list = associatedOnly ? contacts.filter(c=>c.source||c.leadSource||c.channel) : contacts;
+  const counts={}; defs.forEach(d=>counts[d[0]]=0);
+  list.forEach(c=>{ const b=sourceBucket(c); counts[b]=(counts[b]||0)+1; });
+  const max=Math.max(1,...Object.values(counts));
+  const total=list.length;
+  const totalEl=document.getElementById('sourceTotal'); if(totalEl) totalEl.textContent='('+total+')';
+  document.getElementById('sourceGrid').innerHTML = defs.map(([key,label,iconPath,fallback])=>{
+    const cnt=counts[key]||0, pct=Math.max(cnt/max*100, cnt?8:0);
+    const iconUrl = iconPath.startsWith('GFAVICON') ? (key==='propertyfinder'?'https://www.google.com/s2/favicons?domain=propertyfinder.ae&sz=64':'https://www.google.com/s2/favicons?domain=bayut.com&sz=64') : iconBase+iconPath;
+    return `<div class="source-card" onclick="navToSourceBucket('${key}')" title="Open ${label} leads">
+      <div class="source-fill" style="width:${pct}%;"></div>
+      <div class="source-left">
+        <span class="source-icon-wrap"><img src="${iconUrl}" class="source-icon-img" onerror="this.outerHTML='<span class=&quot;source-icon-fallback&quot;>${fallback}</span>'" /></span>
+        <span class="source-label"><span>${label}</span><small>Tap to open</small></span>
+      </div>
+      <div class="source-count">${cnt}</div>
+    </div>`;
+  }).join('');
+}
+
+let _marketLoaded = false;
+function renderDashboard(){
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const total=contacts.length, contacted=contacts.filter(c=>c.status!=='pending').length;
+  const interested=contacts.filter(c=>c.status==='interested').length;
+  const closed=contacts.filter(c=>c.status==='closed'||c.status==='repeat').length;
+  const totalDeals=contacts.reduce((a,c)=>a+(c.deals||[]).length,0);
+  const totalCommission=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(parseFloat((d.commission||'0').replace(/[^0-9.]/g,''))||0),a),0);
+  const hot=contacts.filter(c=>c.priority==='hot').length;
+  const today=new Date().toISOString().slice(0,10);
+  const overdueOrToday=contacts.filter(c=>c.callbackDate&&c.callbackDate<=today&&c.status!=='closed').length;
+
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card" onclick="navToContacts('')" style="cursor:pointer;" title="All contacts">
+      <div class="stat-val" style="color:var(--blue);">${total}</div><div class="stat-lbl">Total Contacts</div>
+    </div>
+    <div class="stat-card" onclick="navToContacts('contacted')" style="cursor:pointer;" title="View contacted">
+      <div class="stat-val" style="color:var(--green);">${contacted}</div><div class="stat-lbl">Contacted</div>
+    </div>
+    <div class="stat-card" onclick="navToContacts('interested')" style="cursor:pointer;" title="View interested">
+      <div class="stat-val" style="color:var(--purple);">${interested}</div><div class="stat-lbl">Interested</div>
+    </div>
+    <div class="stat-card" onclick="navToContactsPriority('hot')" style="cursor:pointer;" title="View hot leads">
+      <div class="stat-val" style="color:#fb923c;">${hot}</div><div class="stat-lbl">Hot Leads</div>
+    </div>
+    <div class="stat-card" onclick="navToFollowup()" style="cursor:pointer;" title="View follow-ups due">
+      <div class="stat-val" style="color:var(--orange);">${overdueOrToday}</div><div class="stat-lbl">Follow-ups Due</div>
+    </div>
+    <div class="stat-card" onclick="navToContacts('closed')" style="cursor:pointer;" title="View closed deals">
+      <div class="stat-val" style="color:var(--green);">${totalDeals}</div><div class="stat-lbl">Deals Closed</div>
+    </div>
+    <div class="stat-card" style="cursor:default;">
+      <div class="stat-val" style="color:#fbbf24;font-size:18px;">AED ${totalCommission>0?totalCommission.toLocaleString('en-US',{maximumFractionDigits:0}):'0'}</div><div class="stat-lbl">Total Commission</div>
+    </div>
+  `;
+  renderSourceDashboard();
+  loadNewsTicker();
+  // Lazy load market data once
+  if(!_marketLoaded){ _marketLoaded=true; setTimeout(()=>loadMarketData(), 800); }
+
+  // Pipeline chart
+  const stages=[{k:'pending',l:'Pending',c:'#555'},{k:'contacted',l:'Contacted',c:'var(--blue)'},{k:'interested',l:'Interested',c:'var(--green)'},{k:'callback',l:'Callback',c:'var(--orange)'},{k:'closed',l:'Closed',c:'var(--purple)'}];
+  document.getElementById('pipelineChart').innerHTML = stages.map(s=>{
+    const cnt=contacts.filter(c=>c.status===s.k).length;
+    const pct=total>0?Math.round(cnt/total*100):0;
+    return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:13px;">${s.l}</span><span style="font-size:13px;font-weight:600;color:${s.c};">${cnt}</span></div><div style="background:var(--bg2);border-radius:3px;height:4px;"><div style="background:${s.c};width:${pct}%;height:4px;border-radius:3px;transition:width 0.3s;"></div></div></div>`;
+  }).join('');
+
+  // Hot leads
+  const hotList=contacts.filter(c=>c.priority==='hot').slice(0,5);
+  document.getElementById('hotLeads').innerHTML = hotList.length ? hotList.map(c=>`
+    <div onclick="openContact(${c.id})" title="Open contact" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+      <div><div style="font-size:13px;font-weight:500;color:var(--blue);">${c.name}</div><div style="font-size:11px;color:var(--text3);">${c.community||'—'} · ${c.nationality||'—'}</div></div>
+      <span class="tag tag-${c.status}">${c.status}</span>
+    </div>`).join('') : '<div style="color:var(--text3);font-size:13px;">No hot leads yet</div>';
+
+  // Follow-ups due
+  const dueCon=contacts.filter(c=>c.callbackDate&&c.callbackDate<=today&&c.status!=='closed');
+  document.getElementById('dashFollowups').innerHTML = dueCon.length ? dueCon.slice(0,8).map(c=>{
+    const isOverdue=c.callbackDate<today;
+    return `<div onclick="openContact(${c.id})" title="Open contact" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+      <div><div style="font-size:13px;font-weight:500;color:var(--blue);">${c.name}</div><div style="font-size:11px;color:var(--text3);">${c.phone}</div></div>
+      <div style="text-align:right;"><div class="tag ${isOverdue?'tag-notinterested':'tag-callback'}">${isOverdue?'Overdue':'Due today'}</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">${c.callbackDate}</div></div>
+    </div>`;
+  }).join('') : '<div style="color:var(--text3);font-size:13px;">No follow-ups due 🎉</div>';
+}
+
+function populateCols(){
+  ['colName','colPhone','colNat','colCom'].forEach(id=>{
+    const sel=document.getElementById(id); if(!sel) return;
+    const isOpt=id==='colNat'||id==='colCom';
+    sel.innerHTML=isOpt?'<option value="">-- skip --</option>':'';
+    headers.forEach((h,i)=>{
+      const o=document.createElement('option'); o.value=i; o.textContent=h;
+      if(id==='colName'&&/name/i.test(h))o.selected=true;
+      if(id==='colPhone'&&/phone|tel|mobile|number/i.test(h))o.selected=true;
+      if(id==='colNat'&&/nation|country/i.test(h))o.selected=true;
+      if(id==='colCom'&&/community|area|project|district/i.test(h))o.selected=true;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function extractPhone(raw){
+  if(!raw) return '';
+  const str=String(raw).trim(); if(str==='-'||str==='0') return '';
+  const parts=str.split(/(?<=\d)\s+(?=[\+\d])/);
+  const cleaned=parts.map(p=>{
+    let n=p.replace(/[\s\+\-\(\)\.]/g,'');
+    if(/^5\d{8}$/.test(n)) n='971'+n;
+    if(/^05\d{8}$/.test(n)) n='971'+n.slice(1);
+    if(/^00971/.test(n)) n=n.slice(2);
+    return n;
+  }).filter(p=>/^\d{10,15}$/.test(p));
+  if(!cleaned.length) return '';
+  return cleaned.find(p=>/^9715/.test(p))||cleaned.find(p=>p.length>=11&&!/^9714/.test(p))||cleaned[0]||'';
+}
+
+
+function timeAgo(dateStr){
+  if(!dateStr) return '—';
+  try {
+    // Parse "28 May at 06:59" format
+    const now = new Date();
+    const parts = dateStr.match(/(\d+)\s+(\w+)(?:\s+(\d{4}))?\s+at\s+(\d+):(\d+)/);
+    if(!parts) return dateStr;
+    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const year = parts[3] ? parseInt(parts[3]) : now.getFullYear();
+    const d = new Date(year, months[parts[2]], parseInt(parts[1]), parseInt(parts[4]), parseInt(parts[5]));
+    const diff = Math.floor((now - d) / 1000);
+    if(diff < 60) return 'Just now';
+    if(diff < 3600) return Math.floor(diff/60)+' min ago';
+    if(diff < 86400) return Math.floor(diff/3600)+' hr ago';
+    if(diff < 172800) return 'Yesterday';
+    if(diff < 2592000) return Math.floor(diff/86400)+' days ago';
+    return Math.floor(diff/2592000)+' months ago';
+  } catch(e){ return dateStr; }
+}
+
+// ─── CONTACTS ────────────────────────────────────────────────────────
+function renderContacts(){
+  const search=(document.getElementById('searchInput').value||'').toLowerCase();
+  const statusF=document.getElementById('filterStatus').value;
+  const priF=document.getElementById('filterPriority').value;
+  const natF=document.getElementById('filterNat').value;
+  const srcF=document.getElementById('filterSource').value;
+
+  // Populate nationality filter
+  const nats=[...new Set(contacts.map(c=>c.nationality).filter(Boolean))].sort();
+  const natSel=document.getElementById('filterNat');
+  const curNat=natSel.value;
+  natSel.innerHTML='<option value="">All Nationalities</option>'+nats.map(n=>`<option value="${n}" ${n===curNat?'selected':''}>${n}</option>`).join('');
+
+  // Populate source filter
+  const sources=[...new Set(contacts.map(c=>c.source).filter(Boolean))].sort();
+  const srcSel=document.getElementById('filterSource');
+  const curSrc=srcSel.value;
+  srcSel.innerHTML='<option value="">All Sources</option>'+sources.map(s=>`<option value="${s}" ${s===curSrc?'selected':''}>${s}</option>`).join('');
+
+  const notice=document.getElementById('sourceFilterNotice');
+  if(notice){ notice.style.display=sourceBucketFilter?'block':'none'; notice.firstChild.textContent = sourceBucketFilter ? 'Source filter active: '+sourceBucketFilter : 'Source filter active '; }
+
+  let list=contacts.filter(c=>{
+    if(search && !c.name.toLowerCase().includes(search) && !c.phone.includes(search) && !(c.nationality||'').toLowerCase().includes(search)) return false;
+    if(statusF && c.status!==statusF) return false;
+    if(priF && c.priority!==priF) return false;
+    if(natF && c.nationality!==natF) return false;
+    if(srcF && c.source!==srcF) return false;
+    if(sourceBucketFilter && sourceBucket(c)!==sourceBucketFilter) return false;
+    return true;
+  });
+
+  const tbody=document.getElementById('contactsBody');
+  tbody.innerHTML='';
+  if(!list.length){tbody.innerHTML='<tr><td colspan="11"><div class="empty">No contacts found</div></td></tr>';return;}
+
+  const today=new Date().toISOString().slice(0,10);
+  list.forEach((c,i)=>{
+    const cbClass=c.callbackDate?(c.callbackDate<today?'overdue':c.callbackDate===today?'due-soon':''):'';
+    // Shorten source filename
+    const srcShort=c.source?c.source.replace(/\.xlsx?$/i,'').slice(0,20)+(c.source.length>24?'…':''):'—';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="color:var(--text3);">${i+1}</td>
+      <td><div style="font-weight:500;cursor:pointer;color:var(--blue);" onclick="openContact(${c.id})">${c.name}</div><div style="font-size:10px;color:var(--text3);">${c.community||'—'}</div></td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text2);">${c.phone||'—'}</td>
+      <td style="font-size:12px;color:var(--text2);">${c.nationality||'—'}</td>
+      <td style="font-size:12px;color:var(--text2);">${c.community||'—'}</td>
+      <td><span style="font-size:10px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text3);" title="${c.source||''}">${srcShort}</span></td>
+      <td><select class="tag tag-${c.status}" onchange="updateStatus(${c.id},this.value)" style="background:transparent;border:none;color:inherit;font-size:10px;font-weight:500;cursor:pointer;padding:0;">
+        <option value="pending" ${c.status==='pending'?'selected':''}>pending</option>
+        <option value="contacted" ${c.status==='contacted'?'selected':''}>contacted</option>
+        <option value="interested" ${c.status==='interested'?'selected':''}>interested</option>
+        <option value="notinterested" ${c.status==='notinterested'?'selected':''}>not interested</option>
+        <option value="callback" ${c.status==='callback'?'selected':''}>callback</option>
+        <option value="closed" ${c.status==='closed'?'selected':''}>🏆 deal closed</option>
+        <option value="alreadybought" ${c.status==='alreadybought'?'selected':''}>❌ already bought</option>
+        <option value="repeat" ${c.status==='repeat'?'selected':''}>🔄 repeat client</option>
+      </select></td>
+      <td><select class="tag tag-${c.priority||'cold'}" onchange="updatePriority(${c.id},this.value)" style="background:transparent;border:none;color:inherit;font-size:10px;font-weight:500;cursor:pointer;padding:0;">
+        <option value="hot" ${c.priority==='hot'?'selected':''}>🔥 Hot</option>
+        <option value="warm" ${c.priority==='warm'?'selected':''}>🌤 Warm</option>
+        <option value="cold" ${(c.priority||'cold')==='cold'?'selected':''}>❄️ Cold</option>
+      </select></td>
+      <td style="font-size:11px;"><div style="color:var(--text2);">${c.lastContact||'—'}</div><div style="font-size:10px;color:var(--orange);">${c.lastContact?timeAgo(c.lastContact):''}</div></td>
+      <td style="font-size:11px;" class="${cbClass}">${c.callbackDate||'—'}</td>
+      <td><div style="display:flex;gap:4px;">
+        <button class="btn btn-ghost btn-sm" onclick="openContact(${c.id})">View</button>
+        <a href="tel:+${c.phone}" class="btn btn-blue btn-sm">📞 Call</a>
+        ${c.msgGenerated?'<button class="btn btn-green btn-sm" onclick="openPreview(${c.id})">↗ WA</button>':'<a href="https://wa.me/'+c.phone+'" target="_blank" class="btn btn-green btn-sm">↗ WA</a>'}
+        <button class="btn btn-sm" onclick="showResetMenu(${c.id},event)" style="background:#1a1a2a;color:#a78bfa;border:1px solid #2e2a5a;" title="Reset contact data">↺</button>
+        <button class="btn btn-sm" onclick="deleteContact(${c.id})" style="background:#2d1515;color:#f87171;border:1px solid #5a2020;">🗑</button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function deleteContact(id){
+  if(!confirm('Delete this contact?')) return;
+  contacts = contacts.filter(x=>parseInt(x.id)!==parseInt(id));
+  save();
+  renderContacts();
+  renderDashboard();
+  toast('🗑 Contact deleted!');
+}
+
+function logCall(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
+  const time=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(!c.notes) c.notes=[];
+  c.notes.push({text:'📞 Call initiated', time});
+  c.lastContact=time;
+  if(c.status==='pending') c.status='contacted';
+  save();
+}
+
+function updateStatus(id,val){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id));
+  if(!c) return;
+  const prev = c.status;
+  c.status=val;
+  save();
+  renderContacts();
+  toast('✅ Status: '+val);
+  if(val==='closed') openDealModal(id);
+  if(val==='alreadybought') openAlreadyBoughtModal(id);
+}
+function updatePriority(id,val){ const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(c){c.priority=val;save();renderContacts();toast('✅ Priority: '+val);} }
+
+// ─── CONTACT MODAL ────────────────────────────────────────────────────
+function openContact(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
+  const ct = c.contactType||'client';
+  const ctColor = ct==='agent'?'#1e1a3a':ct==='seller'?'#1a1a2a':'#1a2a1a';
+  const ctBorder = ct==='agent'?'#2e2a5a':ct==='seller'?'#2a2a5a':'#2a4a2a';
+  const ctTextColor = ct==='agent'?'var(--purple)':ct==='seller'?'var(--orange)':'var(--green)';
+  const ctLabel = ct==='agent'?'🏢 Agent / Broker':ct==='seller'?'🏠 Seller':'👤 Client';
+
+  document.getElementById('modalName').innerHTML=`<span id="editNameDisplay">${c.name}${ct==='agent'?' 🏢':ct==='seller'?' 🏠':''}</span> <button onclick="editContactName(${id})" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 6px;" title="Edit name">✏️</button>`;
+  document.getElementById('modalContent').innerHTML=`
+
+    <!-- Contact Type Banner -->
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;padding:8px 12px;background:${ctColor};border-radius:8px;border:1px solid ${ctBorder};">
+      <span style="font-size:12px;color:${ctTextColor};font-weight:500;">${ctLabel}</span>
+      <select onchange="updateField(${id},'contactType',this.value);openContact(${id});" style="background:transparent;border:none;color:var(--text2);font-size:11px;cursor:pointer;padding:0;margin-left:auto;">
+        <option value="client" ${ct==='client'?'selected':''}>👤 Client</option>
+        <option value="seller" ${ct==='seller'?'selected':''}>🏠 Seller</option>
+        <option value="agent" ${ct==='agent'?'selected':''}>🏢 Agent</option>
+      </select>
+    </div>
+
+    <!-- Basic Info -->
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Phone</label>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:13px;font-family:monospace;">${c.phone||'—'}</span>
+          ${c.phone?`<a href="tel:+${c.phone}" class="btn btn-blue btn-sm" onclick="logCall(${id})">📞 Call</a>`:''}
+          ${c.phone?`<a href="https://wa.me/${c.phone}" target="_blank" class="btn btn-green btn-sm">💬 WA</a>`:''}
+        </div>
+      </div>
+      <div><label class="lbl">Nationality</label><div style="font-size:13px;">${c.nationality||'—'}</div></div>
+    </div>
+    ${c.referredBy?'<div style="margin-bottom:12px;"><label class="lbl">👤 Referred By</label><div style="font-size:13px;color:var(--blue);">'+c.referredBy+'</div></div>':''}
+
+    <!-- Agent specific fields -->
+    ${ct==='agent'?`
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Agency / Company</label><input type="text" value="${c.agencyName||''}" placeholder="Agency name..." onchange="updateField(${id},'agencyName',this.value)"/></div>
+      <div><label class="lbl">Referral Notes</label><input type="text" value="${c.agentNotes||''}" placeholder="What they can refer..." onchange="updateField(${id},'agentNotes',this.value)"/></div>
+    </div>`:''}
+
+    <!-- Seller Property Details -->
+    ${ct==='seller'?`
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:10px;">🏠 Property Details</div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Property Type</label>
+        <select onchange="updateField(${id},'sellerPropType',this.value)">
+          <option value="">Select type</option>
+          <option value="studio" ${c.sellerPropType==='studio'?'selected':''}>Studio</option>
+          <option value="apartment1" ${c.sellerPropType==='apartment1'?'selected':''}>Apartment — 1 BR</option>
+          <option value="apartment2" ${c.sellerPropType==='apartment2'?'selected':''}>Apartment — 2 BR</option>
+          <option value="apartment3" ${c.sellerPropType==='apartment3'?'selected':''}>Apartment — 3 BR</option>
+          <option value="apartment4" ${c.sellerPropType==='apartment4'?'selected':''}>Apartment — 4 BR</option>
+          <option value="penthouse" ${c.sellerPropType==='penthouse'?'selected':''}>Penthouse</option>
+          <option value="townhouse" ${c.sellerPropType==='townhouse'?'selected':''}>Townhouse</option>
+          <option value="villa" ${c.sellerPropType==='villa'?'selected':''}>Villa</option>
+          <option value="plot" ${c.sellerPropType==='plot'?'selected':''}>Plot / Land</option>
+          <option value="commercial" ${c.sellerPropType==='commercial'?'selected':''}>Commercial</option>
+          <option value="retail" ${c.sellerPropType==='retail'?'selected':''}>Retail / Shop</option>
+          <option value="office" ${c.sellerPropType==='office'?'selected':''}>Office</option>
+        </select>
+      </div>
+      <div><label class="lbl">Community / Building</label>
+        <input type="text" value="${c.sellerCommunity||''}" placeholder="e.g. District One, Tower X..." onchange="updateField(${id},'sellerCommunity',this.value)"/>
+      </div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Unit Number</label>
+        <input type="text" value="${c.sellerUnit||''}" placeholder="e.g. 1204, Villa 23..." onchange="updateField(${id},'sellerUnit',this.value)"/>
+      </div>
+      <div><label class="lbl">Size (sq ft)</label>
+        <input type="text" value="${c.sellerSize||''}" placeholder="e.g. 1,250 sqft" onchange="updateField(${id},'sellerSize',this.value)"/>
+      </div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Asking Price (AED)</label>
+        <input type="text" value="${c.askingPrice||''}" placeholder="e.g. 2,500,000" onchange="updateField(${id},'askingPrice',this.value)"/>
+      </div>
+      <div><label class="lbl">Negotiable?</label>
+        <select onchange="updateField(${id},'priceNegotiable',this.value)">
+          <option value="">Not specified</option>
+          <option value="yes" ${c.priceNegotiable==='yes'?'selected':''}>✅ Yes — Negotiable</option>
+          <option value="no" ${c.priceNegotiable==='no'?'selected':''}>❌ Fixed Price</option>
+          <option value="slightly" ${c.priceNegotiable==='slightly'?'selected':''}>🔸 Slightly Flexible</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Ownership Status</label>
+        <select onchange="updateField(${id},'ownershipStatus',this.value)">
+          <option value="">Not specified</option>
+          <option value="clear" ${c.ownershipStatus==='clear'?'selected':''}>✅ Clear Title</option>
+          <option value="mortgage" ${c.ownershipStatus==='mortgage'?'selected':''}>🏦 Under Mortgage</option>
+          <option value="dispute" ${c.ownershipStatus==='dispute'?'selected':''}>⚠️ Dispute</option>
+          <option value="pending" ${c.ownershipStatus==='pending'?'selected':''}>⏳ Pending Payment</option>
+          <option value="inherited" ${c.ownershipStatus==='inherited'?'selected':''}>📜 Inherited</option>
+        </select>
+      </div>
+      <div><label class="lbl">Currently Tenanted?</label>
+        <select onchange="updateField(${id},'tenanted',this.value)">
+          <option value="">Not specified</option>
+          <option value="vacant" ${c.tenanted==='vacant'?'selected':''}>🔑 Vacant</option>
+          <option value="tenanted" ${c.tenanted==='tenanted'?'selected':''}>👥 Tenanted</option>
+          <option value="owneroccupied" ${c.tenanted==='owneroccupied'?'selected':''}>🏠 Owner Occupied</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Dispute / Issue Details</label>
+      <textarea onchange="updateField(${id},'disputeDetails',this.value)" placeholder="Any disputes, pending payments, legal issues..." style="min-height:50px;">${c.disputeDetails||''}</textarea>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Seller Motivation</label>
+        <select onchange="updateField(${id},'sellerMotivation',this.value)">
+          <option value="">Not specified</option>
+          <option value="urgent" ${c.sellerMotivation==='urgent'?'selected':''}>🔥 Urgent — needs quick sale</option>
+          <option value="relocating" ${c.sellerMotivation==='relocating'?'selected':''}>✈️ Relocating</option>
+          <option value="upgrade" ${c.sellerMotivation==='upgrade'?'selected':''}>⬆️ Upgrading</option>
+          <option value="investment" ${c.sellerMotivation==='investment'?'selected':''}>💰 Profit booking</option>
+          <option value="noturgent" ${c.sellerMotivation==='noturgent'?'selected':''}>😌 Not urgent</option>
+        </select>
+      </div>
+      <div><label class="lbl">Expected Closing</label>
+        <select onchange="updateField(${id},'sellerTimeline',this.value)">
+          <option value="">Not specified</option>
+          <option value="immediate" ${c.sellerTimeline==='immediate'?'selected':''}>ASAP</option>
+          <option value="1month" ${c.sellerTimeline==='1month'?'selected':''}>Within 1 month</option>
+          <option value="3months" ${c.sellerTimeline==='3months'?'selected':''}>1-3 months</option>
+          <option value="6months" ${c.sellerTimeline==='6months'?'selected':''}>3-6 months</option>
+          <option value="flexible" ${c.sellerTimeline==='flexible'?'selected':''}>Flexible</option>
+        </select>
+      </div>
+    </div>
+    `:''}
+
+    <!-- Status & Priority -->
+    <div class="row3" style="margin-bottom:12px;">
+      <div><label class="lbl">Status</label>
+        <select onchange="updateStatus(${id},this.value)">
+          <option value="pending" ${c.status==='pending'?'selected':''}>Pending</option>
+          <option value="contacted" ${c.status==='contacted'?'selected':''}>Contacted</option>
+          <option value="interested" ${c.status==='interested'?'selected':''}>Interested</option>
+          <option value="notinterested" ${c.status==='notinterested'?'selected':''}>Not Interested</option>
+          <option value="callback" ${c.status==='callback'?'selected':''}>Callback</option>
+          <option value="closed" ${c.status==='closed'?'selected':''}>Closed</option>
+        </select>
+      </div>
+      <div><label class="lbl">Priority</label>
+        <select onchange="updatePriority(${id},this.value)">
+          <option value="hot" ${c.priority==='hot'?'selected':''}>🔥 Hot</option>
+          <option value="warm" ${c.priority==='warm'?'selected':''}>🌤 Warm</option>
+          <option value="cold" ${(c.priority||'cold')==='cold'?'selected':''}>❄️ Cold</option>
+        </select>
+      </div>
+      <div><label class="lbl">Community</label><input type="text" value="${c.community||''}" onchange="updateField(${id},'community',this.value)" placeholder="Area..."/></div>
+    </div>
+
+    <!-- Callback -->
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Callback Date</label><input type="date" value="${c.callbackDate||''}" onchange="updateField(${id},'callbackDate',this.value)"/></div>
+      <div><label class="lbl">Callback Time</label><input type="time" value="${c.callbackTime||''}" onchange="updateField(${id},'callbackTime',this.value)"/></div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Visit Scheduled</label>
+      <div class="row2">
+        <input type="date" value="${c.visitDate||''}" placeholder="Visit date" onchange="updateField(${id},'visitDate',this.value)"/>
+        <input type="text" value="${c.visitNotes||''}" placeholder="Visit location / notes..." onchange="updateField(${id},'visitNotes',this.value)"/>
+      </div>
+    </div>
+
+    <!-- Requirement (only for clients) -->
+    ${c.contactType!=='agent'?`
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:10px;">🏠 Property Requirement</div>
+
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Property Type</label>
+        <select onchange="updateField(${id},'propType',this.value)">
+          <option value="">Not specified</option>
+          <option value="apartment" ${c.propType==='apartment'?'selected':''}>Apartment</option>
+          <option value="townhouse" ${c.propType==='townhouse'?'selected':''}>Townhouse</option>
+          <option value="villa" ${c.propType==='villa'?'selected':''}>Villa</option>
+          <option value="plot" ${c.propType==='plot'?'selected':''}>Plot</option>
+          <option value="commercial" ${c.propType==='commercial'?'selected':''}>Commercial</option>
+          <option value="multiple" ${c.propType==='multiple'?'selected':''}>Multiple</option>
+        </select>
+      </div>
+      <div><label class="lbl">Bedrooms</label>
+        <select onchange="updateField(${id},'bedrooms',this.value)">
+          <option value="">Any</option>
+          <option value="studio" ${c.bedrooms==='studio'?'selected':''}>Studio</option>
+          <option value="1" ${c.bedrooms==='1'?'selected':''}>1 BHK</option>
+          <option value="2" ${c.bedrooms==='2'?'selected':''}>2 BHK</option>
+          <option value="3" ${c.bedrooms==='3'?'selected':''}>3 BHK</option>
+          <option value="4+" ${c.bedrooms==='4+'?'selected':''}>4+ BHK</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Budget (AED)</label>
+        <input type="text" value="${c.budget||''}" placeholder="e.g. 2M - 3.5M" onchange="updateField(${id},'budget',this.value)"/>
+      </div>
+      <div><label class="lbl">Buyer Type</label>
+        <select onchange="updateField(${id},'buyerType',this.value)">
+          <option value="">Not specified</option>
+          <option value="cash" ${c.buyerType==='cash'?'selected':''}>💵 Cash Buyer</option>
+          <option value="mortgage" ${c.buyerType==='mortgage'?'selected':''}>🏦 Mortgage</option>
+          <option value="crypto" ${c.buyerType==='crypto'?'selected':''}>₿ Crypto</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Purpose</label>
+        <select onchange="updateField(${id},'purpose',this.value)">
+          <option value="">Not specified</option>
+          <option value="endinvestment" ${c.purpose==='endinvestment'?'selected':''}>End use + Investment</option>
+          <option value="investment" ${c.purpose==='investment'?'selected':''}>Pure Investment</option>
+          <option value="enduse" ${c.purpose==='enduse'?'selected':''}>End Use / Own use</option>
+          <option value="rental" ${c.purpose==='rental'?'selected':''}>Rental Income</option>
+        </select>
+      </div>
+      <div><label class="lbl">Timeline to Buy</label>
+        <select onchange="updateField(${id},'timeline',this.value)">
+          <option value="">Not specified</option>
+          <option value="immediate" ${c.timeline==='immediate'?'selected':''}>Immediately</option>
+          <option value="1month" ${c.timeline==='1month'?'selected':''}>Within 1 month</option>
+          <option value="3months" ${c.timeline==='3months'?'selected':''}>1-3 months</option>
+          <option value="6months" ${c.timeline==='6months'?'selected':''}>3-6 months</option>
+          <option value="1year" ${c.timeline==='1year'?'selected':''}>6-12 months</option>
+          <option value="exploring" ${c.timeline==='exploring'?'selected':''}>Just exploring</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Preferred Communities / Areas</label>
+      <input type="text" value="${c.preferredAreas||''}" placeholder="e.g. Downtown, Palm, JVC..." onchange="updateField(${id},'preferredAreas',this.value)"/>
+    </div>
+    `:''}
+
+    <!-- Activity Log -->
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:10px;">📋 Activity Log</div>
+    <div style="margin-bottom:10px;">
+
+      <!-- Call logging with result -->
+      <div style="background:var(--bg2);border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;">📞 Log a Call</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-blue btn-sm" onclick="logDetailedActivity(${id},'📞 Called — ✅ Answered')">✅ Answered</button>
+          <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'📞 Called — ❌ No Answer')">❌ No Answer</button>
+          <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'📞 Called — 🔴 Switched Off')">🔴 Switched Off</button>
+          <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'📞 Called — 📵 Busy')">📵 Busy</button>
+          <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'📞 Called — 🚫 Rejected')">🚫 Rejected</button>
+        </div>
+      </div>
+
+      <!-- WhatsApp logging with result -->
+      <div style="background:var(--bg2);border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;">💬 Log WhatsApp</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-green btn-sm" onclick="logDetailedActivity(${id},'💬 WhatsApp — ✅ Replied')">✅ Replied</button>
+          <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'💬 WhatsApp — 👁 Seen, No Reply')">👁 Seen, No Reply</button>
+          <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'💬 WhatsApp — ⏳ Delivered, Not Seen')">⏳ Not Seen</button>
+          <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'💬 WhatsApp sent')">📤 Sent</button>
+        </div>
+      </div>
+
+      <!-- Other activities -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'🏠 Site visit done')">🏠 Visit Done</button>
+        <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'🤝 Meeting done')">🤝 Meeting</button>
+        <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'📧 Email sent')">📧 Email</button>
+        <button class="btn btn-ghost btn-sm" onclick="logDetailedActivity(${id},'🔔 Reminder set')">🔔 Reminder</button>
+      </div>
+
+      <!-- Custom note -->
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="noteInput" placeholder="Add custom note..." style="flex:1;"/>
+        <button class="btn btn-ghost" onclick="addNote(${id})">Add</button>
+      </div>
+    </div>
+
+    <!-- Activity history -->
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">History</div>
+    <div id="notesContainer" style="max-height:250px;overflow-y:auto;">
+      ${(c.notes||[]).length ? c.notes.slice().reverse().map(n=>{
+        const isCall = n.text.includes('📞');
+        const isWA = n.text.includes('💬');
+        const isVisit = n.text.includes('🏠');
+        const isMeeting = n.text.includes('🤝');
+        const isAnswered = n.text.includes('✅');
+        const isNoAnswer = n.text.includes('No Answer') || n.text.includes('Switched Off') || n.text.includes('Rejected') || n.text.includes('Busy');
+        const isReplied = n.text.includes('Replied');
+        const isSeen = n.text.includes('Seen');
+        const borderColor = isAnswered||isReplied ? 'var(--green)' : isNoAnswer||isSeen ? 'var(--red)' : isWA ? '#25D366' : isCall ? 'var(--blue)' : 'var(--border2)';
+        return '<div class="note-bubble" style="border-left-color:'+borderColor+';margin-bottom:6px;"><div style="font-size:13px;">'+n.text+'</div><div class="note-time">'+n.time+'</div></div>';
+      }).join('') : '<div style="color:var(--text3);font-size:12px;">No activity yet</div>'}
+    </div>
+
+    <div class="divider"></div>
+    <button class="btn btn-green" onclick="openMsgGen(${id});closeModal();" style="width:100%;margin-bottom:6px;">💬 Generate & Send Message</button>
+    ${c.msgGenerated?`<button class="btn btn-ghost" onclick="openPreview(${id});closeModal();" style="width:100%;">👁 Preview Last Message</button>`:''}
+  `;
+  document.getElementById('contactModal').classList.add('open');
+}
+
+function logDetailedActivity(id, action){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
+  const time=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(!c.notes) c.notes=[];
+  c.notes.push({text:action, time});
+  c.lastContact=time;
+  if(c.status==='pending') c.status='contacted';
+  save(); toast('✅ Logged: '+action.substring(0,30)); openContact(id);
+}
+
+function logActivity(id, action){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
+  const time=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(!c.notes) c.notes=[];
+  c.notes.push({text:action, time});
+  c.lastContact=time;
+  if(c.status==='pending') c.status='contacted';
+  save(); openContact(id);
+}
+
+function updateField(id,field,val){ const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(c){c[field]=val;save();} }
+function addNote(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
+  const txt=document.getElementById('noteInput').value.trim(); if(!txt) return;
+  if(!c.notes) c.notes=[];
+  c.notes.push({text:txt, time:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})});
+  save(); openContact(id);
+}
+function editContactName(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id));
+  if(!c) return;
+  const newName = prompt('Edit contact name:', c.name);
+  if(newName && newName.trim()){
+    c.name = newName.trim();
+    save();
+    openContact(id);
+    toast('✅ Name updated!');
+  }
+}
+
+function closeModal(){ document.getElementById('contactModal').classList.remove('open'); }
+
+// ─── OUTREACH ─────────────────────────────────────────────────────────
+function setOFilter(f,el){ oFilter=f; document.querySelectorAll('#outreachChips .chip').forEach(b=>b.classList.remove('active')); el.classList.add('active'); renderOutreach(); }
+
+function getSelectedIds(){
+  return [...document.querySelectorAll('.outreach-cb:checked')].map(cb=>parseInt(cb.dataset.id));
+}
+
+function selectAllOutreach(cb){
+  document.querySelectorAll('.outreach-cb').forEach(c=>c.checked=cb.checked);
+  updateSelectionBar();
+}
+
+function updateSelectionBar(){
+  const selected=getSelectedIds();
+  const bar=document.getElementById('selectionBar');
+  const count=document.getElementById('selCount');
+  if(selected.length>0){ bar.style.display='flex'; count.textContent=selected.length+' selected'; }
+  else { bar.style.display='none'; }
+}
+
+function clearSelected(){
+  const ids=getSelectedIds();
+  if(!ids.length){alert('No contact selected');return;}
+  if(!confirm(ids.length+' contacts ke messages clear karne hain?')) return;
+  ids.forEach(id=>{ const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(c){c.msg='';c.msgGenerated=false;} });
+  save(); renderOutreach();
+}
+
+function regenSelected(){
+  const ids=getSelectedIds();
+  if(!ids.length){alert('No contact selected');return;}
+  ids.forEach(id=>{ const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(c){c.msg='';c.msgGenerated=false;} });
+  ids.forEach(id=>genOne(id));
+  save(); renderOutreach();
+}
+
+function renderOutreach(){
+  const list = oFilter==='all' ? contacts
+    : oFilter==='pending' ? contacts.filter(c=>!c.msgGenerated)
+    : oFilter==='generated' ? contacts.filter(c=>c.msgGenerated&&c.status==='pending')
+    : contacts.filter(c=>c.status==='contacted'||c.lastContact);
+
+  const tbody=document.getElementById('outreachBody');
+  tbody.innerHTML='';
+  if(!list.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty">No contacts</div></td></tr>';return;}
+  list.forEach((c,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><input type="checkbox" class="outreach-cb" data-id="${c.id}" onchange="updateSelectionBar()"/></td>
+      <td style="font-weight:500;">${c.name}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text2);">${c.phone||'—'}</td>
+      <td><input type="text" value="${c.community||''}" placeholder="Add community..." onchange="updateField(${c.id},'community',this.value)" style="font-size:12px;padding:4px 8px;width:140px;"/></td>
+      <td><span class="tag ${c.msgGenerated?'tag-interested':'tag-pending'}">${c.msgGenerated?'Generated':'Not generated'}</span>${c.lastContact?'<div style="font-size:10px;color:var(--text3);margin-top:2px;">Sent: '+c.lastContact+'</div>':''}</td>
+      <td><div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-green btn-sm" data-contact-id="${c.id}" onclick="openMsgGenFromBtn(this)">💬 Generate & Send</button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function applyBulkCom(emptyOnly){
+  const val=document.getElementById('bulkCom').value.trim(); if(!val){alert('Enter community name');return;}
+  contacts.forEach(c=>{ if(!emptyOnly||!c.community) c.community=val; });
+  save(); renderOutreach();
+}
+
+function getMsgType(){ return document.getElementById('msgType')?.value || 'general'; }
+function getProject(){ return document.getElementById('projectRef')?.value || ''; }
+
+function buildMsg(c){
+  const agent=settings.name||'Triloki Chaudhary';
+  const company=settings.company||'Solanki Capital Properties LLC';
+  const tagline=settings.tagline||'Your Trusted Property Advisor';
+  const sig=`Warm regards,\n${agent}\n${company} | ${tagline}`;
+  const sal=salutation(c.name);
+  const project=getProject()||c.community||'';
+  const loc=project?'in '+project+', Dubai':'in Dubai';
+  const msgType=getMsgType();
+
+  if(msgType==='buyer'){
+    return sal+'\n\n'+
+      'I\'m reaching out regarding your property investment '+loc+'.\n\n'+
+      'The market is moving actively, and it may be a good time to understand your options — whether for resale, rental yield, or a new investment opportunity.\n\n'+
+      'Would you be open to a quick discussion? Yes / No\n\n'+sig;
+  }
+  if(msgType==='seller'){
+    const propDetail=c.sellerPropType?c.sellerPropType.replace(/([a-z])(\d)/,'$1 $2 BR').replace('apartment','Apartment').replace('villa','Villa').replace('townhouse','Townhouse').replace('plot','Plot').replace('penthouse','Penthouse').replace('commercial','Commercial'):'property';
+    return sal+'\n\n'+
+      'I hope you are doing well. I\'m currently working with serious buyers actively looking '+(project?'in '+project:'in Dubai')+'.\n\n'+
+      'We have genuine inquiries that may match your '+propDetail+(project?' in '+project:'')+'.'+(c.askingPrice?' At AED '+c.askingPrice+', this could be a great time to close a deal.':' The current market conditions are favorable for sellers.')+'\n\n'+
+      'Would you be open to a quick discussion? Yes / No\n\n'+sig;
+  }
+  if(msgType==='followup'){
+    return sal+'\n\n'+
+      'I hope you\'re doing well. I wanted to follow up on my earlier message'+(project?' regarding '+project:'')+'.\n\n'+
+      'The market continues to show strong activity and I wanted to make sure you have all the information you need.\n\n'+
+      'Happy to answer any questions — would a quick call work for you? Yes / No\n\n'+sig;
+  }
+  // general investment
+  return sal+'\n\n'+
+    'I\'m reaching out with an exciting investment opportunity'+(project?' in '+project+', Dubai':'in Dubai\'s real estate market')+'.\n\n'+
+    'The current market is seeing strong demand and attractive returns. Whether you\'re looking for capital appreciation or rental yield, now may be a good time to explore your options.\n\n'+
+    'Would you be interested in learning more? Yes / No\n\n'+sig;
+}
+
+function genOne(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
+  const btn=document.getElementById('gb-'+id);
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner-sm"></span>';}
+  c.msg=buildMsg(c);
+  c.msgGenerated=true;
+  save();
+  if(btn){btn.disabled=false;btn.textContent='Generate';}
+  renderOutreach();
+}
+
+function handleBulkAction(val){
+  if(!val) return;
+  const ids=getSelectedIds();
+  if(val==='clearAll'){
+    if(!confirm('Clear all messages?')) return;
+    contacts.forEach(c=>{c.msg='';c.msgGenerated=false;});
+    save(); renderOutreach();
+  } else if(val==='clearSelected'){
+    if(!ids.length){alert('No contact selected');return;}
+    if(!confirm(ids.length+' contacts messages will be cleared?')) return;
+    ids.forEach(id=>{const c=contacts.find(x=>parseInt(x.id)===parseInt(id));if(c){c.msg='';c.msgGenerated=false;}});
+    save(); renderOutreach();
+  } else if(val==='regenSelected'){
+    if(!ids.length){alert('No contact selected');return;}
+    ids.forEach(id=>{const c=contacts.find(x=>parseInt(x.id)===parseInt(id));if(c){c.msg='';c.msgGenerated=false;}});
+    ids.forEach(id=>genOne(id));
+    save(); renderOutreach();
+  } else if(val==='regenAll'){
+    if(!confirm('Regenerate messages for all contacts?')) return;
+    contacts.forEach(c=>{c.msg='';c.msgGenerated=false;genOne(c.id);});
+    save(); renderOutreach();
+  }
+}
+
+async function genAll(){
+  const btn=document.getElementById('genAllBtn'); btn.disabled=true; btn.textContent='Generating...';
+  contacts.forEach(c=>genOne(c.id));
+  save(); renderOutreach();
+  btn.disabled=false; btn.textContent='⚡ Generate All';
+}
+
+function clearGenerated(){ if(!confirm('Clear all generated messages?')) return; contacts.forEach(c=>{c.msg='';c.msgGenerated=false;}); save(); renderOutreach(); }
+
+// ─── PREVIEW MODAL ────────────────────────────────────────────────────
+function openPreview(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c||!c.msg) return;
+  previewContactId=id;
+  document.getElementById('previewContent').textContent=c.msg;
+  document.getElementById('previewEdit').value=c.msg;
+  document.getElementById('previewContent').style.display='block';
+  document.getElementById('previewEdit').style.display='none';
+  document.getElementById('editToggleBtn').textContent='✏️ Edit';
+  document.getElementById('previewModal').classList.add('open');
+}
+
+function toggleEdit(){
+  const content=document.getElementById('previewContent');
+  const edit=document.getElementById('previewEdit');
+  const btn=document.getElementById('editToggleBtn');
+  if(edit.style.display==='none'){
+    edit.value=content.textContent; edit.style.display='block'; content.style.display='none'; btn.textContent='💾 Save';
+  } else {
+    const c=contacts.find(x=>x.id===previewContactId);
+    if(c){c.msg=edit.value;save();}
+    content.textContent=edit.value; content.style.display='block'; edit.style.display='none'; btn.textContent='✏️ Edit';
+  }
+}
+
+function copyPreview(){ const c=contacts.find(x=>x.id===previewContactId); if(c) navigator.clipboard.writeText(c.msg).then(()=>alert('Copied!')); }
+
+function sendPreview(){
+  const c=contacts.find(x=>x.id===previewContactId); if(!c||!c.phone) return;
+  if(c.lastContact&&!confirm(c.name+' ko pehle message gaya hai. Dobara bhejna chahte ho?')) return;
+  window.open('https://wa.me/'+c.phone+'?text='+encodeURIComponent(c.msg),'_blank');
+  c.status='contacted';
+  c.lastContact=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(!c.fuCount) c.fuCount=0;
+  save(); closePreview(); renderOutreach(); renderContacts();
+  toast('✅ WhatsApp opened for '+c.name);
+}
+
+function closePreview(){ document.getElementById('previewModal').classList.remove('open'); }
+
+// ─── FOLLOW-UP ───────────────────────────────────────────────────────
+function setFUFilter(f,el){ fuFilter=f; document.querySelectorAll('#page-followup .chip').forEach(b=>b.classList.remove('active')); el.classList.add('active'); renderFU(); }
+
+function renderFU(){
+  const today=new Date().toISOString().slice(0,10);
+  let list=contacts.filter(c=>c.status!=='pending');
+  if(fuFilter==='overdue') list=list.filter(c=>c.callbackDate&&c.callbackDate<today);
+  if(fuFilter==='today') list=list.filter(c=>c.callbackDate===today);
+  if(fuFilter==='upcoming') list=list.filter(c=>c.callbackDate&&c.callbackDate>today);
+
+  const tbody=document.getElementById('fuBody'); tbody.innerHTML='';
+  if(!list.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty">No contacts in this filter</div></td></tr>';return;}
+
+  list.forEach((c,i)=>{
+    const isOverdue=c.callbackDate&&c.callbackDate<today;
+    const isDueToday=c.callbackDate===today;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="color:var(--text3);">${i+1}</td>
+      <td style="font-weight:500;">${c.name}<br><span style="font-size:10px;color:var(--text3);">${c.nationality||''}</span></td>
+      <td style="font-family:monospace;font-size:12px;color:var(--text2);">${c.phone}</td>
+      <td><span class="tag tag-${c.status}">${c.status}</span></td>
+      <td style="font-size:12px;color:var(--text2);">${c.lastContact||'—'}</td>
+      <td><input type="date" value="${c.callbackDate||''}" onchange="updateField(${c.id},'callbackDate',this.value);renderFU();" style="font-size:12px;padding:4px 8px;width:140px;" class="${isOverdue?'overdue':isDueToday?'due-soon':''}"/></td>
+      <td style="text-align:center;"><span class="tag tag-contacted">${c.fuCount||0} sent</span></td>
+      <td><div style="display:flex;gap:4px;">
+        <a href="tel:+${c.phone}" class="btn btn-blue btn-sm" onclick="logCall(${c.id})">📞 Call</a>
+        <button class="btn btn-blue btn-sm" onclick="sendFU(${c.id})">↗ Follow-up</button>
+        <button class="btn btn-ghost btn-sm" onclick="openContact(${c.id})">Notes</button>
+      </div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function sendFU(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c||!c.phone) return;
+  const agent=settings.name||'Triloki Chaudhary';
+  const company=settings.company||'Solanki Capital Properties LLC';
+  const tagline=settings.tagline||'Your Trusted Property Advisor';
+  const loc=c.community?'in '+c.community+', Dubai':'in Dubai';
+  const fuNum=(c.fuCount||0)+1;
+  const fuMsg = salutation(c.name)+'\n\n'+
+    'I hope you\'re doing well. I wanted to follow up on my earlier message regarding your property investment '+loc+'.\n\n'+
+    'The market continues to show strong activity, and I wanted to ensure you have all the information you need to make the best decision.\n\n'+
+    'Happy to answer any questions — would a quick call work for you? Yes / No\n\n'+
+    'Warm regards,\n'+agent+'\n'+company+' | '+tagline;
+  window.open('https://wa.me/'+c.phone+'?text='+encodeURIComponent(fuMsg),'_blank');
+  c.fuCount=fuNum;
+  c.lastContact=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(!c.notes) c.notes=[];
+  c.notes.push({text:'Follow-up #'+fuNum+' sent via WhatsApp', time:c.lastContact});
+  save(); renderFU();
+}
+
+// ─── PIPELINE ────────────────────────────────────────────────────────
+function renderPipeline(){
+  const stages=[
+    {k:'pending',l:'🔵 Pending',c:'var(--text3)'},
+    {k:'contacted',l:'📬 Contacted',c:'var(--blue)'},
+    {k:'interested',l:'✅ Interested',c:'var(--green)'},
+    {k:'callback',l:'📅 Callback',c:'var(--orange)'},
+    {k:'closed',l:'🏆 Closed',c:'var(--purple)'}
+  ];
+  document.getElementById('pipelineCols').innerHTML = stages.map(s=>{
+    const list=contacts.filter(c=>c.status===s.k);
+    return `<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;">
+      <div style="font-size:12px;font-weight:600;margin-bottom:10px;color:${s.c};">${s.l} <span style="color:var(--text3);">(${list.length})</span></div>
+      ${list.length ? list.map(c=>`
+        <div onclick="openContact(${c.id})" style="background:var(--bg2);border-radius:8px;padding:10px;margin-bottom:6px;cursor:pointer;border:1px solid var(--border);">
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px;">${c.name}</div>
+          <div style="font-size:11px;color:var(--text3);">${c.community||'—'} · <span class="tag tag-${c.priority||'cold'}" style="font-size:9px;">${c.priority||'cold'}</span></div>
+          ${c.callbackDate?'<div style="font-size:10px;color:var(--orange);margin-top:4px;">📅 '+c.callbackDate+'</div>':''}
+        </div>`).join('') : `<div style="color:var(--text3);font-size:12px;text-align:center;padding:1rem;">Empty</div>`}
+    </div>`;
+  }).join('');
+}
+
+// ─── IMPORT ──────────────────────────────────────────────────────────
+
+async function extractFromImage(e){
+  const file = e.target.files[0]; if(!file) return;
+  const apiKey = document.getElementById('apiKey')?.value?.trim();
+  if(!apiKey){ alert('Please add Groq API key in Outreach tab first'); return; }
+
+  const status = document.getElementById('ocrStatus');
+  status.textContent = '⏳ Reading...';
+
+  try {
+    // Convert image to base64
+    const base64 = await new Promise((res,rej)=>{
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result.split(',')[1]);
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    });
+
+    const prompt = `Look at this image carefully. Extract contact information and return ONLY a JSON object with these fields (use empty string if not found):
+{
+  "name": "full name of the person",
+  "phone": "phone number with country code (remove spaces/dashes)",
+  "nationality": "nationality or country if visible",
+  "email": "email if visible",
+  "company": "company or organization if visible",
+  "community": "property area or project if visible"
+}
+Return ONLY the JSON. No explanation.`;
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages:[{
+          role:'user',
+          content:[
+            {type:'image_url', image_url:{url:`data:${file.type};base64,${base64}`}},
+            {type:'text', text:prompt}
+          ]
+        }],
+        max_tokens:500,
+        temperature:0.1
+      })
+    });
+
+    const data = await res.json();
+    if(!res.ok){ status.textContent='❌ Error: '+(data.error?.message||res.status); return; }
+
+    const text = data.choices?.[0]?.message?.content?.trim()||'';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    // Fill form
+    if(parsed.name) document.getElementById('ac_name').value = parsed.name;
+    if(parsed.phone) document.getElementById('ac_phone').value = parsed.phone.replace(/[\s\-\(\)\+]/g,'');
+    if(parsed.nationality) document.getElementById('ac_nat').value = parsed.nationality;
+    if(parsed.community) document.getElementById('ac_com').value = parsed.community;
+    if(parsed.company) document.getElementById('ac_source').value = parsed.company;
+
+    status.textContent = '✅ Done!';
+    setTimeout(()=>status.textContent='', 3000);
+
+  } catch(err){
+    status.textContent = '❌ Failed — try again';
+    console.error(err);
+  }
+}
+
+function openAddContact(){
+  document.getElementById('ac_name').value='';
+  document.getElementById('ac_phone').value='';
+  document.getElementById('ac_nat').value='';
+  document.getElementById('ac_com').value='';
+  document.getElementById('ac_source').value='Manual';
+  document.getElementById('ac_referredby').value='';
+  document.getElementById('ac_notes').value='';
+  document.getElementById('ac_status').value='pending';
+  document.getElementById('ac_priority').value='cold';
+  document.getElementById('addContactModal').classList.add('open');
+}
+
+function closeAddContact(){ document.getElementById('addContactModal').classList.remove('open'); }
+
+function saveAddContact(){
+  const name=document.getElementById('ac_name').value.trim();
+  const phone=extractPhone(document.getElementById('ac_phone').value.trim())||document.getElementById('ac_phone').value.trim();
+  if(!name){alert('Name is required');return;}
+  if(!phone){alert('Phone is required');return;}
+
+  const maxId=contacts.length>0?Math.max(...contacts.map(c=>c.id))+1:0;
+  const notes=document.getElementById('ac_notes').value.trim();
+  const project=document.getElementById('ac_project').value;
+  const leadType=document.getElementById('ac_leadtype').value;
+  const newContact={
+    id:maxId,
+    name, phone,
+    nationality:document.getElementById('ac_nat').value.trim(),
+    community:document.getElementById('ac_com').value.trim()||project,
+    source:document.getElementById('ac_source').value.trim()||'Manual',
+    project: project,
+    contactType: leadType==='agent'?'agent': leadType==='seller'?'seller':'client',
+    leadType: leadType,
+    status:document.getElementById('ac_status').value,
+    priority:document.getElementById('ac_priority').value,
+    msg:'', msgGenerated:false, fuCount:0,
+    notes:notes?[{text:'Lead source: '+leadType+(project?' — '+project:'')+(notes?' | '+notes:''),time:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}]:[],
+    callbackDate:'', lastContact:'', referredBy:document.getElementById('ac_referredby').value.trim()
+  };
+  contacts.push(newContact);
+  save(); closeAddContact(); renderContacts();
+  toast('✅ Contact saved!');
+}
+
+async function importGSheet(){
+  const url = document.getElementById('gsheetUrl').value.trim();
+  const tab = document.getElementById('gsheetTab').value.trim();
+  const defCom = document.getElementById('gsheetCom').value.trim() || '';
+  const status = document.getElementById('gsheetStatus');
+
+  if(!url){ alert('Enter Google Sheet URL'); return; }
+
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if(!match){ alert('Invalid Google Sheet URL'); return; }
+  const sheetId = match[1];
+
+  status.textContent = '⏳ Importing...';
+
+  try {
+    // Use export format which supports CORS better
+    let csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+    if(tab) csvUrl += `&sheet=${encodeURIComponent(tab)}`;
+
+    const res = await fetch(csvUrl, {redirect:'follow'});
+    if(!res.ok){ status.textContent = '❌ Sheet not accessible — Set to "Anyone with link" → Viewer'; return; }
+
+    const text = await res.text();
+    if(!text || text.includes('<!DOCTYPE')){ status.textContent = '❌ Sheet is not public or is empty'; return; }
+
+    // Parse CSV
+    function parseCSV(str){
+      const rows=[]; let row=[], cur='', inQ=false;
+      for(let i=0;i<str.length;i++){
+        const ch=str[i], nx=str[i+1];
+        if(ch==='"'&&inQ&&nx==='"'){cur+='"';i++;}
+        else if(ch==='"'){inQ=!inQ;}
+        else if(ch===','&&!inQ){row.push(cur.trim());cur='';}
+        else if((ch==='\n'||ch==='\r')&&!inQ){if(cur||row.length){row.push(cur.trim());rows.push(row);}row=[];cur='';if(ch==='\r'&&nx==='\n')i++;}
+        else{cur+=ch;}
+      }
+      if(cur||row.length){row.push(cur.trim());rows.push(row);}
+      return rows;
+    }
+
+    const rows = parseCSV(text);
+    if(rows.length < 2){ status.textContent = '❌ No data in sheet'; return; }
+
+    const headers = rows[0].map(h=>h.replace(/^"|"$/g,'').trim());
+    const dataRows = rows.slice(1).filter(r=>r.some(c=>c));
+
+    const nameIdx = headers.findIndex(h=>/name/i.test(h));
+    const phoneIdx = headers.findIndex(h=>/phone|tel|mobile|number/i.test(h));
+    const natIdx = headers.findIndex(h=>/nation|country/i.test(h));
+    const comIdx = headers.findIndex(h=>/community|area|project/i.test(h));
+    const emailIdx = headers.findIndex(h=>/email/i.test(h));
+
+    if(nameIdx<0||phoneIdx<0){
+      status.textContent = `❌ Name/Phone column nahi mila. Columns: ${headers.join(', ')}`;
+      return;
+    }
+
+    const existingPhones = new Set(contacts.map(c=>c.phone).filter(Boolean));
+    let maxId = contacts.length>0?Math.max(...contacts.map(c=>c.id))+1:0;
+    let added=0, dups=0;
+
+    dataRows.forEach(row=>{
+      const name = (row[nameIdx]||'').replace(/^"|"$/g,'').trim();
+      const rawPhone = (row[phoneIdx]||'').replace(/^"|"$/g,'').trim();
+      const phone = extractPhone(rawPhone)||rawPhone;
+      if(!name||!phone) return;
+      if(existingPhones.has(phone)){dups++;return;}
+      existingPhones.add(phone);
+      contacts.push({
+        id:maxId++, name, phone,
+        nationality: natIdx>=0?(row[natIdx]||'').replace(/^"|"$/g,'').trim():'',
+        community: comIdx>=0?((row[comIdx]||'').replace(/^"|"$/g,'').trim()||defCom):defCom,
+        email: emailIdx>=0?(row[emailIdx]||'').trim():'',
+        source: 'Google Sheets'+(tab?' — '+tab:''),
+        status:'pending', priority:'cold',
+        msg:'', msgGenerated:false, fuCount:0,
+        notes:[], callbackDate:'', lastContact:''
+      });
+      added++;
+    });
+
+    save();
+    status.textContent = `✅ ${added} contacts imported!${dups>0?' '+dups+' duplicates skipped':''}`;
+    renderContacts();
+
+  } catch(e){
+    status.textContent = '❌ Error: '+e.message;
+  }
+}
+
+function exportExcel(){
+  if(!contacts.length){alert('No contacts to export');return;}
+  const hdrs=['Name','Phone','Nationality','Community','Source File','Status','Priority','Last Contact','Callback Date','FU Count','Notes'];
+  const rows=contacts.map(c=>[
+    c.name, c.phone, c.nationality||'', c.community||'', c.source||'',
+    c.status, c.priority||'cold', c.lastContact||'', c.callbackDate||'',
+    c.fuCount||0, (c.notes||[]).map(n=>n.text).join(' | ')
+  ]);
+  const ws=XLSX.utils.aoa_to_sheet([hdrs,...rows]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,'Contacts',ws);
+  XLSX.writeFile(wb,'solanki_crm_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+
+function openImport(){ document.getElementById('importModal').classList.add('open'); }
+
+function closeImport(){ document.getElementById('importModal').classList.remove('open'); pendingFiles=[]; document.getElementById('filesList').innerHTML=''; document.getElementById('colMapSection').style.display='none'; document.getElementById('uploadZone').classList.remove('loaded'); document.getElementById('uploadZone').querySelector('p').textContent='📊 Click to upload one or multiple .xlsx files'; }
+
+// Smart column finder — finds best match for name/phone across different naming conventions
+function findCol(headers, patterns){
+  for(const p of patterns){
+    const idx = headers.findIndex(h=>new RegExp(p,'i').test(String(h||'')));
+    if(idx>=0) return idx;
+  }
+  return -1;
+}
+
+function handleFiles(e){
+  const files=Array.from(e.target.files); if(!files.length) return;
+  pendingFiles=[];
+  document.getElementById('filesList').innerHTML='<div style="font-size:12px;color:var(--text3);margin-bottom:6px;">📖 Reading all tabs...</div>';
+  let loaded=0;
+
+  files.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const wb=XLSX.read(ev.target.result,{type:'binary'});
+
+      // Process ALL sheets/tabs
+      wb.SheetNames.forEach(sheetName=>{
+        const ws=wb.Sheets[sheetName];
+        const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        if(data.length<2) return;
+
+        // Find header row — sometimes headers are not row 0
+        let headerRowIdx=0;
+        for(let i=0;i<Math.min(5,data.length);i++){
+          const row=data[i];
+          const nameCol=findCol(row.map(String),['full.?name','\\bname\\b','client','party','contact.?name','lead.?name']);
+          const phoneCol=findCol(row.map(String),['phone','number','contact.?no','mobile','tel','whatsapp','correct.?phone']);
+          if(nameCol>=0&&phoneCol>=0){headerRowIdx=i;break;}
+        }
+
+        const hdrs=data[headerRowIdx].map(h=>String(h||'').trim());
+        const rows=data.slice(headerRowIdx+1).filter(r=>r.some(c=>String(c||'').trim()));
+
+        const nameCol=findCol(hdrs,['full.?name','\\bname\\b','client','party','contact.?name','lead.?name']);
+        const phoneCol=findCol(hdrs,['correct.?phone','phone','number','contact.?no','mobile','tel','whatsapp']);
+        const natCol=findCol(hdrs,['nation','country','citizenship']);
+        const comCol=findCol(hdrs,['community','area','project','location','enquired']);
+        const statusCol=findCol(hdrs,['status','remark','comment','note']);
+        const budgetCol=findCol(hdrs,['budget','price','amount']);
+
+        if(nameCol>=0&&phoneCol>=0&&rows.length>0){
+          pendingFiles.push({
+            name:file.name+' → '+sheetName,
+            sheetName, headers:hdrs, rows,
+            nameCol, phoneCol, natCol, comCol, statusCol, budgetCol
+          });
+        }
+      });
+
+      loaded++;
+      if(loaded===files.length) onAllFilesLoaded();
+    };
+    reader.readAsBinaryString(file);
+  });
+}
+
+function onAllFilesLoaded(){
+  const totalRows=pendingFiles.reduce((a,f)=>a+f.rows.length,0);
+  document.getElementById('filesList').innerHTML = `
+    <div style="font-size:13px;color:var(--green);margin-bottom:8px;font-weight:500;">✅ ${pendingFiles.length} tabs found — ${totalRows} total rows</div>
+    `+pendingFiles.map(f=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg2);border-radius:6px;margin-bottom:4px;border:1px solid var(--border);">
+      <span style="font-size:13px;flex:1;">📋 ${f.name}</span>
+      <span style="font-size:11px;color:var(--text3);">${f.rows.length} rows · Name: col ${f.nameCol+1} · Phone: col ${f.phoneCol+1}</span>
+    </div>`).join('');
+
+  if(pendingFiles.length>0){
+    document.getElementById('colMapSection').style.display='block';
+    document.getElementById('uploadZone').classList.add('loaded');
+    document.getElementById('uploadZone').querySelector('p').textContent='✓ '+pendingFiles.length+' tab(s) ready to import';
+  } else {
+    document.getElementById('filesList').innerHTML='<div style="color:var(--red);font-size:13px;">❌ No tab found with Name and Phone columns</div>';
+  }
+}
+
+function loadContacts(){
+  const defCom=document.getElementById('defCom').value.trim()||'';
+  const existingPhones=new Set(contacts.map(c=>c.phone).filter(Boolean));
+  let maxId=contacts.length>0?Math.max(...contacts.map(c=>c.id))+1:0;
+  let totalAdded=0, totalDups=0, totalSkipped=0;
+
+  pendingFiles.forEach(file=>{
+    file.rows.forEach(row=>{
+      const name=String(row[file.nameCol]||'').trim();
+      const rawPhone=String(row[file.phoneCol]||'').trim();
+      const phone=extractPhone(rawPhone)||rawPhone.replace(/[\s\+\-\(\)]/g,'');
+
+      if(!name||name.length<2) return;
+      if(!phone||phone.length<7){totalSkipped++;return;}
+      if(existingPhones.has(phone)){totalDups++;return;}
+      existingPhones.add(phone);
+
+      const nat=file.natCol>=0?String(row[file.natCol]||'').trim():'';
+      const com=file.comCol>=0?(String(row[file.comCol]||'').trim()||defCom):defCom;
+      const statusNote=file.statusCol>=0?String(row[file.statusCol]||'').trim():'';
+      const budget=file.budgetCol>=0?String(row[file.budgetCol]||'').trim():'';
+
+      const notes=[];
+      if(statusNote) notes.push({text:'Status from sheet: '+statusNote, time:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})});
+
+      contacts.push({
+        id:maxId++, name, phone,
+        nationality:nat, community:com,
+        budget:budget,
+        source:file.name,
+        status:'pending', priority:'cold',
+        msg:'', msgGenerated:false, fuCount:0,
+        notes, callbackDate:'', lastContact:''
+      });
+      totalAdded++;
+    });
+  });
+
+  save(); closeImport(); renderContacts();
+  toast(`✅ ${totalAdded} contacts imported!${totalDups>0?' ('+totalDups+' duplicates skipped)':''}`);
+}
+
+// ─── MESSAGE GENERATOR ───────────────────────────────────────────────
+let msgGenContactId = null;
+let currentMsgLead = null;
+
+function openMsgGenFromBtn(btn){
+  const id = btn && btn.dataset ? btn.dataset.contactId : null;
+  if(!id){ toast('Contact ID missing. Refresh page and try again.', 'error'); return; }
+  openMsgGen(id);
+}
+
+function openMsgGen(id){
+  const c = contacts.find(x=>String(x.id)===String(id) || parseInt(x.id)===parseInt(id));
+  if(!c){
+    msgGenContactId = null;
+    currentMsgLead = null;
+    document.getElementById('mg_preview').textContent = 'Error: Contact not found. Click the green Generate & Send button in the same lead row.';
+    document.getElementById('msgGenModal').classList.add('open');
+    return;
+  }
+
+  msgGenContactId = c.id;
+  currentMsgLead = c;
+  const modal = document.getElementById('msgGenModal');
+  modal.dataset.contactId = String(c.id);
+  document.getElementById('mg_preview').textContent = '';
+  document.getElementById('msgGenTitle').textContent = 'Message for '+c.name;
+
+  const sel = document.getElementById('mg_project');
+  sel.innerHTML = '<option value="">-- No specific project --</option>' +
+    projects.map(p=>`<option value="${p.id}">${p.developer} — ${p.name}</option>`).join('');
+
+  const tmpl = document.getElementById('mg_template');
+  if(c.contactType==='seller') tmpl.value='seller';
+  else if((c.fuCount||0)>0) tmpl.value='followup';
+  else tmpl.value='buyer';
+
+  modal.classList.add('open');
+  setTimeout(()=>previewMsgGen(), 50);
+}
+
+// ─── CUSTOM TEMPLATES ────────────────────────────────────────────
+let customTemplates = JSON.parse(localStorage.getItem('crm_custom_templates')||'[]');
+
+function saveCustomTemplate(){
+  const name = document.getElementById('custom_tmpl_name').value.trim();
+  const body = document.getElementById('custom_tmpl_body').value.trim();
+  if(!name||!body){ toast('Name and message both required','error'); return; }
+  customTemplates.push({id:'custom_'+Date.now(), name, body});
+  localStorage.setItem('crm_custom_templates', JSON.stringify(customTemplates));
+  loadCustomTemplatesInSelect();
+  document.getElementById('custom_tmpl_name').value='';
+  document.getElementById('custom_tmpl_body').value='';
+  toast('✅ Template saved!');
+}
+
+function loadCustomTemplatesInSelect(){
+  const sel = document.getElementById('mg_template');
+  // Remove old custom options
+  Array.from(sel.options).filter(o=>o.value.startsWith('custom_')).forEach(o=>o.remove());
+  customTemplates.forEach(t=>{
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = '✏️ '+t.name;
+    sel.appendChild(opt);
+  });
+}
+
+
+function closeMsgGen(){
+  document.getElementById('msgGenModal').classList.remove('open');
+  msgGenContactId=null;
+  currentMsgLead=null;
+}
+
+function buildEngagingMsg(c, template, proj){
+  const agent = settings.name||'Triloki Chaudhary';
+  const company = settings.company||'Solanki Capital Properties LLC';
+  const tagline = settings.tagline||'Your Trusted Property Advisor';
+  const sig = `Warm regards,\n${agent}\n${company} | ${tagline}`;
+  const sal = salutation(c.name);
+  const projLine = proj ? `*${proj.name}* by ${proj.developer}` : '';
+  const loc = proj ? proj.location||'Dubai' : c.community||'Dubai';
+  const fn = getFirst(c.name);
+
+  const templates = {
+    project_enquiry: () => `${sal}\n\nThank you for your enquiry${proj?' regarding '+projLine:''}! 🏡\n\nI wanted to share some key highlights:\n${proj&&proj.startPrice?'💰 Starting from AED '+proj.startPrice+'\n':''}${proj&&proj.units?'🛏 Units: '+proj.units+'\n':''}${proj&&proj.payment?'📅 Payment Plan: '+proj.payment+'\n':''}${proj&&proj.handover?'🏗 Handover: '+proj.handover+'\n':''}\nThis is generating strong interest right now. Would you like to schedule a quick call to discuss further?\n\n${sig}`,
+
+    buyer: () => `${sal}\n\nI hope this message finds you well! 😊\n\nI'm reaching out as we have some exceptional investment opportunities in ${loc} that align perfectly with current market trends.\n\nThe Dubai real estate market is showing strong momentum — ${proj?projLine+' is':'Properties here are'} seeing excellent capital appreciation and rental yields of 7-8%+.\n\nWould you be open to a 10-minute call to explore what's available? I'm confident we can find something that matches your goals.\n\nYes / No\n\n${sig}`,
+
+    seller: () => `${sal}\n\nI hope you're doing well! 🌟\n\nI'm currently working with serious buyers actively searching in ${loc}. Based on current market conditions, this could be an ideal time to maximize returns on your property.\n\nWe have pre-qualified buyers ready — the demand is strong and prices are favorable for sellers.\n\nWould you be open to a quick discussion about your options?\n\nYes / No\n\n${sig}`,
+
+    followup: () => `${sal}\n\nI hope you're keeping well! 🙏\n\nI wanted to follow up on our earlier conversation${proj?' about '+projLine:''}. The market continues to move quickly and I wouldn't want you to miss out on the right opportunity.\n\nIf the timing wasn't right before, I completely understand — I'd love to reconnect when you're ready.\n\nWould a quick call this week work for you?\n\nYes / No\n\n${sig}`,
+
+    call_didnt_pick: () => `${sal}\n\nI tried calling you just now but couldn't connect. 📞\n\nNo worries at all! I'm reaching out regarding ${proj?projLine:'an exciting property opportunity in Dubai'} that I thought might interest you.\n\nWhenever you get a free moment, I'd love to share the details. Feel free to call back or just reply here.\n\n${sig}`,
+
+    connect_later: () => `${sal}\n\nAs we discussed, just checking in to reconnect! 😊\n\nI know you mentioned timing was important — I wanted to make sure I'm here when you're ready to move forward.\n\n${proj?projLine+' is still available and the terms remain favorable.':'The Dubai market continues to offer strong opportunities.'}\n\nShall we connect this week?\n\n${sig}`,
+
+    dropping_wa: () => `${sal}\n\nJust dropping you a quick message! 💬\n\n${proj?'We have some exciting updates on '+projLine+' that I think you\'ll find interesting.':'There\'s a great property opportunity in Dubai that just came up and immediately thought of you.'}\n\nWould love to share the details — takes just 5 minutes. Are you free for a quick call?\n\n${sig}`,
+
+    staying_connected: () => `${sal}\n\nI hope everything is going great your end! 🤝\n\nI wanted to stay in touch and keep you updated on the Dubai real estate market — there are some really interesting developments happening right now.\n\n${proj?projLine+' continues to attract strong investor interest.':'Both residential and commercial sectors are showing positive momentum.'}\n\nWhenever you're considering your next move, I'm here to help. No pressure at all!\n\n${sig}`,
+
+    general: () => `${sal}\n\nI'm reaching out with an exciting investment opportunity in ${loc}! 📊\n\nDubai real estate is delivering some of the best returns globally right now — with rental yields of 7-9% and strong capital appreciation.\n\n${proj?'*'+projLine+'* offers:'+'\n'+(proj.startPrice?'💰 Starting AED '+proj.startPrice+'\n':'')+(proj.payment?'📅 '+proj.payment+'\n':'')+(proj.handover?'🏗 '+proj.handover:''): 'Whether you\'re looking for rental income or capital growth, we have options to match your goals.'}\n\nWould you like to explore further?\n\nYes / No\n\n${sig}`,
+
+    contact_confirmation: () => `${sal}\n\nI hope I have the right contact for you! ✅\n\nI'm ${agent} from ${company}. I specialize in Dubai real estate and help clients find the best investment opportunities.\n\nI'd love to connect and understand your property goals — whether you're looking to buy, sell, or invest.\n\nAm I reaching the right person?\n\nYes / No\n\n${sig}`
+  };
+
+  const fn2 = templates[template];
+  let msg = '';
+  if(template.startsWith('custom_')){
+    const ct = customTemplates.find(t=>t.id===template);
+    msg = ct ? ct.body.replace(/{name}/g, sal).replace(/{agent}/g, agent).replace(/{company}/g, company) : templates.general();
+  } else {
+    msg = fn2 ? fn2() : templates.general();
+  }
+  // Append document link if provided
+  const docLink = document.getElementById('mg_doc_link')?.value?.trim();
+  const docLabel = document.getElementById('mg_doc_label')?.value?.trim() || 'Document';
+  if(docLink) msg += `\n\n📎 *${docLabel}:* ${docLink}`;
+  return msg;
+}
+
+function previewMsgGen(){
+  const modal = document.getElementById('msgGenModal');
+  const id = msgGenContactId || modal.dataset.contactId;
+  const c = currentMsgLead || contacts.find(x=>String(x.id)===String(id) || parseInt(x.id)===parseInt(id));
+  if(!c){
+    document.getElementById('mg_preview').textContent='No contact selected. Close this popup and click Generate & Send from a lead row.';
+    return;
+  }
+  msgGenContactId = c.id;
+  currentMsgLead = c;
+  modal.dataset.contactId = String(c.id);
+  const template = document.getElementById('mg_template').value;
+  const projId = document.getElementById('mg_project').value;
+  const proj = projId ? projects.find(p=>parseInt(p.id)===parseInt(projId)) : null;
+  document.getElementById('mg_preview').textContent = buildEngagingMsg(c, template, proj);
+}
+
+function copyMsgGen(){
+  const text = document.getElementById('mg_preview').textContent;
+  navigator.clipboard.writeText(text).then(()=>toast('📋 Copied!'));
+}
+
+function sendMsgGen(){
+  const modal = document.getElementById('msgGenModal');
+  const id = msgGenContactId || modal.dataset.contactId;
+  const c = currentMsgLead || contacts.find(x=>String(x.id)===String(id) || parseInt(x.id)===parseInt(id));
+  if(!c || !c.phone){ toast('Contact phone not found', 'error'); return; }
+  let msg = document.getElementById('mg_preview').textContent;
+  if(!msg || msg.startsWith('No contact selected') || msg.startsWith('Error:')){ previewMsgGen(); msg = document.getElementById('mg_preview').textContent; }
+  const template = document.getElementById('mg_template').value;
+  c.msg = msg;
+  c.msgGenerated = true;
+  c.lastContact = new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  if(!c.notes) c.notes=[];
+  c.notes.push({text:'💬 WhatsApp sent — '+template.replace(/_/g,' '), time:c.lastContact});
+  if(c.status==='pending') c.status='contacted';
+  save();
+  window.open('https://wa.me/'+c.phone+'?text='+encodeURIComponent(msg),'_blank');
+  renderContacts(); renderOutreach(); renderDashboard();
+  closeMsgGen();
+  toast('✅ WhatsApp opened for '+c.name);
+}
+
+
+// ─── PROJECTS ────────────────────────────────────────────────────────
+let currentSendProject = null;
+
+function renderProjects(){
+  const devFilter = document.getElementById('filterDeveloper').value;
+  const typeFilter = document.getElementById('filterPropType2').value;
+
+  // Populate developer filter
+  const devs = [...new Set(projects.map(p=>p.developer).filter(Boolean))].sort();
+  const devSel = document.getElementById('filterDeveloper');
+  const curDev = devSel.value;
+  devSel.innerHTML = '<option value="">All Developers</option>'+devs.map(d=>`<option value="${d}" ${d===curDev?'selected':''}>${d}</option>`).join('');
+
+  let list = projects.filter(p=>{
+    if(devFilter && p.developer !== devFilter) return false;
+    if(typeFilter && p.type !== typeFilter) return false;
+    return true;
+  });
+
+  const grid = document.getElementById('projectsGrid');
+  if(!list.length){
+    grid.innerHTML='<div style="color:var(--text3);font-size:13px;grid-column:1/-1;text-align:center;padding:3rem;">No projects yet — "+ Add Project" se shuru karo</div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(p=>`
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:12px;overflow:hidden;">
+      <div style="background:var(--bg4);padding:12px 14px;border-bottom:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">${p.developer||'—'}</div>
+        <div style="font-size:15px;font-weight:600;color:#fff;">${p.name}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">📍 ${p.location||'—'} · ${p.type||'—'}</div>
+      </div>
+      <div style="padding:12px 14px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Starting Price</div><div style="font-size:13px;font-weight:500;color:var(--green);">${p.startPrice||'—'}</div></div>
+          <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Handover</div><div style="font-size:13px;">${p.handover||'—'}</div></div>
+          <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Unit Types</div><div style="font-size:12px;color:var(--text2);">${p.units||'—'}</div></div>
+          <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Payment Plan</div><div style="font-size:12px;color:var(--text2);">${p.payment||'—'}</div></div>
+        </div>
+        ${p.roi?`<div style="font-size:12px;color:var(--orange);margin-bottom:8px;">📈 ${p.roi}</div>`:''}
+        ${p.highlights?`<div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5;">${p.highlights}</div>`:''}
+
+        <!-- Document links -->
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">
+          ${p.brochure?`<a href="${p.brochure}" target="_blank" class="btn btn-ghost btn-sm">📄 Brochure</a>`:''}
+          ${p.factsheet?`<a href="${p.factsheet}" target="_blank" class="btn btn-ghost btn-sm">📋 Factsheet</a>`:''}
+          ${p.paymentLink?`<a href="${p.paymentLink}" target="_blank" class="btn btn-ghost btn-sm">💰 Payment Plan</a>`:''}
+          ${p.devProfile?`<a href="${p.devProfile}" target="_blank" class="btn btn-ghost btn-sm">🏢 Developer</a>`:''}
+        </div>
+
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-green btn-sm" style="flex:1;" onclick="openSendProject(${p.id})">↗ Send to Client</button>
+          <button class="btn btn-ghost btn-sm" onclick="editProject(${p.id})">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="deleteProject(${p.id})">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAddProject(){
+  document.getElementById('projectModalTitle').textContent = 'Add Project';
+  document.getElementById('p_editId').value = '';
+  ['p_developer','p_name','p_location','p_startPrice','p_units','p_handover','p_roi','p_payment','p_highlights','p_brochure','p_factsheet','p_paymentLink','p_devProfile'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('p_type').value='apartment';
+  document.getElementById('addProjectModal').classList.add('open');
+}
+
+function closeAddProject(){ document.getElementById('addProjectModal').classList.remove('open'); }
+
+function editProject(id){
+  const p=projects.find(x=>x.id===id); if(!p) return;
+  document.getElementById('projectModalTitle').textContent='Edit Project';
+  document.getElementById('p_editId').value=id;
+  document.getElementById('p_developer').value=p.developer||'';
+  document.getElementById('p_name').value=p.name||'';
+  document.getElementById('p_location').value=p.location||'';
+  document.getElementById('p_type').value=p.type||'apartment';
+  document.getElementById('p_startPrice').value=p.startPrice||'';
+  document.getElementById('p_units').value=p.units||'';
+  document.getElementById('p_handover').value=p.handover||'';
+  document.getElementById('p_roi').value=p.roi||'';
+  document.getElementById('p_payment').value=p.payment||'';
+  document.getElementById('p_highlights').value=p.highlights||'';
+  document.getElementById('p_brochure').value=p.brochure||'';
+  document.getElementById('p_factsheet').value=p.factsheet||'';
+  document.getElementById('p_paymentLink').value=p.paymentLink||'';
+  document.getElementById('p_devProfile').value=p.devProfile||'';
+  document.getElementById('addProjectModal').classList.add('open');
+}
+
+function saveProject(){
+  const developer=document.getElementById('p_developer').value.trim();
+  const name=document.getElementById('p_name').value.trim();
+  if(!developer||!name){alert('Developer and Project name are required');return;}
+
+  const editId=document.getElementById('p_editId').value;
+  const proj={
+    id: editId?parseInt(editId): Date.now(),
+    developer, name,
+    location:document.getElementById('p_location').value.trim(),
+    type:document.getElementById('p_type').value,
+    startPrice:document.getElementById('p_startPrice').value.trim(),
+    units:document.getElementById('p_units').value.trim(),
+    handover:document.getElementById('p_handover').value.trim(),
+    roi:document.getElementById('p_roi').value.trim(),
+    payment:document.getElementById('p_payment').value.trim(),
+    highlights:document.getElementById('p_highlights').value.trim(),
+    brochure:document.getElementById('p_brochure').value.trim(),
+    factsheet:document.getElementById('p_factsheet').value.trim(),
+    paymentLink:document.getElementById('p_paymentLink').value.trim(),
+    devProfile:document.getElementById('p_devProfile').value.trim(),
+  };
+
+  if(editId){
+    const idx=projects.findIndex(x=>x.id===parseInt(editId));
+    if(idx>=0) projects[idx]=proj;
+  } else {
+    projects.push(proj);
+  }
+
+  save(); closeAddProject(); renderProjects();
+  toast('✅ Project saved!');
+}
+
+function deleteProject(id){
+  if(!confirm('Delete this project?')) return;
+  projects=projects.filter(x=>x.id!==id);
+  save(); renderProjects();
+}
+
+function buildProjectMsg(p, contactName){
+  const agent=settings.name||'Triloki Chaudhary';
+  const company=settings.company||'Solanki Capital Properties LLC';
+  const tagline=settings.tagline||'Your Trusted Property Advisor';
+  const sal=contactName?salutation(contactName):'Dear Sir/Madam,';
+
+  let msg=sal+'\n\n';
+  msg+=`Please find below the details for *${p.name}* by *${p.developer}*:\n\n`;
+  if(p.location) msg+=`📍 *Location:* ${p.location}\n`;
+  if(p.type) msg+=`🏠 *Type:* ${p.type.charAt(0).toUpperCase()+p.type.slice(1)}\n`;
+  if(p.startPrice) msg+=`💰 *Starting Price:* AED ${p.startPrice}\n`;
+  if(p.units) msg+=`🛏 *Unit Types:* ${p.units}\n`;
+  if(p.payment) msg+=`📅 *Payment Plan:* ${p.payment}\n`;
+  if(p.handover) msg+=`🏗 *Handover:* ${p.handover}\n`;
+  if(p.roi) msg+=`📈 *ROI:* ${p.roi}\n`;
+  if(p.highlights) msg+=`\n✨ *Highlights:*\n${p.highlights}\n`;
+
+  // Document links
+  const links=[];
+  if(p.brochure) links.push(`📄 Brochure: ${p.brochure}`);
+  if(p.factsheet) links.push(`📋 Factsheet: ${p.factsheet}`);
+  if(p.paymentLink) links.push(`💰 Payment Plan: ${p.paymentLink}`);
+  if(p.devProfile) links.push(`🏢 Developer Profile: ${p.devProfile}`);
+  if(links.length) msg+=`\n📎 *Documents:*\n${links.join('\n')}\n`;
+
+  msg+=`\nFor more details or to schedule a viewing, feel free to reach out.\n\n`;
+  msg+=`Warm regards,\n${agent}\n${company} | ${tagline}`;
+  return msg;
+}
+
+function openSendProject(id){
+  const p=projects.find(x=>x.id===id); if(!p) return;
+  currentSendProject=p;
+
+  // Populate contacts dropdown
+  const sel=document.getElementById('sp_contact');
+  sel.innerHTML='<option value="">-- Select contact (optional) --</option>'+
+    contacts.map(c=>`<option value="${c.id}">${c.name} — ${c.phone}</option>`).join('');
+
+  document.getElementById('sp_preview').textContent=buildProjectMsg(p,'');
+  document.getElementById('sendProjectModal').classList.add('open');
+}
+
+function closeSendProject(){ document.getElementById('sendProjectModal').classList.remove('open'); currentSendProject=null; }
+
+function copyProjectMsg(){
+  const text=document.getElementById('sp_preview').textContent;
+  navigator.clipboard.writeText(text).then(()=>alert('Copied!'));
+}
+
+function sendProjectWA(){
+  if(!currentSendProject) return;
+  const contactId=document.getElementById('sp_contact').value;
+  const c=contacts.find(x=>x.id===parseInt(contactId));
+  const msg=document.getElementById('sp_preview').textContent;
+  const phone=c?c.phone:'';
+  if(phone){
+    window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
+    if(c){ c.lastContact=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); if(!c.notes)c.notes=[]; c.notes.push({text:'📤 Project sent: '+currentSendProject.name,time:c.lastContact}); save(); }
+  } else {
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  }
+}
+
+// Update preview when contact selected
+document.addEventListener('DOMContentLoaded',()=>{
+  loadCustomTemplatesInSelect();
+  const sel=document.getElementById('sp_contact');
+  if(sel) sel.addEventListener('change',function(){
+    if(!currentSendProject) return;
+    const c=contacts.find(x=>x.id===parseInt(this.value));
+    document.getElementById('sp_preview').textContent=buildProjectMsg(currentSendProject,c?c.name:'');
+  });
+});
+
+// ─── EXPORT ──────────────────────────────────────────────────────────
+function exportCSV(){
+  if(!contacts.length){alert('No contacts to export');return;}
+  const hdrs=['Name','Phone','Nationality','Community','Source File','Status','Priority','Last Contact','Callback Date','FU Count','Notes'];
+  const rows=contacts.map(c=>[
+    c.name, c.phone, c.nationality||'', c.community||'', c.source||'',
+    c.status, c.priority||'cold', c.lastContact||'', c.callbackDate||'',
+    c.fuCount||0, (c.notes||[]).map(n=>n.text).join(' | ')
+  ]);
+  const csv=[hdrs,...rows].map(r=>r.map(v=>'"'+(String(v).replace(/"/g,'""'))+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='solanki_crm_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────
+function saveSettings(){
+  settings.name=document.getElementById('agentName').value.trim()||'Triloki Chaudhary';
+  settings.company=document.getElementById('agentCompany').value.trim()||'Solanki Capital Properties LLC';
+  settings.tagline=document.getElementById('agentTagline').value.trim()||'Your Trusted Property Advisor';
+  save(); alert('Settings saved!');
+}
+
+function clearAllData(){ if(!confirm('Delete all data? This cannot be undone!')) return; contacts=[]; save(); renderDashboard(); alert('Data cleared.'); }
+
+// ─── INIT ────────────────────────────────────────────────────────────
+load();
+renderDashboard();
+document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+setTimeout(()=>{ loadFromCloud(); }, 500);
+</script>
+
+<!-- Deal Close Modal -->
+<div class="modal-overlay" id="dealCloseModal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <div class="modal-title">🏆 Deal Closed — Enter Details</div>
+      <button class="modal-close" onclick="closeDealModal()">✕</button>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Developer</label><input type="text" id="deal_developer" placeholder="e.g. Emaar, Sobha, DAMAC"/></div>
+      <div><label class="lbl">Project</label><input type="text" id="deal_project" placeholder="e.g. Sobha Hartland 2"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Unit Type</label>
+        <select id="deal_unit">
+          <option value="">Select type</option>
+          <option>Studio</option>
+          <option>1 BR</option>
+          <option>2 BR</option>
+          <option>3 BR</option>
+          <option>4+ BR</option>
+          <option>Villa</option>
+          <option>Townhouse</option>
+          <option>Penthouse</option>
+          <option>Plot</option>
+          <option>Commercial</option>
+        </select>
+      </div>
+      <div><label class="lbl">Deal Value (AED)</label><input type="text" id="deal_value" placeholder="e.g. 2,500,000"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Commission (AED)</label><input type="text" id="deal_commission" placeholder="e.g. 62,500"/></div>
+      <div><label class="lbl">Date of Closing</label><input type="date" id="deal_date"/></div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label class="lbl">Notes</label>
+      <textarea id="deal_notes" placeholder="Any additional notes..." style="min-height:60px;"></textarea>
+    </div>
+    <button class="btn btn-green" style="width:100%;" onclick="saveDeal()">💾 Save Deal</button>
+  </div>
+</div>
+
+<!-- Already Bought Modal -->
+<div class="modal-overlay" id="alreadyBoughtModal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <div class="modal-title">❌ Already Bought — Enter Details</div>
+      <button class="modal-close" onclick="closeAlreadyBoughtModal()">✕</button>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Developer/Project</label><input type="text" id="ab_project" placeholder="e.g. Emaar — Creek Harbour"/></div>
+      <div><label class="lbl">Agency Name</label><input type="text" id="ab_agency" placeholder="e.g. Betterhomes, Espace"/></div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label class="lbl">Notes</label>
+      <textarea id="ab_notes" placeholder="Any details..." style="min-height:60px;"></textarea>
+    </div>
+    <button class="btn btn-green" style="width:100%;" onclick="saveAlreadyBought()">💾 Save</button>
+  </div>
+</div>
+
+<script>
+let _dealContactId = null;
+
+function openDealModal(id){
+  _dealContactId = id;
+  const c = contacts.find(x=>parseInt(x.id)===parseInt(id));
+  document.getElementById('deal_developer').value = c?.deals?.length ? '' : '';
+  document.getElementById('deal_project').value = c?.community||'';
+  document.getElementById('deal_unit').value = '';
+  document.getElementById('deal_value').value = c?.budget||'';
+  document.getElementById('deal_commission').value = '';
+  document.getElementById('deal_date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('deal_notes').value = '';
+  document.getElementById('dealCloseModal').classList.add('open');
+}
+
+function closeDealModal(){ document.getElementById('dealCloseModal').classList.remove('open'); }
+
+function saveDeal(){
+  const c = contacts.find(x=>parseInt(x.id)===parseInt(_dealContactId));
+  if(!c) return;
+  const deal = {
+    developer: document.getElementById('deal_developer').value.trim(),
+    project: document.getElementById('deal_project').value.trim(),
+    unit: document.getElementById('deal_unit').value,
+    value: document.getElementById('deal_value').value.trim(),
+    commission: document.getElementById('deal_commission').value.trim(),
+    date: document.getElementById('deal_date').value,
+    notes: document.getElementById('deal_notes').value.trim(),
+    closedAt: new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+  };
+  if(!c.deals) c.deals = [];
+  // Check if repeat client
+  if(c.deals.length > 0) c.status = 'repeat';
+  c.deals.push(deal);
+  if(!c.notes) c.notes = [];
+  c.notes.push({
+    text: '🏆 Deal Closed — '+deal.developer+' '+deal.project+' '+deal.unit+(deal.value?' | AED '+deal.value:'')+(deal.commission?' | Commission: AED '+deal.commission:''),
+    time: deal.closedAt
+  });
+  save(); closeDealModal(); renderContacts(); renderDashboard();
+  toast('🏆 Deal saved!');
+}
+
+function openAlreadyBoughtModal(id){
+  _dealContactId = id;
+  document.getElementById('ab_project').value = '';
+  document.getElementById('ab_agency').value = '';
+  document.getElementById('ab_notes').value = '';
+  document.getElementById('alreadyBoughtModal').classList.add('open');
+}
+
+function closeAlreadyBoughtModal(){ document.getElementById('alreadyBoughtModal').classList.remove('open'); }
+
+function saveAlreadyBought(){
+  const c = contacts.find(x=>parseInt(x.id)===parseInt(_dealContactId));
+  if(!c) return;
+  c.alreadyBought = {
+    project: document.getElementById('ab_project').value.trim(),
+    agency: document.getElementById('ab_agency').value.trim(),
+    notes: document.getElementById('ab_notes').value.trim(),
+    date: new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+  };
+  if(!c.notes) c.notes = [];
+  c.notes.push({
+    text: '❌ Already Bought — '+(c.alreadyBought.project||'')+(c.alreadyBought.agency?' via '+c.alreadyBought.agency:''),
+    time: c.alreadyBought.date
+  });
+  save(); closeAlreadyBoughtModal(); renderContacts();
+  toast('Saved — marked as already bought');
+}
+</script>
+
+<script>
+// ─── RESET CONTACT ────────────────────────────────────────────────
+function showResetMenu(id, event){
+  event.stopPropagation();
+  // Remove existing menu
+  const existing = document.getElementById('resetMenu');
+  if(existing) existing.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'resetMenu';
+  menu.style.cssText = 'position:fixed;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:6px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:200px;';
+  menu.innerHTML = `
+    <div style="font-size:11px;color:#555;padding:4px 8px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Reset Options</div>
+    <button onclick="resetNotes(${id})" style="display:block;width:100%;text-align:left;padding:8px 10px;background:transparent;border:none;color:#e8e8e8;font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">📋 Clear Activity History</button>
+    <button onclick="resetStatus(${id})" style="display:block;width:100%;text-align:left;padding:8px 10px;background:transparent;border:none;color:#e8e8e8;font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">🔄 Reset Status & Priority</button>
+    <button onclick="resetFull(${id})" style="display:block;width:100%;text-align:left;padding:8px 10px;background:transparent;border:none;color:#f87171;font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#2d1515'" onmouseout="this.style.background='transparent'">⚡ Full Reset (keep name & phone only)</button>
+  `;
+
+  // Position near click
+  const x = Math.min(event.clientX, window.innerWidth - 220);
+  const y = Math.min(event.clientY, window.innerHeight - 160);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+  setTimeout(()=>{ document.addEventListener('click', ()=>{ menu.remove(); }, {once:true}); }, 10);
+}
+
+function resetNotes(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
+  if(!confirm('Clear all activity history for '+c.name+'?')) return;
+  c.notes = [];
+  c.lastContact = '';
+  c.fuCount = 0;
+  save(); renderContacts(); toast('📋 Activity history cleared!');
+}
+
+function resetStatus(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
+  if(!confirm('Reset status & priority for '+c.name+'?')) return;
+  c.status = 'pending';
+  c.priority = 'cold';
+  c.callbackDate = '';
+  c.callbackTime = '';
+  c.msg = '';
+  c.msgGenerated = false;
+  save(); renderContacts(); toast('🔄 Status & priority reset!');
+}
+
+function resetFull(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
+  if(!confirm('Full reset for '+c.name+'? Only name & phone will be kept.')) return;
+  const fresh = {
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+    nationality: '',
+    community: '',
+    source: 'Manual',
+    status: 'pending',
+    priority: 'cold',
+    msg: '', msgGenerated: false, fuCount: 0,
+    notes: [], callbackDate: '', lastContact: '',
+    referredBy: '', contactType: 'client', leadType: 'buyer'
+  };
+  const idx = contacts.findIndex(x=>parseInt(x.id)===parseInt(id));
+  if(idx>=0) contacts[idx] = fresh;
+  save(); renderContacts(); renderDashboard(); toast('⚡ Contact fully reset!');
+}
+</script>
+
+<script>
+// ─── BREAKING NEWS TICKER ────────────────────────────────────────────
+async function loadNewsTicker(){
+  // Show static headlines immediately while loading
+  const staticNews = [
+    {title:'Dubai real estate market hits record transaction volumes in 2026', link:'https://www.khaleejtimes.com/business/property'},
+    {title:'DLD reports strong demand for off-plan properties across Dubai', link:'https://dubailand.gov.ae'},
+    {title:'UAE property prices continue upward trend amid strong demand', link:'https://www.arabianbusiness.com/property'},
+    {title:'Dubai Marina and Downtown see highest rental yields in Q1 2026', link:'https://www.gulfnews.com/business/property'},
+    {title:'New visa reforms boost foreign investment in UAE real estate', link:'https://www.khaleejtimes.com/uae'},
+  ];
+
+  const ticker = document.getElementById('newsTicker');
+  if(!ticker) return;
+
+  function setTicker(items){
+    const html = items.map(h=>`<span class="news-ticker-item">⚡ <a href="${h.link}" target="_blank">${h.title}</a></span>`).join('');
+    ticker.innerHTML = html + html;
+    const totalLen = items.reduce((a,h)=>a+h.title.length,0);
+    ticker.style.animationDuration = Math.max(25, totalLen * 0.12)+'s';
+  }
+
+  // Show static immediately
+  setTicker(staticNews);
+
+  // Try to load live news
+  try {
+    const feed = 'https://www.arabianbusiness.com/rss/property';
+    const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feed)+'&count=8', {signal: AbortSignal.timeout(5000)});
+    const data = await res.json();
+    if(data.status==='ok' && data.items && data.items.length > 0){
+      const live = data.items.map(i=>({title:i.title, link:i.link}));
+      setTicker(live);
+    }
+  } catch(e){
+    // Keep static headlines - already showing
+  }
+}
+
+// ─── MARKET DATA ─────────────────────────────────────────────────────
+async function loadMarketData(){
+  // 1. Currency rates
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/AED');
+    const data = await res.json();
+    const pairs = {INR:'🇮🇳 INR', USD:'🇺🇸 USD', GBP:'🇬🇧 GBP', EUR:'🇪🇺 EUR', PKR:'🇵🇰 PKR', SAR:'🇸🇦 SAR', QAR:'🇶🇦 QAR', KWD:'🇰🇼 KWD', BHD:'🇧🇭 BHD', OMR:'🇴🇲 OMR'};
+    const ratesEl = document.getElementById('currencyRates');
+    if(ratesEl && data.rates) ratesEl.innerHTML = Object.entries(pairs).map(([code, label])=>{
+      const rate = data.rates[code];
+      return rate ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:110px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">${label}</div><div style="font-size:14px;font-weight:600;color:var(--blue);">1 AED = ${rate.toFixed(2)}</div></div>` : '';
+    }).join('');
+  } catch(e) {
+    const el = document.getElementById('currencyRates');
+    if(el) el.innerHTML = '<div style="color:var(--text3);font-size:12px;">Unable to load</div>';
+  }
+
+  // 2. Commodity prices (Gold & Petrol UAE)
+  const petrolPrices = {'Special 95':'2.89','Super 98':'3.02','Diesel':'2.77','E-Plus 91':'2.77'};
+  const comEl = document.getElementById('commodityPrices');
+  
+  // Show petrol immediately (static - UAE govt updates quarterly)
+  const petrolCards = Object.entries(petrolPrices).map(([grade,price])=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">⛽ ${grade}</div><div style="font-size:14px;font-weight:600;color:var(--orange);">AED ${price}</div><div style="font-size:10px;color:var(--text3);">May 2026</div></div>`).join('');
+  if(comEl) comEl.innerHTML = `<div id="goldCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">Loading...</div></div>${petrolCards}`;
+
+  // Try multiple gold APIs
+  try {
+    let goldUSD = 0;
+    const goldApis = [
+      'https://api.gold-api.com/price/XAU',
+      'https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/XAU/USD'
+    ];
+    for(const api of goldApis){
+      try {
+        const r = await fetch(api, {signal: AbortSignal.timeout(4000)});
+        const d = await r.json();
+        goldUSD = d.price || d.bid || d[0]?.bid || 0;
+        if(goldUSD > 0) break;
+      } catch(e){}
+    }
+    
+    // Fallback: use currency API to get gold
+    if(!goldUSD){
+      const r = await fetch('https://open.er-api.com/v6/latest/XAU', {signal: AbortSignal.timeout(4000)});
+      const d = await r.json();
+      goldUSD = d.rates?.USD || 3300;
+    }
+    
+    const goldAED = (goldUSD * 3.6725).toFixed(0);
+    const goldCard = document.getElementById('goldCard');
+    if(goldCard && goldUSD > 0) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ${parseInt(goldAED).toLocaleString()}</div><div style="font-size:10px;color:var(--text3);">USD ${goldUSD.toFixed(0)}</div>`;
+  } catch(e) {
+    const goldCard = document.getElementById('goldCard');
+    if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">~AED 12,100</div><div style="font-size:10px;color:var(--text3);">~USD 3,295</div>`;
+  }
+
+  // 3. News from multiple sources horizontally
+  try {
+    const feeds = [
+      'https://www.khaleejtimes.com/rss',
+      'https://www.arabianbusiness.com/rss/property',
+      'https://gulfnews.com/rss/business'
+    ];
+    let allNews = [];
+    for(const feed of feeds){
+      try {
+        const proxy = 'https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feed)+'&count=4';
+        const res = await fetch(proxy);
+        const data = await res.json();
+        if(data.items && data.items.length) allNews = allNews.concat(data.items.slice(0,4));
+        if(allNews.length >= 8) break;
+      } catch(err){}
+    }
+
+    const newsEl = document.getElementById('dubaiNews');
+    if(newsEl && allNews.length > 0){
+      newsEl.innerHTML = allNews.slice(0,8).map(item=>`
+        <a href="${item.link}" target="_blank" style="display:block;min-width:220px;max-width:220px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;flex-shrink:0;">
+          <div style="font-size:12px;color:var(--blue);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${item.title}</div>
+          <div style="font-size:10px;color:var(--text3);">${new Date(item.pubDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
+        </a>`).join('');
+    } else if(newsEl){
+      newsEl.innerHTML = `
+        <a href="https://www.khaleejtimes.com/uae" target="_blank" style="display:block;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;text-align:center;"><div style="font-size:13px;color:var(--blue);">🗞 Khaleej Times</div></a>
+        <a href="https://www.arabianbusiness.com/property" target="_blank" style="display:block;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;text-align:center;"><div style="font-size:13px;color:var(--blue);">📰 Arabian Business</div></a>
+        <a href="https://gulfnews.com/business/property" target="_blank" style="display:block;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;text-align:center;"><div style="font-size:13px;color:var(--blue);">📰 Gulf News</div></a>
+      `;
+    }
+  } catch(e) {
+    const newsEl = document.getElementById('dubaiNews');
+    if(newsEl) newsEl.innerHTML = '<a href="https://www.khaleejtimes.com" target="_blank" class="btn btn-ghost btn-sm">Open Khaleej Times →</a>';
+  }
+}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+
+<!-- CSV Import Modal -->
+<div class="modal-overlay" id="csvImportModal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <div class="modal-title">Import CSV File</div>
+      <button class="modal-close" onclick="closeCSVImport()">✕</button>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">CSV file upload karo — Name aur Phone columns zaroori hain. First row headers honi chahiye.</p>
+    <div class="upload-zone" onclick="document.getElementById('csvFileInput').click()">
+      <p>📄 Click to upload .csv file</p>
+      <p style="font-size:11px;margin-top:4px;color:var(--text3);">Required columns: Name, Phone</p>
+      <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="handleCSVFile(event)"/>
+    </div>
+    <div id="csvPreview" style="margin-top:12px;"></div>
+    <div id="csvImportBtn" style="display:none;margin-top:12px;">
+      <div style="margin-bottom:8px;"><label class="lbl">Default community (optional)</label><input type="text" id="csvDefCom" placeholder="e.g. District One"/></div>
+      <button class="btn btn-green" style="width:100%;" onclick="importCSVData()">Import →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let _csvData = [];
+
+function openCSVImport(){
+  _csvData = [];
+  document.getElementById('csvPreview').innerHTML = '';
+  document.getElementById('csvImportBtn').style.display = 'none';
+  document.getElementById('csvFileInput').value = '';
+  document.getElementById('csvImportModal').classList.add('open');
+}
+
+function closeCSVImport(){ document.getElementById('csvImportModal').classList.remove('open'); }
+
+function handleCSVFile(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const text = ev.target.result;
+    const rows = parseCSVText(text);
+    if(rows.length < 2){ 
+      document.getElementById('csvPreview').innerHTML = '<div style="color:var(--red);font-size:13px;">❌ File empty or invalid</div>'; 
+      return; 
+    }
+    
+    const headers = rows[0];
+    const nameIdx = headers.findIndex(h=>/name/i.test(h));
+    const phoneIdx = headers.findIndex(h=>/phone|mobile|number|tel/i.test(h));
+    const natIdx = headers.findIndex(h=>/nation|country/i.test(h));
+    const comIdx = headers.findIndex(h=>/community|area|project/i.test(h));
+    
+    if(nameIdx < 0 || phoneIdx < 0){
+      document.getElementById('csvPreview').innerHTML = `<div style="color:var(--red);font-size:13px;">❌ Name/Phone column not found.<br>Columns found: ${headers.join(', ')}</div>`;
+      return;
+    }
+    
+    _csvData = {rows: rows.slice(1), nameIdx, phoneIdx, natIdx, comIdx};
+    
+    document.getElementById('csvPreview').innerHTML = `
+      <div style="background:var(--bg2);border-radius:8px;padding:12px;border:1px solid var(--border);">
+        <div style="color:var(--green);font-size:13px;font-weight:600;margin-bottom:6px;">✅ ${rows.length-1} rows found</div>
+        <div style="font-size:12px;color:var(--text2);">Name: column ${nameIdx+1} · Phone: column ${phoneIdx+1}</div>
+        ${natIdx>=0?'<div style="font-size:12px;color:var(--text2);">Nationality: column '+(natIdx+1)+'</div>':''}
+        ${comIdx>=0?'<div style="font-size:12px;color:var(--text2);">Community: column '+(comIdx+1)+'</div>':''}
+        <div style="font-size:12px;color:var(--text3);margin-top:6px;">Preview: ${rows[1][nameIdx]} — ${rows[1][phoneIdx]}</div>
+      </div>`;
+    document.getElementById('csvImportBtn').style.display = 'block';
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVText(text){
+  const rows = []; 
+  let row = [], cur = '', inQ = false;
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i], nx = text[i+1];
+    if(ch==='"' && inQ && nx==='"'){ cur+='"'; i++; }
+    else if(ch==='"'){ inQ=!inQ; }
+    else if(ch===',' && !inQ){ row.push(cur.trim()); cur=''; }
+    else if((ch==='
+'||ch==='
+') && !inQ){ 
+      if(cur||row.length){ row.push(cur.trim()); rows.push(row); } 
+      row=[]; cur=''; 
+      if(ch==='
+'&&nx==='
+') i++; 
+    }
+    else{ cur+=ch; }
+  }
+  if(cur||row.length){ row.push(cur.trim()); rows.push(row); }
+  return rows.filter(r=>r.some(c=>c));
+}
+
+function importCSVData(){
+  if(!_csvData || !_csvData.rows) return;
+  const defCom = document.getElementById('csvDefCom').value.trim();
+  const existingPhones = new Set(contacts.map(c=>c.phone).filter(Boolean));
+  let maxId = contacts.length>0?Math.max(...contacts.map(c=>c.id))+1:0;
+  let added=0, dups=0, skipped=0;
+
+  _csvData.rows.forEach(row=>{
+    const name = (row[_csvData.nameIdx]||'').trim();
+    const rawPhone = (row[_csvData.phoneIdx]||'').trim();
+    const phone = extractPhone(rawPhone)||rawPhone.replace(/[\s\+\-\(\)]/g,'');
+    
+    if(!name||name.length<2){ skipped++; return; }
+    if(!phone||phone.length<7){ skipped++; return; }
+    if(existingPhones.has(phone)){ dups++; return; }
+    existingPhones.add(phone);
+    
+    contacts.push({
+      id: maxId++, name, phone,
+      nationality: _csvData.natIdx>=0?(row[_csvData.natIdx]||'').trim():'',
+      community: _csvData.comIdx>=0?((row[_csvData.comIdx]||'').trim()||defCom):defCom,
+      source: 'CSV Import',
+      status:'pending', priority:'cold',
+      msg:'', msgGenerated:false, fuCount:0,
+      notes:[], callbackDate:'', lastContact:''
+    });
+    added++;
+  });
+
+  save(); closeCSVImport(); renderContacts(); renderDashboard();
+  toast(`✅ ${added} contacts imported!${dups>0?' ('+dups+' duplicates skipped)':''}${skipped>0?' ('+skipped+' skipped)':''}`);
+}
+</script>
+
+</body>
+</html>
