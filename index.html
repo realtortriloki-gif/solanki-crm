@@ -210,6 +210,19 @@ tr:hover td{background:#161616;}
 .tone-btn.active{background:#1e3a2f;border-color:#2d5c45;color:var(--green);}
 
 .empty{text-align:center;padding:3rem;color:#999;font-size:13px;}
+/* Area Price Popup */
+.area-popup{position:fixed;bottom:90px;right:20px;background:linear-gradient(135deg,#1a2a1a,#0f1f0f);border:1px solid #25D366;border-radius:14px;padding:14px 18px;z-index:500;min-width:220px;max-width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:slideInRight 0.4s ease;cursor:pointer;}
+.area-popup:hover{border-color:#4ade80;}
+.area-popup.hide{animation:slideOutRight 0.3s ease forwards;}
+@keyframes slideInRight{from{transform:translateX(120%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+@keyframes slideOutRight{from{transform:translateX(0);opacity:1;}to{transform:translateX(120%);opacity:0;}}
+.area-popup-label{font-size:10px;color:#25D366;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600;}
+.area-popup-area{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;}
+.area-popup-price{font-size:22px;font-weight:800;color:#25D366;}
+.area-popup-sub{font-size:11px;color:#888;margin-top:3px;}
+.area-popup-close{position:absolute;top:8px;right:10px;color:#555;font-size:14px;cursor:pointer;background:none;border:none;}
+.area-popup-close:hover{color:#fff;}
+@media(max-width:768px){.area-popup{bottom:80px;right:10px;left:10px;min-width:auto;}}
 /* Breaking News Ticker */
 .news-ticker-wrap{background:#1a0a0a;border:1px solid #5a2020;border-radius:8px;padding:0;overflow:hidden;margin-bottom:1.25rem;display:flex;align-items:center;}
 .news-ticker-label{background:#f87171;color:#000;font-size:11px;font-weight:700;padding:8px 12px;white-space:nowrap;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;}
@@ -2660,12 +2673,11 @@ function saveSettings(){
 function clearAllData(){ if(!confirm('Delete all data? This cannot be undone!')) return; contacts=[]; save(); renderDashboard(); alert('Data cleared.'); }
 
 // ─── INIT ────────────────────────────────────────────────────────────
-(async function initCRM(){
-  await loadFromCloud();
-  renderDashboard();
-  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  syncBottomNav('dashboard');
-})();
+load();
+renderDashboard();
+document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+syncBottomNav('dashboard');
+setTimeout(()=>{ loadFromCloud(); }, 500);
 </script>
 
 <!-- Deal Close Modal -->
@@ -3328,6 +3340,95 @@ function closeQRScan(){
   document.getElementById('qrScanModal').classList.remove('open');
   document.getElementById('qrVideo').srcObject = null;
 }
+</script>
+
+
+<!-- Area Price Popup -->
+<div class="area-popup" id="areaPricePopup" style="display:none;" onclick="nextAreaPopup()">
+  <button class="area-popup-close" onclick="event.stopPropagation();pauseAreaPopup()">✕</button>
+  <div class="area-popup-label">🏙️ Dubai Area Price</div>
+  <div class="area-popup-area" id="popupArea">Downtown Dubai</div>
+  <div class="area-popup-price" id="popupPrice">AED 2,800/sqft</div>
+  <div class="area-popup-sub" id="popupSub">Avg | May 2026</div>
+</div>
+
+<script>
+const AREA_PRICES = [
+  {area:'Downtown Dubai', price:'AED 2,800', type:'Apartment', trend:'↑ 8%'},
+  {area:'Dubai Marina', price:'AED 1,950', type:'Apartment', trend:'↑ 5%'},
+  {area:'Palm Jumeirah', price:'AED 3,200', type:'Villa/Apt', trend:'↑ 12%'},
+  {area:'Business Bay', price:'AED 1,800', type:'Apartment', trend:'↑ 6%'},
+  {area:'JVC', price:'AED 1,100', type:'Apartment', trend:'↑ 3%'},
+  {area:'Dubai Hills', price:'AED 1,650', type:'Villa/Apt', trend:'↑ 9%'},
+  {area:'Arabian Ranches', price:'AED 1,400', type:'Villa', trend:'↑ 7%'},
+  {area:'DAMAC Hills', price:'AED 1,200', type:'Villa/Apt', trend:'↑ 4%'},
+  {area:'Jumeirah', price:'AED 2,100', type:'Villa', trend:'↑ 6%'},
+  {area:'Al Barsha', price:'AED 1,050', type:'Apartment', trend:'↑ 2%'},
+  {area:'Mirdif', price:'AED 900', type:'Villa/Apt', trend:'↑ 3%'},
+  {area:'Deira', price:'AED 750', type:'Apartment', trend:'↑ 1%'},
+  {area:'Bur Dubai', price:'AED 850', type:'Apartment', trend:'↑ 2%'},
+  {area:'Creek Harbour', price:'AED 2,200', type:'Apartment', trend:'↑ 11%'},
+  {area:'Emaar Beachfront', price:'AED 3,500', type:'Apartment', trend:'↑ 15%'},
+  {area:'MBR City', price:'AED 1,750', type:'Villa/Apt', trend:'↑ 8%'},
+  {area:'Sobha Hartland', price:'AED 1,900', type:'Apartment', trend:'↑ 10%'},
+  {area:'Bluewaters Island', price:'AED 3,800', type:'Apartment', trend:'↑ 13%'},
+  {area:'Sports City', price:'AED 900', type:'Apartment', trend:'↑ 2%'},
+  {area:'Motor City', price:'AED 850', type:'Apartment', trend:'↑ 2%'},
+  {area:'Discovery Gardens', price:'AED 750', type:'Apartment', trend:'↑ 1%'},
+  {area:'International City', price:'AED 550', type:'Apartment', trend:'↑ 1%'},
+  {area:'Al Furjan', price:'AED 1,050', type:'Apartment', trend:'↑ 4%'},
+  {area:'DIFC', price:'AED 3,000', type:'Apartment', trend:'↑ 9%'},
+];
+
+let _areaIdx = 0;
+let _areaTimer = null;
+let _areaPaused = false;
+
+function showAreaPopup(){
+  const popup = document.getElementById('areaPricePopup');
+  if(!popup || _areaPaused) return;
+  
+  const area = AREA_PRICES[_areaIdx];
+  document.getElementById('popupArea').textContent = area.area;
+  document.getElementById('popupPrice').textContent = area.price + '/sqft';
+  document.getElementById('popupSub').textContent = area.type + ' | ' + area.trend + ' YoY | May 2026';
+  
+  popup.style.display = 'block';
+  popup.classList.remove('hide');
+  
+  // Auto hide after 4 seconds then show next
+  clearTimeout(_areaTimer);
+  _areaTimer = setTimeout(()=>{
+    popup.classList.add('hide');
+    setTimeout(()=>{
+      _areaIdx = (_areaIdx + 1) % AREA_PRICES.length;
+      showAreaPopup();
+    }, 400);
+  }, 4000);
+}
+
+function nextAreaPopup(){
+  const popup = document.getElementById('areaPricePopup');
+  popup.classList.add('hide');
+  clearTimeout(_areaTimer);
+  setTimeout(()=>{
+    _areaIdx = (_areaIdx + 1) % AREA_PRICES.length;
+    showAreaPopup();
+  }, 300);
+}
+
+function pauseAreaPopup(){
+  _areaPaused = true;
+  clearTimeout(_areaTimer);
+  const popup = document.getElementById('areaPricePopup');
+  popup.classList.add('hide');
+  setTimeout(()=>{ popup.style.display='none'; }, 400);
+  // Resume after 30 seconds
+  setTimeout(()=>{ _areaPaused=false; showAreaPopup(); }, 30000);
+}
+
+// Start popup after 3 seconds
+setTimeout(()=>{ showAreaPopup(); }, 3000);
 </script>
 
 </body>
