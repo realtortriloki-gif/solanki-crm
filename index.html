@@ -22,7 +22,6 @@ window.saveToFirebase = async function(data) {
     });
   } catch(e) { console.error('Firebase save:', e); }
 };
-
 window.loadFromFirebase = async function() {
   try {
     if(!window._db) return null;
@@ -35,20 +34,20 @@ window.loadFromFirebase = async function() {
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onload="window._fbApp=true;window._initFB&&window._initFB();"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onload="window._fbFS=true;window._initFB&&window._initFB();"></script>
 <script>
-window._fbApp=false; window._fbFS=false;
-window._initFB = function(){
-  if(!window._fbApp || !window._fbFS) return;
+window._fbApp=false;window._fbFS=false;
+window._initFB=function(){
+  if(!window._fbApp||!window._fbFS) return;
   if(!firebase.apps.length){
     firebase.initializeApp({
-      apiKey: 'AIzaSyBf2hn63nIBvA_6QCKrZiXW_Qk3boy70hk',
-      authDomain: 'solanki-crm.firebaseapp.com',
-      projectId: 'solanki-crm',
-      storageBucket: 'solanki-crm.firebasestorage.app',
-      messagingSenderId: '1005706848642',
-      appId: '1:1005706848642:web:38cbecafbe39e91305079b'
+      apiKey:'AIzaSyBf2hn63nIBvA_6QCKrZiXW_Qk3boy70hk',
+      authDomain:'solanki-crm.firebaseapp.com',
+      projectId:'solanki-crm',
+      storageBucket:'solanki-crm.firebasestorage.app',
+      messagingSenderId:'1005706848642',
+      appId:'1:1005706848642:web:38cbecafbe39e91305079b'
     });
   }
-  window._db = firebase.firestore();
+  window._db=firebase.firestore();
   console.log('Firebase ready');
 };
 </script>
@@ -2912,17 +2911,33 @@ async function loadNewsTicker(){
   // Show static immediately
   setTicker(staticNews);
 
-  // Try to load live news
+  // Load from Google News RSS (free, reliable)
   try {
-    const feed = 'https://www.arabianbusiness.com/rss/property';
-    const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feed)+'&count=8', {signal: AbortSignal.timeout(5000)});
-    const data = await res.json();
-    if(data.status==='ok' && data.items && data.items.length > 0){
-      const live = data.items.map(i=>({title:i.title, link:i.link}));
-      setTicker(live);
+    const feeds = [
+      'https://news.google.com/rss/search?q=Dubai+real+estate+property&hl=en-US&gl=US&ceid=US:en',
+      'https://news.google.com/rss/search?q=UAE+property+market+2026&hl=en-US&gl=US&ceid=US:en'
+    ];
+    for(const feed of feeds){
+      try {
+        const proxy = 'https://api.allorigins.win/get?url='+encodeURIComponent(feed);
+        const res = await fetch(proxy, {signal: AbortSignal.timeout(8000)});
+        const data = await res.json();
+        if(data.contents){
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(data.contents, 'text/xml');
+          const items = [...xml.querySelectorAll('item')].slice(0,10);
+          if(items.length > 0){
+            const live = items.map(i=>({
+              title: i.querySelector('title')?.textContent||'',
+              link: i.querySelector('link')?.textContent||'#'
+            })).filter(i=>i.title);
+            if(live.length > 0){ setTicker(live); break; }
+          }
+        }
+      } catch(err){}
     }
   } catch(e){
-    // Keep static headlines - already showing
+    // Keep static headlines
   }
 }
 
@@ -2987,17 +3002,26 @@ async function loadMarketData(){
   // 3. News from multiple sources horizontally
   try {
     const feeds = [
-      'https://www.khaleejtimes.com/rss',
-      'https://www.arabianbusiness.com/rss/property',
-      'https://gulfnews.com/rss/business'
+      'https://news.google.com/rss/search?q=Dubai+property+real+estate&hl=en-US&gl=US&ceid=US:en',
+      'https://news.google.com/rss/search?q=UAE+real+estate+2026&hl=en-US&gl=US&ceid=US:en'
     ];
     let allNews = [];
     for(const feed of feeds){
       try {
-        const proxy = 'https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feed)+'&count=4';
-        const res = await fetch(proxy);
+        const proxy = 'https://api.allorigins.win/get?url='+encodeURIComponent(feed);
+        const res = await fetch(proxy, {signal: AbortSignal.timeout(8000)});
         const data = await res.json();
-        if(data.items && data.items.length) allNews = allNews.concat(data.items.slice(0,4));
+        if(data.contents){
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(data.contents, 'text/xml');
+          const items = [...xml.querySelectorAll('item')].slice(0,5);
+          items.forEach(i=>{
+            const title = i.querySelector('title')?.textContent||'';
+            const link = i.querySelector('link')?.textContent||'#';
+            const pubDate = i.querySelector('pubDate')?.textContent||'';
+            if(title) allNews.push({title, link, pubDate});
+          });
+        }
         if(allNews.length >= 8) break;
       } catch(err){}
     }
