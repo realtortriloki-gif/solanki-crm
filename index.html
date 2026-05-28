@@ -12,9 +12,15 @@
 <title>Solanki Capital CRM</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ─── FIREBASE SYNC ENGINE ────────────────────────────────────────────
+// ─── SUPABASE + OFFLINE-FIRST SYNC ENGINE ─────────────────────────────
+// Keep this as a publishable anon key only. Do not put service-role keys in frontend HTML.
+const SUPABASE_URL = 'https://eyckdvdxtnachqzellog.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_VcxbcS_k1WQVuNWIDpKU1w_mi8midI_';
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  realtime: { params: { eventsPerSecond: 5 } }
+});
 
 const CRM_SYNC_VERSION = 'offline-pwa-v10';
 const CRM_DEVICE_ID_KEY = 'sccrm_device_id';
@@ -41,43 +47,69 @@ function markPendingSync(value){
 function isOnlineNow(){ return navigator.onLine !== false; }
 
 window.saveToFirebase = async function(data) {
-  if(!isOnlineNow()){ markPendingSync(true); return {ok:false,offline:true}; }
+  const payload = {
+    contacts: Array.isArray(data.contacts) ? data.contacts : [],
+    projects: Array.isArray(data.projects) ? data.projects : [],
+    settings: { ...(data.settings || {}), __sync: syncMeta() }
+  };
+
+  if(!isOnlineNow()){
+    markPendingSync(true);
+    return { ok:false, offline:true };
+  }
+
   try {
-    if(typeof window.updateSyncBadge==='function') window.updateSyncBadge('syncing','Syncing...');
-    if(!window._db) return {ok:false,error:'Firebase not ready'};
-    await window._db.collection('crm').doc('contacts').set({
-      contacts: Array.isArray(data.contacts)?data.contacts:[],
-      projects: Array.isArray(data.projects)?data.projects:[],
-      settings: {...(data.settings||{})},
-      updated: Date.now()
-    });
+    if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('syncing', 'Syncing...');
+    const { error } = await _sb.from('crm_data').upsert({
+      id: 'main',
+      contacts: payload.contacts,
+      projects: payload.projects,
+      settings: payload.settings
+    }, { onConflict: 'id' });
+    if(error){
+      console.error('Supabase save error:', error);
+      markPendingSync(true);
+      if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('error', 'Cloud save failed');
+      return { ok:false, error };
+    }
     localStorage.setItem(CRM_LAST_SYNC_KEY, new Date().toISOString());
     markPendingSync(false);
-    if(typeof window.updateSyncBadge==='function') window.updateSyncBadge('synced','Synced');
-    return {ok:true};
+    if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('synced', 'Synced');
+    return { ok:true };
   } catch(e) {
-    console.error('Firebase save error:',e);
+    console.error('Supabase save exception:', e);
     markPendingSync(true);
-    if(typeof window.updateSyncBadge==='function') window.updateSyncBadge('error','Sync error');
-    return {ok:false,error:e};
+    if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('error', 'Sync error');
+    return { ok:false, error:e };
   }
 };
 
 window.loadFromFirebase = async function() {
   if(!isOnlineNow()) return null;
   try {
-    if(!window._db) return null;
-    const snap = await window._db.collection('crm').doc('contacts').get();
-    if(snap.exists){
-      const d=snap.data();
-      return {contacts:d.contacts||[],projects:d.projects||[],settings:d.settings||{}};
-    }
-  } catch(e) { console.error('Firebase load error:',e); }
+    const { data, error } = await _sb.from('crm_data').select('*').eq('id','main').maybeSingle();
+    if(error) { console.error('Supabase load error:', error); return null; }
+    if(data) return { contacts: data.contacts||[], projects: data.projects||[], settings: data.settings||{} };
+  } catch(e) { console.error('Supabase load exception:', e); }
   return null;
 };
 
 window.startCRMRealtime = function(){
-  console.log('Firebase realtime via polling');
+  try{
+    if(window.__crmRealtimeStarted) return;
+    window.__crmRealtimeStarted = true;
+    _sb.channel('crm_data_main_realtime')
+      .on('postgres_changes', { event:'*', schema:'public', table:'crm_data', filter:'id=eq.main' }, (payload)=>{
+        const row = payload.new || {};
+        const meta = row.settings && row.settings.__sync;
+        if(meta && meta.deviceId === CRM_DEVICE_ID) return;
+        if(typeof window.handleRemoteCRMUpdate === 'function') window.handleRemoteCRMUpdate(row);
+      })
+      .subscribe((status)=>{
+        if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
+        console.log('CRM realtime:', status);
+      });
+  }catch(e){ console.warn('Realtime subscribe failed:', e); }
 };
 </script>
 <style>
@@ -3862,18 +3894,18 @@ function ADV_markStaleCold(){
         <div style="display:flex;gap:8px;">
           <input type="number" id="area_val" placeholder="e.g. 1500" oninput="convertArea()" style="flex:2;"/>
           <select id="area_from" onchange="convertArea()" style="flex:1;">
-            <option value="sqft">sqft</option><option value="sqm">sqm</option><option value="gaj">Gaj</option>
-            <option value="yard">Sq Yard</option><option value="acre">Acre</option>
-            <option value="marla">Marla</option><option value="kanal">Kanal</option>
+            <option value="sqft">sqft</option><option value="sqm">sqm</option>
+            <option value="gaj">Gaj</option><option value="yard">Sq Yard</option>
+            <option value="acre">Acre</option><option value="marla">Marla</option><option value="kanal">Kanal</option>
           </select>
         </div>
       </div>
       <div id="area_results" style="background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--border);margin-bottom:12px;"><div style="color:var(--text3);font-size:13px;">Enter a value above</div></div>
       <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border);">
         <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💰 Price Calculator</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <input type="number" id="area_price_sqft" placeholder="AED per sqft" oninput="calcAreaPrice()" style="flex:1;min-width:120px;"/>
-          <span style="color:var(--text3);">×</span>
+          <span style="color:var(--text3);align-self:center;">×</span>
           <input type="number" id="area_sqft_count" placeholder="Total sqft" oninput="calcAreaPrice()" style="flex:1;min-width:100px;"/>
         </div>
         <div id="area_price_result" style="margin-top:10px;font-size:18px;font-weight:700;color:var(--green);"></div>
@@ -3963,8 +3995,8 @@ function switchCalcTab(tab){
   });
   if(tab==='currency') loadCurrencyRates();
 }
-function openCalcModal(tab){ document.getElementById('calcModal').classList.add('open'); switchCalcTab(tab||'mortgage'); }
-function openMortgageCalc(){ openCalcModal('mortgage'); }
+function openCalcModal(tab){document.getElementById('calcModal').classList.add('open');switchCalcTab(tab||'mortgage');}
+function openMortgageCalc(){openCalcModal('mortgage');}
 
 let _mortType='resident';
 function setMortType(type){
@@ -3992,7 +4024,7 @@ function calcMortgage(){
   document.getElementById('mort_loan').textContent=f(loan);
   document.getElementById('mort_dp_amt').textContent=f(dpAmt);
   document.getElementById('mort_interest').textContent=f(totalInterest);
-  document.getElementById('mort_costs').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;"><div>DLD 4%: <b style="color:var(--text)">${f(dld)}</b></div><div>Agent 2%: <b>${f(agentFee)}</b></div><div>Registration: <b>${f(regFee)}</b></div><div>Mortgage Reg: <b>${f(loan*0.0025)}</b></div><div>Trustee: <b>${f(trustee)}</b></div><div style="color:var(--orange)">Total: <b>${f(dld+agentFee+regFee+mortReg+trustee)}</b></div></div>`;
+  document.getElementById('mort_costs').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;"><div>DLD 4%: <b style="color:var(--text)">${f(dld)}</b></div><div>Agent 2%: <b>${f(agentFee)}</b></div><div>Registration: <b>${f(regFee)}</b></div><div>Mortgage Reg: <b>${f(mortReg)}</b></div><div>Trustee: <b>${f(trustee)}</b></div><div style="color:var(--orange)">Total: <b>${f(dld+agentFee+regFee+mortReg+trustee)}</b></div></div>`;
   document.getElementById('mort_result').style.display='block';
   window._lastMortSummary=`Mortgage (${_mortType==='overseas'?'Overseas':'UAE Resident'})
 Property: ${f(price)}
@@ -4001,7 +4033,7 @@ Loan: ${f(loan)} @ ${rate}% ${years}yrs
 Monthly EMI: ${f(monthly)}
 Total Interest: ${f(totalInterest)}
 DLD: ${f(dld)} | Agent: ${f(agentFee)}
-Total One-time Costs: ${f(dld+agentFee+regFee+loan*0.0025+trustee)}`;
+Total One-time: ${f(dld+agentFee+regFee+mortReg+trustee)}`;
 }
 function copyMortgage(){
   if(!window._lastMortSummary){alert('Calculate first');return;}
@@ -4028,7 +4060,7 @@ function calcAreaPrice(){
   document.getElementById('area_price_result').textContent=p&&s?'Total: AED '+Math.round(p*s).toLocaleString('en-US'):'';
 }
 
-let _rates={AED:1,USD:0.2723,GBP:0.2145,EUR:0.2517,INR:22.87,PKR:75.8,SAR:1.0206,QAR:0.991,KWD:0.0834,BHD:0.1026,OMR:0.1049};
+let _rates={AED:1,USD:0.2723,GBP:0.2145,EUR:0.2517,INR:22.87,PKR:75.8,SAR:1.0206,QAR:0.991,KWD:0.0834};
 async function loadCurrencyRates(){
   const el=document.getElementById('curr_rate_label');
   if(el) el.textContent='Loading live rates...';
@@ -4050,8 +4082,6 @@ function convertCurrency(){
   const d=result>=1?result.toLocaleString('en-US',{maximumFractionDigits:4}):result.toFixed(6);
   const el=document.getElementById('curr_val');
   if(el) el.textContent=d+' '+to;
-  const lbl=document.getElementById('curr_rate_label');
-  if(lbl&&!lbl.textContent.includes('Live')&&!lbl.textContent.includes('Cached')) lbl.textContent=`1 ${from} = ${(_rates[to]/_rates[from]).toFixed(6)} ${to}`;
 }
 </script>
 </body>
