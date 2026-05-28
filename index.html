@@ -3,45 +3,45 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="manifest" href="manifest.json"/>
-<meta name="theme-color" content="#25D366"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Solanki CRM"/>
-<link rel="apple-touch-icon" href="icon-192.png"/>
 <title>Solanki Capital CRM</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
-const SUPABASE_URL = 'https://eyckdvdxtnachqzellog.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_VcxbcS_k1WQVuNWIDpKU1w_mi8midI_';
-const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const firebaseConfig = {
+  apiKey: "AIzaSyBf2hn63nIBvA_6QCKrZiXW_Qk3boy70hk",
+  authDomain: "solanki-crm.firebaseapp.com",
+  projectId: "solanki-crm",
+  storageBucket: "solanki-crm.firebasestorage.app",
+  messagingSenderId: "1005706848642",
+  appId: "1:1005706848642:web:38cbecafbe39e91305079b"
+};
+window.firebaseReady = false;
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// Test connection
+db.collection("crm").doc("contacts").get().then(()=>{
+  window.firebaseReady = true;
+}).catch(()=>{
+  window.firebaseReady = false;
+});
 
 window.saveToFirebase = async function(data) {
-  try {
-    const { error } = await _sb.from('crm_data').upsert({
-      id: 'main',
-      contacts: data.contacts || [],
-      projects: data.projects || [],
-      settings: data.settings || {}
-    }, {onConflict: 'id'});
-    if(error) console.error("Supabase save error:", error);
-  } catch(e) { console.error("Supabase save exception:", e); }
+  try { await db.collection("crm").doc("contacts").set({ data: JSON.stringify(data), updated: Date.now() }); }
+  catch(e) { console.error("Firebase save:", e); }
 };
 
 window.loadFromFirebase = async function() {
   try {
-    const { data, error } = await _sb.from('crm_data').select('*').eq('id','main').maybeSingle();
-    if(error) { console.error("Supabase load error:", error); return null; }
-    if(data) return { contacts: data.contacts||[], projects: data.projects||[], settings: data.settings||{} };
-  } catch(e) { console.error("Supabase load exception:", e); }
+    const snap = await db.collection("crm").doc("contacts").get();
+    if(snap.exists) return JSON.parse(snap.data().data);
+  } catch(e) { console.error("Firebase load:", e); }
   return null;
 };
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-:root{--bg:#0a0a0a;--bg2:#141414;--bg3:#1a1a1a;--bg4:#222;--border:#252525;--border2:#2a2a2a;--text:#f5f5f5;--text2:#b0b0b0;--text3:#888;--green:#25D366;--blue:#60a5fa;--orange:#f59e0b;--red:#f87171;--purple:#a78bfa;}
+:root{--bg:#0a0a0a;--bg2:#141414;--bg3:#1a1a1a;--bg4:#222;--border:#252525;--border2:#2a2a2a;--text:#e8e8e8;--text2:#888;--text3:#555;--green:#25D366;--blue:#60a5fa;--orange:#f59e0b;--red:#f87171;--purple:#a78bfa;}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 a{color:var(--blue);text-decoration:none;}
 
@@ -50,7 +50,7 @@ a{color:var(--blue);text-decoration:none;}
 .main{margin-left:200px;padding:1.5rem;}
 .logo{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;}
 .logo-sub{font-size:11px;color:var(--text3);margin-bottom:1.5rem;}
-.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13px;color:#bbb;cursor:pointer;margin-bottom:2px;transition:all 0.15s;border:none;background:transparent;width:100%;text-align:left;font-family:inherit;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:2px;transition:all 0.15s;border:none;background:transparent;width:100%;text-align:left;font-family:inherit;}
 .nav-item:hover{background:var(--bg3);color:var(--text);}
 .nav-item.active{background:var(--bg4);color:var(--text);font-weight:500;}
 .nav-icon{font-size:15px;width:20px;}
@@ -76,7 +76,7 @@ a{color:var(--blue);text-decoration:none;}
   .row2{grid-template-columns:1fr!important;}
   .row3{grid-template-columns:1fr 1fr!important;}
   .stats-grid{grid-template-columns:1fr 1fr!important;}
-  #pipelineCols{grid-template-columns:repeat(5,85vw)!important;overflow-x:auto;display:flex!important;gap:10px;padding-bottom:12px;}
+  #pipelineCols{grid-template-columns:1fr!important;}
   .pipeline{display:block!important;}
   .tbl-wrap{font-size:12px;}
   th,td{padding:6px 8px!important;}
@@ -89,28 +89,14 @@ a{color:var(--blue);text-decoration:none;}
 
 /* Cards */
 .card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
-.card-title{font-size:12px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;font-weight:500;}
+.card-title{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;font-weight:500;}
 
 /* Stats grid */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.25rem;}
 .stat-card{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:1rem;transition:border-color 0.15s,background 0.15s;}
 .stat-card:hover{border-color:#3a3a3a;background:var(--bg4);}
-
-/* Source Dashboard */
-.source-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;background:transparent;color:var(--text);}
-.source-card{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:8px 12px;border-radius:10px;background:linear-gradient(145deg,#171717,#101010);overflow:hidden;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;border:1px solid rgba(255,255,255,.07);box-shadow:0 4px 12px rgba(0,0,0,.18);}
-.source-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.18);box-shadow:0 8px 20px rgba(0,0,0,.35);}
-.source-left{display:flex;align-items:center;gap:8px;z-index:1;font-weight:600;font-size:12px;}
-.source-icon-wrap{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.22);flex:0 0 30px;}
-.source-icon-img{width:18px;height:18px;object-fit:contain;display:block;}
-.source-icon-fallback{font-size:13px;}
-.source-count{z-index:1;font-size:16px;font-weight:800;color:#fff;min-width:24px;text-align:right;}
-.source-fill{position:absolute;left:0;top:0;bottom:0;opacity:.18;min-width:0;background:linear-gradient(90deg,rgba(37,211,102,.7),rgba(96,165,250,.35));}
-.source-label{display:flex;flex-direction:column;gap:1px;}
-.source-label small{color:var(--text3);font-weight:500;font-size:9px;text-transform:uppercase;letter-spacing:.5px;}
-@media(max-width:768px){.source-grid{grid-template-columns:1fr 1fr!important;padding:8px;}.source-card{min-height:48px;padding:8px 10px;}.source-left{font-size:11px;}.source-icon-wrap{width:26px;height:26px;flex-basis:26px}.source-icon-img{width:16px;height:16px;}.source-count{font-size:14px;}}
 .stat-val{font-size:28px;font-weight:700;margin-bottom:2px;}
-.stat-lbl{font-size:12px;color:#aaa;}
+.stat-lbl{font-size:12px;color:var(--text3);}
 .stat-green .stat-val{color:var(--green);}
 .stat-blue .stat-val{color:var(--blue);}
 .stat-orange .stat-val{color:var(--orange);}
@@ -125,7 +111,7 @@ a{color:var(--blue);text-decoration:none;}
 .pipe-bar{height:3px;border-radius:2px;margin-top:8px;}
 
 /* Forms */
-.lbl{display:block;font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;}
+.lbl{display:block;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;}
 input[type=text],input[type=password],input[type=date],input[type=search],select,textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;font-family:inherit;transition:border-color 0.15s;}
 input:focus,select:focus,textarea:focus{border-color:#3a3a3a;}
 select option{background:var(--bg3);}
@@ -154,8 +140,6 @@ textarea{resize:vertical;min-height:60px;}
 .tag-notinterested{background:#3a1515;color:var(--red);border:1px solid #5a2020;}
 .tag-callback{background:#2a1f0a;color:var(--orange);border:1px solid #3a2a0a;}
 .tag-closed{background:#1e1a3a;color:var(--purple);border:1px solid #2e2a5a;}
-.tag-alreadybought{background:#3a1515;color:var(--red);border:1px solid #5a2020;}
-.tag-repeat{background:#0a2a1a;color:#34d399;border:1px solid #0a4a2a;}
 .tag-hot{background:#3a1f0a;color:#fb923c;border:1px solid #5a2f0a;}
 .tag-warm{background:#2a2a0a;color:#fbbf24;border:1px solid #4a3a0a;}
 .tag-cold{background:#0a1a2a;color:#93c5fd;border:1px solid #0a2a4a;}
@@ -163,7 +147,7 @@ textarea{resize:vertical;min-height:60px;}
 /* Table */
 .tbl-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
-th{text-align:left;padding:8px 10px;font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap;}
+th{text-align:left;padding:8px 10px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap;}
 td{padding:8px 10px;border-bottom:1px solid #161616;vertical-align:middle;}
 tr:hover td{background:#161616;}
 
@@ -193,6 +177,10 @@ tr:hover td{background:#161616;}
 .upload-zone input{display:none;}
 
 /* Note */
+.source-card{border-radius:18px;padding:24px;transition:0.25s ease;cursor:pointer;border:1px solid rgba(255,255,255,0.06);background:linear-gradient(145deg,#171717,#111111);}
+.source-card:hover{transform:translateY(-4px);border-color:#2f2f2f;box-shadow:0 10px 35px rgba(0,0,0,0.35);}
+.source-icon-wrap{width:40px;height:40px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.source-icon{width:22px;height:22px;object-fit:contain;}
 .note-bubble{background:var(--bg2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text2);margin-bottom:4px;border-left:3px solid var(--border2);}
 .note-time{font-size:10px;color:var(--text3);margin-top:2px;}
 
@@ -209,30 +197,7 @@ tr:hover td{background:#161616;}
 .tone-btn{flex:1;padding:7px;font-size:12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;transition:all 0.15s;}
 .tone-btn.active{background:#1e3a2f;border-color:#2d5c45;color:var(--green);}
 
-.empty{text-align:center;padding:3rem;color:#999;font-size:13px;}
-/* Area Price Popup */
-.area-popup{position:fixed;bottom:90px;right:20px;background:linear-gradient(135deg,#1a2a1a,#0f1f0f);border:1px solid #25D366;border-radius:14px;padding:14px 18px;z-index:500;min-width:220px;max-width:260px;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:slideInRight 0.4s ease;cursor:pointer;}
-.area-popup:hover{border-color:#4ade80;}
-.area-popup.hide{animation:slideOutRight 0.3s ease forwards;}
-@keyframes slideInRight{from{transform:translateX(120%);opacity:0;}to{transform:translateX(0);opacity:1;}}
-@keyframes slideOutRight{from{transform:translateX(0);opacity:1;}to{transform:translateX(120%);opacity:0;}}
-.area-popup-label{font-size:10px;color:#25D366;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600;}
-.area-popup-area{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;}
-.area-popup-price{font-size:22px;font-weight:800;color:#25D366;}
-.area-popup-sub{font-size:11px;color:#888;margin-top:3px;}
-.area-popup-close{position:absolute;top:8px;right:10px;color:#555;font-size:14px;cursor:pointer;background:none;border:none;}
-.area-popup-close:hover{color:#fff;}
-@media(max-width:768px){.area-popup{bottom:80px;right:10px;left:10px;min-width:auto;}}
-/* Breaking News Ticker */
-.news-ticker-wrap{background:#1a0a0a;border:1px solid #5a2020;border-radius:8px;padding:0;overflow:hidden;margin-bottom:1.25rem;display:flex;align-items:center;}
-.news-ticker-label{background:#f87171;color:#000;font-size:11px;font-weight:700;padding:8px 12px;white-space:nowrap;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;}
-.news-ticker-scroll{overflow:hidden;flex:1;height:36px;position:relative;}
-.news-ticker-inner{display:flex;position:absolute;white-space:nowrap;animation:ticker 40s linear infinite;}
-.news-ticker-inner:hover{animation-play-state:paused;}
-.news-ticker-item{display:inline-block;padding:0 40px;font-size:12px;color:var(--text);line-height:36px;}
-.news-ticker-item a{color:#fbbf24;text-decoration:none;}
-.news-ticker-item a:hover{text-decoration:underline;}
-@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px;}
 .spinner-sm{display:inline-block;width:10px;height:10px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .divider{height:1px;background:var(--border);margin:12px 0;}
@@ -245,7 +210,7 @@ tr:hover td{background:#161616;}
 <!-- Sidebar -->
 <div class="sidebar">
   <div class="logo">Solanki Capital</div>
-  <div class="logo-sub">Property CRM • FINAL v8</div>
+  <div class="logo-sub">Property CRM</div>
   <button class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</button>
   <button class="nav-item" onclick="nav('contacts',this)"><span class="nav-icon">👥</span> Contacts</button>
   <button class="nav-item" onclick="nav('outreach',this)"><span class="nav-icon">💬</span> Outreach</button>
@@ -281,31 +246,13 @@ tr:hover td{background:#161616;}
 </div>
 
 <!-- Main -->
-<main class="main">
+<div class="main">
 
 <!-- DASHBOARD -->
 <div id="page-dashboard" class="page active">
-  <!-- Breaking News Ticker -->
-  <div class="news-ticker-wrap" id="newsTickerWrap">
-    <div class="news-ticker-label">🔴 Breaking</div>
-    <div class="news-ticker-scroll">
-      <div class="news-ticker-inner" id="newsTicker">
-        <span class="news-ticker-item">Loading latest news...</span>
-      </div>
-    </div>
-  </div>
-  <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Dashboard <span style="font-size:11px;color:var(--green);font-weight:500;">FINAL v8</span></h2>
+  <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Dashboard</h2>
   <p style="font-size:13px;color:var(--text3);margin-bottom:1.25rem;" id="dash-date"></p>
   <div class="stats-grid" id="statsGrid"></div>
-  <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;">
-      <div style="font-size:15px;font-weight:700;">Leads From Source <span id="sourceTotal" style="color:var(--text2);font-weight:600;"></span></div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer;">
-        <input type="checkbox" id="sourceAssociatedOnly" onchange="renderDashboard()"/> Associated Data
-      </label>
-    </div>
-    <div id="sourceGrid" class="source-grid"></div>
-  </div>
   <div class="row2">
     <div class="card">
       <div class="card-title">Pipeline Overview</div>
@@ -320,51 +267,6 @@ tr:hover td{background:#161616;}
     <div class="card-title">🔔 Follow-ups Due Today / Overdue</div>
     <div id="dashFollowups"></div>
   </div>
-
-  <!-- Market Updates -->
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div class="card-title" style="margin-bottom:0;">🌍 Market Updates</div>
-      <button class="btn btn-ghost btn-sm" onclick="loadMarketData()">↻ Refresh</button>
-    </div>
-
-    <!-- Currency Rates -->
-    <div style="margin-bottom:16px;">
-      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💱 AED Exchange Rates</div>
-      <div id="currencyRates" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;">
-        <div style="color:var(--text3);font-size:12px;">Loading...</div>
-      </div>
-    </div>
-
-    <!-- Commodities -->
-    <div style="margin-bottom:16px;">
-      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⛽ Fuel & 🥇 Gold Prices</div>
-      <div id="commodityPrices" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;flex-wrap:nowrap;">
-        <div style="color:var(--text3);font-size:12px;">Loading...</div>
-      </div>
-    </div>
-
-    <!-- News -->
-    <div style="margin-bottom:16px;">
-      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📰 Latest News</div>
-      <div id="dubaiNews" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;"></div>
-    </div>
-
-    <!-- Quick Links -->
-    <div style="margin-bottom:0;">
-      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">🔗 Quick Links</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <a href="https://dubailand.gov.ae" target="_blank" class="btn btn-ghost btn-sm">🏛 DLD</a>
-        <a href="https://www.rta.ae" target="_blank" class="btn btn-ghost btn-sm">🚗 RTA</a>
-        <a href="https://www.dxbinteract.com" target="_blank" class="btn btn-ghost btn-sm">📊 DXB Interact</a>
-        <a href="https://mediaoffice.ae" target="_blank" class="btn btn-ghost btn-sm">📰 Dubai Media</a>
-        <a href="https://dldcube.com/en/" target="_blank" class="btn btn-ghost btn-sm">📦 DLD Cube</a>
-        <a href="https://dubailand.gov.ae/en/eservices/real-estate-project-status-landing/real-estate-project-status/#/" target="_blank" class="btn btn-ghost btn-sm">🏗 DLD Project Status</a>
-        <a href="https://dubailand.gov.ae/en/eservices/title-deed-verification-overview/title-deed-verification#/" target="_blank" class="btn btn-ghost btn-sm">📜 Title Deed Verify</a>
-        <a href="https://www.khaleejtimes.com/uae" target="_blank" class="btn btn-ghost btn-sm">🗞 Khaleej Times</a>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- CONTACTS -->
@@ -374,8 +276,6 @@ tr:hover td{background:#161616;}
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-green" onclick="openAddContact()">+ Add Contact</button>
       <button class="btn btn-ghost" onclick="openImport()">⬆ Import Excel</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('csvDirectInput').click()">⬆ Import CSV</button>
-      <input type="file" id="csvDirectInput" accept=".csv,.txt" style="display:none;" onchange="handleDirectCSV(event)"/>
       <button class="btn btn-ghost" onclick="exportExcel()">⬇ Export Excel</button>
       <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
     </div>
@@ -400,14 +300,13 @@ tr:hover td{background:#161616;}
       <option value="warm">🌤 Warm</option>
       <option value="cold">❄️ Cold</option>
     </select>
-    <select id="filterNat" onchange="renderContacts()" style="width:auto;">
+    <select id="filterNat" onchange="renderContacts()" style="width:auto;" id="filterNat">
       <option value="">All Nationalities</option>
     </select>
-    <select id="filterSource" onchange="sourceBucketFilter='';renderContacts()" style="width:auto;">
+    <select id="filterSource" onchange="renderContacts()" style="width:auto;">
       <option value="">All Sources</option>
     </select>
   </div>
-  <div id="sourceFilterNotice" style="display:none;margin-bottom:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text2);">Source filter active <button class="btn btn-ghost btn-sm" onclick="clearSourceBucket()" style="margin-left:8px;">Clear</button></div>
   <div class="card" style="padding:0;overflow:hidden;">
     <div class="tbl-wrap">
       <table>
@@ -488,8 +387,8 @@ tr:hover td{background:#161616;}
           <option value="">🗑 Bulk Actions</option>
           <option value="clearAll">Clear All Messages</option>
           <option value="clearSelected">Clear Selected</option>
-          <option value="regenSelected">⚡ Generate Selected</option>
-          <option value="regenAll">⚡ Generate All Contacts</option>
+          <option value="regenSelected">↻ Regenerate Selected</option>
+          <option value="regenAll">↻ Regenerate All</option>
         </select>
       </div>
     </div>
@@ -578,7 +477,7 @@ tr:hover td{background:#161616;}
   </div>
   <div class="card">
     <div class="card-title">📊 Import from Google Sheets</div>
-    <p style="font-size:12px;color:var(--text3);margin-bottom:10px;">Make Google Sheet public (Anyone with link → Viewer) → Paste link → Import → Then make private again.</p>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:10px;">Google Sheet ko public karo (Anyone with link → Viewer) → Link paste karo → Import karo → Phir wapas private kar do.</p>
     <label class="lbl">Google Sheet URL</label>
     <input type="text" id="gsheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..."/>
     <div class="row2" style="margin-top:8px;gap:8px;">
@@ -602,7 +501,7 @@ tr:hover td{background:#161616;}
   </div>
 </div>
 
-</main><!-- end main -->
+</div><!-- end main -->
 
 <!-- Contact Detail Modal -->
 <div class="modal-overlay" id="contactModal">
@@ -638,26 +537,12 @@ tr:hover td{background:#161616;}
         <option value="contact_confirmation">✅ Contact Confirmation Required</option>
       </select>
     </div>
-    <div style="margin-bottom:12px;border-top:1px solid var(--border);padding-top:12px;">
-      <label class="lbl">➕ Create Custom Template</label>
-      <div style="display:flex;gap:8px;margin-top:6px;">
-        <input type="text" id="custom_tmpl_name" placeholder="Template name (e.g. Meeting Follow Up)" style="flex:1;"/>
-      </div>
-      <textarea id="custom_tmpl_body" placeholder="Write message... use {name} for contact name, {agent} for your name" style="margin-top:8px;min-height:80px;font-size:12px;"></textarea>
-      <button class="btn btn-blue" onclick="saveCustomTemplate()" style="width:100%;margin-top:8px;">💾 Save Template</button>
-    </div>
 
     <div style="margin-bottom:12px;">
       <label class="lbl">Project (optional)</label>
       <select id="mg_project" onchange="previewMsgGen()" style="width:100%;">
         <option value="">-- No specific project --</option>
       </select>
-    </div>
-
-    <div style="margin-bottom:12px;">
-      <label class="lbl">📎 Attach Document Link (optional)</label>
-      <input type="text" id="mg_doc_link" placeholder="Google Drive / Dropbox link..." style="margin-bottom:6px;"/>
-      <input type="text" id="mg_doc_label" placeholder="Document label (e.g. Brochure, Factsheet, Floor Plan)" />
     </div>
 
     <div style="margin-bottom:12px;">
@@ -764,7 +649,7 @@ tr:hover td{background:#161616;}
         <input type="file" id="ocrFile" accept="image/*" style="flex:1;font-size:12px;" onchange="extractFromImage(event)"/>
         <span id="ocrStatus" style="font-size:11px;color:var(--text3);white-space:nowrap;"></span>
       </div>
-      <p style="font-size:11px;color:var(--text3);margin-top:5px;">Upload WhatsApp or business card screenshot — AI will auto-fill name, number, nationality</p>
+      <p style="font-size:11px;color:var(--text3);margin-top:5px;">WhatsApp/business card screenshot upload karo — AI naam, number, nationality auto-fill karega</p>
     </div>
     <div class="row2" style="margin-bottom:12px;">
       <div><label class="lbl">Name *</label><input type="text" id="ac_name" placeholder="Full name"/></div>
@@ -824,10 +709,6 @@ tr:hover td{background:#161616;}
       <label class="lbl">Source</label>
       <input type="text" id="ac_source" placeholder="e.g. Manual, Referral, Walk-in, Exhibition"/>
     </div>
-    <div style="margin-bottom:12px;">
-      <label class="lbl">👤 Referred By</label>
-      <input type="text" id="ac_referredby" placeholder="e.g. John Smith, colleague name..."/>
-    </div>
     <div style="margin-bottom:16px;">
       <label class="lbl">Notes</label>
       <textarea id="ac_notes" placeholder="Any initial notes..."></textarea>
@@ -843,16 +724,16 @@ tr:hover td{background:#161616;}
       <div class="modal-title">Import Excel Files</div>
       <button class="modal-close" onclick="closeImport()">✕</button>
     </div>
-    <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">Upload multiple files — duplicates are automatically skipped, source file is tracked.</p>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">Multiple files upload kar sakte ho — duplicates automatically skip honge, source file track hogi.</p>
     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
       <p>📊 Click to upload one or multiple .xlsx files</p>
-      <p style="font-size:11px;margin-top:4px;color:var(--text3);">Required: Name, Phone columns</p>
+      <p style="font-size:11px;margin-top:4px;color:var(--text3);">Zaroori: Name, Phone columns</p>
       <input type="file" id="fileInput" accept=".xlsx,.xls" multiple onchange="handleFiles(event)"/>
     </div>
     <div id="filesList" style="margin-top:10px;"></div>
     <div id="colMapSection" style="display:none;margin-top:12px;">
       <div style="display:flex;gap:8px;align-items:flex-end;">
-        <div style="flex:1;"><label class="lbl">Default community (optional)</label><input type="text" id="defCom" placeholder="e.g. District One — if not in sheet"/></div>
+        <div style="flex:1;"><label class="lbl">Default community (optional)</label><input type="text" id="defCom" placeholder="e.g. District One — agar sheet mein nahi hai"/></div>
         <button class="btn btn-green" onclick="loadContacts()">Import All Tabs →</button>
       </div>
     </div>
@@ -882,7 +763,6 @@ let contacts = [];
 let projects = [];
 let headers = [], rawRows = [], pendingFiles = [];
 let oFilter = 'all', fuFilter = 'all';
-let sourceBucketFilter = '';
 let previewContactId = null;
 let settings = { name:'Triloki Chaudhary', company:'Solanki Capital Properties LLC', tagline:'Your Trusted Property Advisor' };
 
@@ -926,18 +806,14 @@ function toast(msg, type='success'){
 }
 
 // ─── STORAGE ─────────────────────────────────────────────────────────
-let _saveTimer = null;
 function save(){
   try{
     localStorage.setItem('sccrm_contacts', JSON.stringify(contacts));
     localStorage.setItem('sccrm_settings', JSON.stringify(settings));
     localStorage.setItem('sccrm_projects', JSON.stringify(projects));
   }catch(e){}
-  // Debounce cloud save — only sync after 2 seconds of no changes
-  clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(()=>{
-    try{ window.saveToFirebase({contacts, settings, projects}); }catch(e){}
-  }, 2000);
+  // Always try Firebase save regardless of firebaseReady flag
+  try{ window.saveToFirebase({contacts, settings, projects}); }catch(e){}
 }
 
 function load(){
@@ -951,19 +827,9 @@ function load(){
 async function loadFromCloud(){
   try {
     const data = await window.loadFromFirebase();
-    if(data && (data.contacts || data.projects)){
-      if(data.contacts && data.contacts.length > 0){
-        // Merge: cloud is source of truth but preserve local notes/status if contact exists
-        const localMap = {};
-        contacts.forEach(c => localMap[c.phone] = c);
-        contacts = data.contacts.map(c => {
-          const local = localMap[c.phone];
-          if(local && local.notes && local.notes.length > (c.notes||[]).length) {
-            return {...c, notes: local.notes, status: local.status, priority: local.priority, lastContact: local.lastContact, callbackDate: local.callbackDate};
-          }
-          return c;
-        });
-      }
+    if(data){
+      // Always use Firebase data — it's the source of truth
+      if(data.contacts) contacts = data.contacts;
       if(data.projects) projects = data.projects;
       if(data.settings){
         settings = data.settings;
@@ -971,10 +837,9 @@ async function loadFromCloud(){
         document.getElementById('agentCompany').value=settings.company||'Solanki Capital Properties LLC';
         document.getElementById('agentTagline').value=settings.tagline||'Your Trusted Property Advisor';
       }
+      // Save to localStorage as backup
       try{ localStorage.setItem('sccrm_contacts', JSON.stringify(contacts)); localStorage.setItem('sccrm_projects', JSON.stringify(projects)); }catch(e){}
       renderDashboard();
-      // If contacts page is open, re-render it too
-      if(document.getElementById('page-contacts').classList.contains('active')) renderContacts();
     }
   } catch(e){ console.error('Cloud load error:', e); }
 }
@@ -1005,88 +870,11 @@ function navToFollowup(){
   renderFU();
 }
 
-
-function sourceText(c){
-  return ((c.source||'')+' '+(c.leadSource||'')+' '+(c.channel||'')+' '+(c.notes||[]).map(n=>n.text||'').join(' ')).toLowerCase();
-}
-function sourceBucket(c){
-  const t = sourceText(c);
-  if(/facebook|fb\b/.test(t)) return 'facebook';
-  if(/linkedin/.test(t)) return 'linkedin';
-  if(/google|gads|ads/.test(t)) return 'googleads';
-  if(/gmail|email|mail/.test(t)) return 'gmail';
-  if(/whatsapp|wa\b/.test(t)) return 'whatsapp';
-  if(/youtube|yt\b/.test(t)) return 'youtube';
-  if(/instagram|insta|ig\b/.test(t)) return 'instagram';
-  if(/propertyfinder|property finder/.test(t)) return 'propertyfinder';
-  if(/bayut/.test(t)) return 'bayut';
-  if(/dubizzle/.test(t)) return 'dubizzle';
-  if(/webhook/.test(t)) return 'webhook';
-  if(/skyloov/.test(t)) return 'skyloov';
-  if(/direct/.test(t)) return 'direct';
-  if(/referral/.test(t)) return 'referral';
-  if(/walk\s?in|walk-in/.test(t)) return 'walkin';
-  if(/website|web site/.test(t)) return 'website';
-  if(/phonebook|phone book/.test(t)) return 'phonebook';
-  if(/call log|calllogs|call logs/.test(t)) return 'calllogs';
-  if(/qr/.test(t)) return 'qrcode';
-  if(/manual/.test(t)) return 'direct';
-  return 'direct';
-}
-function navToSourceBucket(bucket){
-  if(bucket === 'qrcode'){ openQRScan(); return; }
-  sourceBucketFilter = bucket;
-  document.getElementById('filterStatus').value='';
-  document.getElementById('filterPriority').value='';
-  document.getElementById('filterNat').value='';
-  document.getElementById('filterSource').value='';
-  document.getElementById('searchInput').value='';
-  const btn = document.querySelectorAll('.nav-item')[1];
-  if(btn) nav('contacts', btn); else { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById('page-contacts').classList.add('active'); }
-  syncBottomNav('contacts');
-  renderContacts();
-}
-function clearSourceBucket(){ sourceBucketFilter=''; renderContacts(); }
-function renderSourceDashboard(){
-  const iconBase='https://cdn-icons-png.flaticon.com/512/';
-  const defs=[
-    ['facebook','Facebook','733/733547.png','📘'], ['propertyfinder','PropertyFinder','GFAVICON','PF'], ['direct','Direct','1828/1828911.png','🚶'],
-    ['linkedin','LinkedIn','174/174857.png','in'], ['bayut','Bayut','6124/6124933.png','🟢'], ['referral','Referral','1006/1006657.png','🤝'],
-    ['googleads','Google Ads','300/300221.png','G'], ['dubizzle','Dubizzle','684/684908.png','D'], ['walkin','Walk In','854/854878.png','🚶'],
-    ['gmail','Gmail','732/732200.png','M'], ['webhook','Webhook','455/455705.png','🔗'], ['website','Website','1006/1006771.png','🌐'],
-    ['whatsapp','WhatsApp','733/733585.png','🟢'], ['skyloov','Skyloov','684/684908.png','🏘️'], ['phonebook','Phonebook','3095/3095583.png','📒'],
-    ['youtube','YouTube','1384/1384060.png','▶️'], ['calllogs','Call Logs','724/724664.png','📞'], ['qrcode','QR Code','1042/1042339.png','▦'],
-    ['instagram','Instagram','2111/2111463.png','📸']
-  ];
-  const associatedOnly = document.getElementById('sourceAssociatedOnly')?.checked;
-  const list = associatedOnly ? contacts.filter(c=>c.source||c.leadSource||c.channel) : contacts;
-  const counts={}; defs.forEach(d=>counts[d[0]]=0);
-  list.forEach(c=>{ const b=sourceBucket(c); counts[b]=(counts[b]||0)+1; });
-  const max=Math.max(1,...Object.values(counts));
-  const total=list.length;
-  const totalEl=document.getElementById('sourceTotal'); if(totalEl) totalEl.textContent='('+total+')';
-  document.getElementById('sourceGrid').innerHTML = defs.map(([key,label,iconPath,fallback])=>{
-    const cnt=counts[key]||0, pct=Math.max(cnt/max*100, cnt?8:0);
-    const iconUrl = iconPath.startsWith('GFAVICON') ? (key==='propertyfinder'?'https://www.google.com/s2/favicons?domain=propertyfinder.ae&sz=64':'https://www.google.com/s2/favicons?domain=bayut.com&sz=64') : iconBase+iconPath;
-    return `<div class="source-card" onclick="navToSourceBucket('${key}')" title="Open ${label} leads">
-      <div class="source-fill" style="width:${pct}%;"></div>
-      <div class="source-left">
-        <span class="source-icon-wrap"><img src="${iconUrl}" class="source-icon-img" alt="${label}" onerror="this.outerHTML='<span class=&quot;source-icon-fallback&quot;>${fallback}</span>'" /></span>
-        <span class="source-label"><span>${label}</span><small>Tap to open</small></span>
-      </div>
-      <div class="source-count">${cnt}</div>
-    </div>`;
-  }).join('');
-}
-
-let _marketLoaded = false;
 function renderDashboard(){
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   const total=contacts.length, contacted=contacts.filter(c=>c.status!=='pending').length;
   const interested=contacts.filter(c=>c.status==='interested').length;
-  const closed=contacts.filter(c=>c.status==='closed'||c.status==='repeat').length;
-  const totalDeals=contacts.reduce((a,c)=>a+(c.deals||[]).length,0);
-  const totalCommission=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(parseFloat((d.commission||'0').replace(/[^0-9.]/g,''))||0),a),0);
+  const closed=contacts.filter(c=>c.status==='closed').length;
   const hot=contacts.filter(c=>c.priority==='hot').length;
   const today=new Date().toISOString().slice(0,10);
   const overdueOrToday=contacts.filter(c=>c.callbackDate&&c.callbackDate<=today&&c.status!=='closed').length;
@@ -1108,16 +896,9 @@ function renderDashboard(){
       <div class="stat-val" style="color:var(--orange);">${overdueOrToday}</div><div class="stat-lbl">Follow-ups Due</div>
     </div>
     <div class="stat-card" onclick="navToContacts('closed')" style="cursor:pointer;" title="View closed deals">
-      <div class="stat-val" style="color:var(--green);">${totalDeals}</div><div class="stat-lbl">Deals Closed</div>
-    </div>
-    <div class="stat-card" style="cursor:default;">
-      <div class="stat-val" style="color:#fbbf24;font-size:18px;">AED ${totalCommission>0?totalCommission.toLocaleString('en-US',{maximumFractionDigits:0}):'0'}</div><div class="stat-lbl">Total Commission</div>
+      <div class="stat-val" style="color:var(--green);">${closed}</div><div class="stat-lbl">Deals Closed</div>
     </div>
   `;
-  renderSourceDashboard();
-  loadNewsTicker();
-  // Lazy load market data once
-  if(!_marketLoaded){ _marketLoaded=true; setTimeout(()=>loadMarketData(), 800); }
 
   // Pipeline chart
   const stages=[{k:'pending',l:'Pending',c:'#555'},{k:'contacted',l:'Contacted',c:'var(--blue)'},{k:'interested',l:'Interested',c:'var(--green)'},{k:'callback',l:'Callback',c:'var(--orange)'},{k:'closed',l:'Closed',c:'var(--purple)'}];
@@ -1130,8 +911,8 @@ function renderDashboard(){
   // Hot leads
   const hotList=contacts.filter(c=>c.priority==='hot').slice(0,5);
   document.getElementById('hotLeads').innerHTML = hotList.length ? hotList.map(c=>`
-    <div onclick="openContact(${c.id})" title="Open contact" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-      <div><div style="font-size:13px;font-weight:500;color:var(--blue);">${c.name}</div><div style="font-size:11px;color:var(--text3);">${c.community||'—'} · ${c.nationality||'—'}</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div><div style="font-size:13px;font-weight:500;">${c.name}</div><div style="font-size:11px;color:var(--text3);">${c.community||'—'} · ${c.nationality||'—'}</div></div>
       <span class="tag tag-${c.status}">${c.status}</span>
     </div>`).join('') : '<div style="color:var(--text3);font-size:13px;">No hot leads yet</div>';
 
@@ -1139,8 +920,8 @@ function renderDashboard(){
   const dueCon=contacts.filter(c=>c.callbackDate&&c.callbackDate<=today&&c.status!=='closed');
   document.getElementById('dashFollowups').innerHTML = dueCon.length ? dueCon.slice(0,8).map(c=>{
     const isOverdue=c.callbackDate<today;
-    return `<div onclick="openContact(${c.id})" title="Open contact" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-      <div><div style="font-size:13px;font-weight:500;color:var(--blue);">${c.name}</div><div style="font-size:11px;color:var(--text3);">${c.phone}</div></div>
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div><div style="font-size:13px;font-weight:500;">${c.name}</div><div style="font-size:11px;color:var(--text3);">${c.phone}</div></div>
       <div style="text-align:right;"><div class="tag ${isOverdue?'tag-notinterested':'tag-callback'}">${isOverdue?'Overdue':'Due today'}</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">${c.callbackDate}</div></div>
     </div>`;
   }).join('') : '<div style="color:var(--text3);font-size:13px;">No follow-ups due 🎉</div>';
@@ -1177,27 +958,6 @@ function extractPhone(raw){
   return cleaned.find(p=>/^9715/.test(p))||cleaned.find(p=>p.length>=11&&!/^9714/.test(p))||cleaned[0]||'';
 }
 
-
-function timeAgo(dateStr){
-  if(!dateStr) return '—';
-  try {
-    // Parse "28 May at 06:59" format
-    const now = new Date();
-    const parts = dateStr.match(/(\d+)\s+(\w+)(?:\s+(\d{4}))?\s+at\s+(\d+):(\d+)/);
-    if(!parts) return dateStr;
-    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    const year = parts[3] ? parseInt(parts[3]) : now.getFullYear();
-    const d = new Date(year, months[parts[2]], parseInt(parts[1]), parseInt(parts[4]), parseInt(parts[5]));
-    const diff = Math.floor((now - d) / 1000);
-    if(diff < 60) return 'Just now';
-    if(diff < 3600) return Math.floor(diff/60)+' min ago';
-    if(diff < 86400) return Math.floor(diff/3600)+' hr ago';
-    if(diff < 172800) return 'Yesterday';
-    if(diff < 2592000) return Math.floor(diff/86400)+' days ago';
-    return Math.floor(diff/2592000)+' months ago';
-  } catch(e){ return dateStr; }
-}
-
 // ─── CONTACTS ────────────────────────────────────────────────────────
 function renderContacts(){
   const search=(document.getElementById('searchInput').value||'').toLowerCase();
@@ -1218,16 +978,12 @@ function renderContacts(){
   const curSrc=srcSel.value;
   srcSel.innerHTML='<option value="">All Sources</option>'+sources.map(s=>`<option value="${s}" ${s===curSrc?'selected':''}>${s}</option>`).join('');
 
-  const notice=document.getElementById('sourceFilterNotice');
-  if(notice){ notice.style.display=sourceBucketFilter?'block':'none'; notice.firstChild.textContent = sourceBucketFilter ? 'Source filter active: '+sourceBucketFilter : 'Source filter active '; }
-
   let list=contacts.filter(c=>{
     if(search && !c.name.toLowerCase().includes(search) && !c.phone.includes(search) && !(c.nationality||'').toLowerCase().includes(search)) return false;
     if(statusF && c.status!==statusF) return false;
     if(priF && c.priority!==priF) return false;
     if(natF && c.nationality!==natF) return false;
     if(srcF && c.source!==srcF) return false;
-    if(sourceBucketFilter && sourceBucket(c)!==sourceBucketFilter) return false;
     return true;
   });
 
@@ -1254,35 +1010,22 @@ function renderContacts(){
         <option value="interested" ${c.status==='interested'?'selected':''}>interested</option>
         <option value="notinterested" ${c.status==='notinterested'?'selected':''}>not interested</option>
         <option value="callback" ${c.status==='callback'?'selected':''}>callback</option>
-        <option value="closed" ${c.status==='closed'?'selected':''}>🏆 deal closed</option>
-        <option value="alreadybought" ${c.status==='alreadybought'?'selected':''}>❌ already bought</option>
-        <option value="repeat" ${c.status==='repeat'?'selected':''}>🔄 repeat client</option>
+        <option value="closed" ${c.status==='closed'?'selected':''}>closed</option>
       </select></td>
       <td><select class="tag tag-${c.priority||'cold'}" onchange="updatePriority(${c.id},this.value)" style="background:transparent;border:none;color:inherit;font-size:10px;font-weight:500;cursor:pointer;padding:0;">
         <option value="hot" ${c.priority==='hot'?'selected':''}>🔥 Hot</option>
         <option value="warm" ${c.priority==='warm'?'selected':''}>🌤 Warm</option>
         <option value="cold" ${(c.priority||'cold')==='cold'?'selected':''}>❄️ Cold</option>
       </select></td>
-      <td style="font-size:11px;"><div style="color:var(--text2);">${c.lastContact||'—'}</div><div style="font-size:10px;color:var(--orange);">${c.lastContact?timeAgo(c.lastContact):''}</div></td>
+      <td style="font-size:11px;color:var(--text3);">${c.lastContact||'—'}</td>
       <td style="font-size:11px;" class="${cbClass}">${c.callbackDate||'—'}</td>
       <td><div style="display:flex;gap:4px;">
         <button class="btn btn-ghost btn-sm" onclick="openContact(${c.id})">View</button>
         <a href="tel:+${c.phone}" class="btn btn-blue btn-sm">📞 Call</a>
-        ${c.msgGenerated?'<button class="btn btn-green btn-sm" onclick="openPreview(${c.id})">↗ WA</button>':'<a href="https://wa.me/'+c.phone+'" target="_blank" class="btn btn-green btn-sm">↗ WA</a>'}
-        <button class="btn btn-sm" onclick="showResetMenu(${c.id},event)" style="background:#1a1a2a;color:#a78bfa;border:1px solid #2e2a5a;" title="Reset contact data">↺</button>
-        <button class="btn btn-sm" onclick="deleteContact(${c.id})" style="background:#2d1515;color:#f87171;border:1px solid #5a2020;">🗑</button>
+        <button class="btn btn-green btn-sm" onclick="openPreview(${c.id})" ${c.msgGenerated?'':'disabled'}>↗ WA</button>
       </div></td>`;
     tbody.appendChild(tr);
   });
-}
-
-function deleteContact(id){
-  if(!confirm('Delete this contact?')) return;
-  contacts = contacts.filter(x=>parseInt(x.id)!==parseInt(id));
-  save();
-  renderContacts();
-  renderDashboard();
-  toast('🗑 Contact deleted!');
 }
 
 function logCall(id){
@@ -1295,17 +1038,7 @@ function logCall(id){
   save();
 }
 
-function updateStatus(id,val){
-  const c=contacts.find(x=>parseInt(x.id)===parseInt(id));
-  if(!c) return;
-  const prev = c.status;
-  c.status=val;
-  save();
-  renderContacts();
-  toast('✅ Status: '+val);
-  if(val==='closed') openDealModal(id);
-  if(val==='alreadybought') openAlreadyBoughtModal(id);
-}
+function updateStatus(id,val){ const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(c){c.status=val;save();renderContacts();toast('✅ Status updated to: '+val);} }
 function updatePriority(id,val){ const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(c){c.priority=val;save();renderContacts();toast('✅ Priority: '+val);} }
 
 // ─── CONTACT MODAL ────────────────────────────────────────────────────
@@ -1317,7 +1050,7 @@ function openContact(id){
   const ctTextColor = ct==='agent'?'var(--purple)':ct==='seller'?'var(--orange)':'var(--green)';
   const ctLabel = ct==='agent'?'🏢 Agent / Broker':ct==='seller'?'🏠 Seller':'👤 Client';
 
-  document.getElementById('modalName').innerHTML=`<span id="editNameDisplay">${c.name}${ct==='agent'?' 🏢':ct==='seller'?' 🏠':''}</span> <button onclick="editContactName(${id})" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 6px;" title="Edit name">✏️</button>`;
+  document.getElementById('modalName').textContent=c.name + (ct==='agent'?' 🏢':ct==='seller'?' 🏠':'');
   document.getElementById('modalContent').innerHTML=`
 
     <!-- Contact Type Banner -->
@@ -1341,7 +1074,6 @@ function openContact(id){
       </div>
       <div><label class="lbl">Nationality</label><div style="font-size:13px;">${c.nationality||'—'}</div></div>
     </div>
-    ${c.referredBy?'<div style="margin-bottom:12px;"><label class="lbl">👤 Referred By</label><div style="font-size:13px;color:var(--blue);">'+c.referredBy+'</div></div>':''}
 
     <!-- Agent specific fields -->
     ${ct==='agent'?`
@@ -1613,7 +1345,7 @@ function openContact(id){
     </div>
 
     <div class="divider"></div>
-    <button class="btn btn-green" onclick="openMsgGen(${id});closeModal();" style="width:100%;margin-bottom:6px;">💬 Generate & Send Message</button>
+    <button class="btn btn-green" onclick="openMsgGen(${id})" style="width:100%;margin-bottom:6px;">💬 Generate & Send Message</button>
     ${c.msgGenerated?`<button class="btn btn-ghost" onclick="openPreview(${id});closeModal();" style="width:100%;">👁 Preview Last Message</button>`:''}
   `;
   document.getElementById('contactModal').classList.add('open');
@@ -1647,18 +1379,6 @@ function addNote(id){
   c.notes.push({text:txt, time:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})});
   save(); openContact(id);
 }
-function editContactName(id){
-  const c=contacts.find(x=>parseInt(x.id)===parseInt(id));
-  if(!c) return;
-  const newName = prompt('Edit contact name:', c.name);
-  if(newName && newName.trim()){
-    c.name = newName.trim();
-    save();
-    openContact(id);
-    toast('✅ Name updated!');
-  }
-}
-
 function closeModal(){ document.getElementById('contactModal').classList.remove('open'); }
 
 // ─── OUTREACH ─────────────────────────────────────────────────────────
@@ -1683,7 +1403,7 @@ function updateSelectionBar(){
 
 function clearSelected(){
   const ids=getSelectedIds();
-  if(!ids.length){alert('No contact selected');return;}
+  if(!ids.length){alert('Koi contact select nahi kiya');return;}
   if(!confirm(ids.length+' contacts ke messages clear karne hain?')) return;
   ids.forEach(id=>{ const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(c){c.msg='';c.msgGenerated=false;} });
   save(); renderOutreach();
@@ -1691,7 +1411,7 @@ function clearSelected(){
 
 function regenSelected(){
   const ids=getSelectedIds();
-  if(!ids.length){alert('No contact selected');return;}
+  if(!ids.length){alert('Koi contact select nahi kiya');return;}
   ids.forEach(id=>{ const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(c){c.msg='';c.msgGenerated=false;} });
   ids.forEach(id=>genOne(id));
   save(); renderOutreach();
@@ -1714,15 +1434,16 @@ function renderOutreach(){
       <td style="font-family:monospace;font-size:12px;color:var(--text2);">${c.phone||'—'}</td>
       <td><input type="text" value="${c.community||''}" placeholder="Add community..." onchange="updateField(${c.id},'community',this.value)" style="font-size:12px;padding:4px 8px;width:140px;"/></td>
       <td><span class="tag ${c.msgGenerated?'tag-interested':'tag-pending'}">${c.msgGenerated?'Generated':'Not generated'}</span>${c.lastContact?'<div style="font-size:10px;color:var(--text3);margin-top:2px;">Sent: '+c.lastContact+'</div>':''}</td>
-      <td><div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="btn btn-green btn-sm" data-contact-id="${c.id}" onclick="openMsgGenFromBtn(this)">💬 Generate & Send</button>
+      <td><div style="display:flex;gap:4px;">
+        <button class="btn btn-ghost btn-sm" id="gb-${c.id}" onclick="genOne(${c.id})">${c.msgGenerated?'Regen':'Generate'}</button>
+        <button class="btn btn-green btn-sm" onclick="openPreview(${c.id})" ${c.msgGenerated?'':'disabled'}>↗ Send</button>
       </div></td>`;
     tbody.appendChild(tr);
   });
 }
 
 function applyBulkCom(emptyOnly){
-  const val=document.getElementById('bulkCom').value.trim(); if(!val){alert('Enter community name');return;}
+  const val=document.getElementById('bulkCom').value.trim(); if(!val){alert('Community likho');return;}
   contacts.forEach(c=>{ if(!emptyOnly||!c.community) c.community=val; });
   save(); renderOutreach();
 }
@@ -1773,7 +1494,7 @@ function genOne(id){
   c.msg=buildMsg(c);
   c.msgGenerated=true;
   save();
-  if(btn){btn.disabled=false;btn.textContent='Generate';}
+  if(btn){btn.disabled=false;btn.textContent='Regen';}
   renderOutreach();
 }
 
@@ -1781,21 +1502,21 @@ function handleBulkAction(val){
   if(!val) return;
   const ids=getSelectedIds();
   if(val==='clearAll'){
-    if(!confirm('Clear all messages?')) return;
+    if(!confirm('Sab messages clear karne hain?')) return;
     contacts.forEach(c=>{c.msg='';c.msgGenerated=false;});
     save(); renderOutreach();
   } else if(val==='clearSelected'){
-    if(!ids.length){alert('No contact selected');return;}
-    if(!confirm(ids.length+' contacts messages will be cleared?')) return;
+    if(!ids.length){alert('Koi contact select nahi');return;}
+    if(!confirm(ids.length+' contacts ke messages clear hain?')) return;
     ids.forEach(id=>{const c=contacts.find(x=>parseInt(x.id)===parseInt(id));if(c){c.msg='';c.msgGenerated=false;}});
     save(); renderOutreach();
   } else if(val==='regenSelected'){
-    if(!ids.length){alert('No contact selected');return;}
+    if(!ids.length){alert('Koi contact select nahi');return;}
     ids.forEach(id=>{const c=contacts.find(x=>parseInt(x.id)===parseInt(id));if(c){c.msg='';c.msgGenerated=false;}});
     ids.forEach(id=>genOne(id));
     save(); renderOutreach();
   } else if(val==='regenAll'){
-    if(!confirm('Regenerate messages for all contacts?')) return;
+    if(!confirm('Sab contacts ke messages regenerate hain?')) return;
     contacts.forEach(c=>{c.msg='';c.msgGenerated=false;genOne(c.id);});
     save(); renderOutreach();
   }
@@ -1932,7 +1653,7 @@ function renderPipeline(){
 async function extractFromImage(e){
   const file = e.target.files[0]; if(!file) return;
   const apiKey = document.getElementById('apiKey')?.value?.trim();
-  if(!apiKey){ alert('Please add Groq API key in Outreach tab first'); return; }
+  if(!apiKey){ alert('Pehle Outreach tab mein Groq API key daalo'); return; }
 
   const status = document.getElementById('ocrStatus');
   status.textContent = '⏳ Reading...';
@@ -2003,7 +1724,6 @@ function openAddContact(){
   document.getElementById('ac_nat').value='';
   document.getElementById('ac_com').value='';
   document.getElementById('ac_source').value='Manual';
-  document.getElementById('ac_referredby').value='';
   document.getElementById('ac_notes').value='';
   document.getElementById('ac_status').value='pending';
   document.getElementById('ac_priority').value='cold';
@@ -2015,8 +1735,8 @@ function closeAddContact(){ document.getElementById('addContactModal').classList
 function saveAddContact(){
   const name=document.getElementById('ac_name').value.trim();
   const phone=extractPhone(document.getElementById('ac_phone').value.trim())||document.getElementById('ac_phone').value.trim();
-  if(!name){alert('Name is required');return;}
-  if(!phone){alert('Phone is required');return;}
+  if(!name){alert('Name zaroori hai');return;}
+  if(!phone){alert('Phone zaroori hai');return;}
 
   const maxId=contacts.length>0?Math.max(...contacts.map(c=>c.id))+1:0;
   const notes=document.getElementById('ac_notes').value.trim();
@@ -2035,7 +1755,7 @@ function saveAddContact(){
     priority:document.getElementById('ac_priority').value,
     msg:'', msgGenerated:false, fuCount:0,
     notes:notes?[{text:'Lead source: '+leadType+(project?' — '+project:'')+(notes?' | '+notes:''),time:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}]:[],
-    callbackDate:'', lastContact:'', referredBy:document.getElementById('ac_referredby').value.trim()
+    callbackDate:'', lastContact:''
   };
   contacts.push(newContact);
   save(); closeAddContact(); renderContacts();
@@ -2048,7 +1768,7 @@ async function importGSheet(){
   const defCom = document.getElementById('gsheetCom').value.trim() || '';
   const status = document.getElementById('gsheetStatus');
 
-  if(!url){ alert('Enter Google Sheet URL'); return; }
+  if(!url){ alert('Google Sheet URL daalo'); return; }
 
   const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   if(!match){ alert('Invalid Google Sheet URL'); return; }
@@ -2062,10 +1782,10 @@ async function importGSheet(){
     if(tab) csvUrl += `&sheet=${encodeURIComponent(tab)}`;
 
     const res = await fetch(csvUrl, {redirect:'follow'});
-    if(!res.ok){ status.textContent = '❌ Sheet not accessible — Set to "Anyone with link" → Viewer'; return; }
+    if(!res.ok){ status.textContent = '❌ Sheet accessible nahi — "Anyone with link" → Viewer karo'; return; }
 
     const text = await res.text();
-    if(!text || text.includes('<!DOCTYPE')){ status.textContent = '❌ Sheet is not public or is empty'; return; }
+    if(!text || text.includes('<!DOCTYPE')){ status.textContent = '❌ Sheet public nahi hai ya empty hai'; return; }
 
     // Parse CSV
     function parseCSV(str){
@@ -2083,7 +1803,7 @@ async function importGSheet(){
     }
 
     const rows = parseCSV(text);
-    if(rows.length < 2){ status.textContent = '❌ No data in sheet'; return; }
+    if(rows.length < 2){ status.textContent = '❌ Sheet mein data nahi'; return; }
 
     const headers = rows[0].map(h=>h.replace(/^"|"$/g,'').trim());
     const dataRows = rows.slice(1).filter(r=>r.some(c=>c));
@@ -2227,7 +1947,7 @@ function onAllFilesLoaded(){
     document.getElementById('uploadZone').classList.add('loaded');
     document.getElementById('uploadZone').querySelector('p').textContent='✓ '+pendingFiles.length+' tab(s) ready to import';
   } else {
-    document.getElementById('filesList').innerHTML='<div style="color:var(--red);font-size:13px;">❌ No tab found with Name and Phone columns</div>';
+    document.getElementById('filesList').innerHTML='<div style="color:var(--red);font-size:13px;">❌ Koi bhi tab mein Name aur Phone column nahi mila</div>';
   }
 }
 
@@ -2277,75 +1997,24 @@ function loadContacts(){
 let msgGenContactId = null;
 let currentMsgLead = null;
 
-function openMsgGenFromBtn(btn){
-  const id = btn && btn.dataset ? btn.dataset.contactId : null;
-  if(!id){ toast('Contact ID missing. Refresh page and try again.', 'error'); return; }
-  openMsgGen(id);
-}
-
 function openMsgGen(id){
-  const c = contacts.find(x=>String(x.id)===String(id) || parseInt(x.id)===parseInt(id));
-  if(!c){
-    msgGenContactId = null;
-    currentMsgLead = null;
-    document.getElementById('mg_preview').textContent = 'Error: Contact not found. Click the green Generate & Send button in the same lead row.';
-    document.getElementById('msgGenModal').classList.add('open');
-    return;
-  }
-
-  msgGenContactId = c.id;
+  const c = contacts.find(x=>parseInt(x.id)===parseInt(id)||String(x.id)===String(id));
+  if(!c){ alert('Contact not found — please try again'); return; }
   currentMsgLead = c;
-  const modal = document.getElementById('msgGenModal');
-  modal.dataset.contactId = String(c.id);
-  document.getElementById('mg_preview').textContent = '';
+  msgGenContactId = id;
   document.getElementById('msgGenTitle').textContent = 'Message for '+c.name;
-
   const sel = document.getElementById('mg_project');
   sel.innerHTML = '<option value="">-- No specific project --</option>' +
     projects.map(p=>`<option value="${p.id}">${p.developer} — ${p.name}</option>`).join('');
-
   const tmpl = document.getElementById('mg_template');
   if(c.contactType==='seller') tmpl.value='seller';
-  else if((c.fuCount||0)>0) tmpl.value='followup';
+  else if(c.fuCount>0) tmpl.value='followup';
   else tmpl.value='buyer';
-
-  modal.classList.add('open');
-  setTimeout(()=>previewMsgGen(), 50);
+  document.getElementById('msgGenModal').classList.add('open');
+  previewMsgGen();
 }
 
-// ─── CUSTOM TEMPLATES ────────────────────────────────────────────
-let customTemplates = JSON.parse(localStorage.getItem('crm_custom_templates')||'[]');
-
-function saveCustomTemplate(){
-  const name = document.getElementById('custom_tmpl_name').value.trim();
-  const body = document.getElementById('custom_tmpl_body').value.trim();
-  if(!name||!body){ toast('Name and message both required','error'); return; }
-  customTemplates.push({id:'custom_'+Date.now(), name, body});
-  localStorage.setItem('crm_custom_templates', JSON.stringify(customTemplates));
-  loadCustomTemplatesInSelect();
-  document.getElementById('custom_tmpl_name').value='';
-  document.getElementById('custom_tmpl_body').value='';
-  toast('✅ Template saved!');
-}
-
-function loadCustomTemplatesInSelect(){
-  const sel = document.getElementById('mg_template');
-  // Remove old custom options
-  Array.from(sel.options).filter(o=>o.value.startsWith('custom_')).forEach(o=>o.remove());
-  customTemplates.forEach(t=>{
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = '✏️ '+t.name;
-    sel.appendChild(opt);
-  });
-}
-
-
-function closeMsgGen(){
-  document.getElementById('msgGenModal').classList.remove('open');
-  msgGenContactId=null;
-  currentMsgLead=null;
-}
+function closeMsgGen(){ document.getElementById('msgGenModal').classList.remove('open'); currentMsgLead=null; msgGenContactId=null; }
 
 function buildEngagingMsg(c, template, proj){
   const agent = settings.name||'Triloki Chaudhary';
@@ -2380,31 +2049,13 @@ function buildEngagingMsg(c, template, proj){
   };
 
   const fn2 = templates[template];
-  let msg = '';
-  if(template.startsWith('custom_')){
-    const ct = customTemplates.find(t=>t.id===template);
-    msg = ct ? ct.body.replace(/{name}/g, sal).replace(/{agent}/g, agent).replace(/{company}/g, company) : templates.general();
-  } else {
-    msg = fn2 ? fn2() : templates.general();
-  }
-  // Append document link if provided
-  const docLink = document.getElementById('mg_doc_link')?.value?.trim();
-  const docLabel = document.getElementById('mg_doc_label')?.value?.trim() || 'Document';
-  if(docLink) msg += `\n\n📎 *${docLabel}:* ${docLink}`;
-  return msg;
+  return fn2 ? fn2() : templates.general();
 }
 
 function previewMsgGen(){
-  const modal = document.getElementById('msgGenModal');
-  const id = msgGenContactId || modal.dataset.contactId;
-  const c = currentMsgLead || contacts.find(x=>String(x.id)===String(id) || parseInt(x.id)===parseInt(id));
-  if(!c){
-    document.getElementById('mg_preview').textContent='No contact selected. Close this popup and click Generate & Send from a lead row.';
-    return;
-  }
-  msgGenContactId = c.id;
+  const c = currentMsgLead || contacts.find(x=>parseInt(x.id)===parseInt(msgGenContactId)||String(x.id)===String(msgGenContactId));
+  if(!c){ document.getElementById('mg_preview').textContent='Contact not found — please close and reopen'; return; }
   currentMsgLead = c;
-  modal.dataset.contactId = String(c.id);
   const template = document.getElementById('mg_template').value;
   const projId = document.getElementById('mg_project').value;
   const proj = projId ? projects.find(p=>parseInt(p.id)===parseInt(projId)) : null;
@@ -2417,26 +2068,22 @@ function copyMsgGen(){
 }
 
 function sendMsgGen(){
-  const modal = document.getElementById('msgGenModal');
-  const id = msgGenContactId || modal.dataset.contactId;
-  const c = currentMsgLead || contacts.find(x=>String(x.id)===String(id) || parseInt(x.id)===parseInt(id));
-  if(!c || !c.phone){ toast('Contact phone not found', 'error'); return; }
-  let msg = document.getElementById('mg_preview').textContent;
-  if(!msg || msg.startsWith('No contact selected') || msg.startsWith('Error:')){ previewMsgGen(); msg = document.getElementById('mg_preview').textContent; }
+  const c = currentMsgLead;
+  if(!c){ alert('Contact not found'); return; }
+  if(!c.phone){ alert('Phone number nahi hai'); return; }
+  const msg = document.getElementById('mg_preview').textContent;
+  if(!msg || msg.length < 10){ alert('Pehle Generate Preview dabao'); return; }
   const template = document.getElementById('mg_template').value;
-  c.msg = msg;
-  c.msgGenerated = true;
+  c.msg = msg; c.msgGenerated = true;
   c.lastContact = new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
   if(!c.notes) c.notes=[];
   c.notes.push({text:'💬 WhatsApp sent — '+template.replace(/_/g,' '), time:c.lastContact});
   if(c.status==='pending') c.status='contacted';
   save();
   window.open('https://wa.me/'+c.phone+'?text='+encodeURIComponent(msg),'_blank');
-  renderContacts(); renderOutreach(); renderDashboard();
   closeMsgGen();
   toast('✅ WhatsApp opened for '+c.name);
 }
-
 
 // ─── PROJECTS ────────────────────────────────────────────────────────
 let currentSendProject = null;
@@ -2534,7 +2181,7 @@ function editProject(id){
 function saveProject(){
   const developer=document.getElementById('p_developer').value.trim();
   const name=document.getElementById('p_name').value.trim();
-  if(!developer||!name){alert('Developer and Project name are required');return;}
+  if(!developer||!name){alert('Developer aur Project name zaroori hai');return;}
 
   const editId=document.getElementById('p_editId').value;
   const proj={
@@ -2566,7 +2213,7 @@ function saveProject(){
 }
 
 function deleteProject(id){
-  if(!confirm('Delete this project?')) return;
+  if(!confirm('Project delete karna chahte ho?')) return;
   projects=projects.filter(x=>x.id!==id);
   save(); renderProjects();
 }
@@ -2637,7 +2284,6 @@ function sendProjectWA(){
 
 // Update preview when contact selected
 document.addEventListener('DOMContentLoaded',()=>{
-  loadCustomTemplatesInSelect();
   const sel=document.getElementById('sp_contact');
   if(sel) sel.addEventListener('change',function(){
     if(!currentSendProject) return;
@@ -2670,766 +2316,13 @@ function saveSettings(){
   save(); alert('Settings saved!');
 }
 
-function clearAllData(){ if(!confirm('Delete all data? This cannot be undone!')) return; contacts=[]; save(); renderDashboard(); alert('Data cleared.'); }
+function clearAllData(){ if(!confirm('Sab data delete karna chahte ho? Yeh undo nahi hoga!')) return; contacts=[]; save(); renderDashboard(); alert('Data cleared.'); }
 
 // ─── INIT ────────────────────────────────────────────────────────────
 load();
 renderDashboard();
 document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-syncBottomNav('dashboard');
-setTimeout(()=>{ loadFromCloud(); }, 500);
+setTimeout(()=>{ loadFromCloud(); }, 1500);
 </script>
-
-<!-- Deal Close Modal -->
-<div class="modal-overlay" id="dealCloseModal">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-header">
-      <div class="modal-title">🏆 Deal Closed — Enter Details</div>
-      <button class="modal-close" onclick="closeDealModal()">✕</button>
-    </div>
-    <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Developer</label><input type="text" id="deal_developer" placeholder="e.g. Emaar, Sobha, DAMAC"/></div>
-      <div><label class="lbl">Project</label><input type="text" id="deal_project" placeholder="e.g. Sobha Hartland 2"/></div>
-    </div>
-    <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Unit Type</label>
-        <select id="deal_unit">
-          <option value="">Select type</option>
-          <option>Studio</option>
-          <option>1 BR</option>
-          <option>2 BR</option>
-          <option>3 BR</option>
-          <option>4+ BR</option>
-          <option>Villa</option>
-          <option>Townhouse</option>
-          <option>Penthouse</option>
-          <option>Plot</option>
-          <option>Commercial</option>
-        </select>
-      </div>
-      <div><label class="lbl">Deal Value (AED)</label><input type="text" id="deal_value" placeholder="e.g. 2,500,000"/></div>
-    </div>
-    <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Commission (AED)</label><input type="text" id="deal_commission" placeholder="e.g. 62,500"/></div>
-      <div><label class="lbl">Date of Closing</label><input type="date" id="deal_date"/></div>
-    </div>
-    <div style="margin-bottom:16px;">
-      <label class="lbl">Notes</label>
-      <textarea id="deal_notes" placeholder="Any additional notes..." style="min-height:60px;"></textarea>
-    </div>
-    <button class="btn btn-green" style="width:100%;" onclick="saveDeal()">💾 Save Deal</button>
-  </div>
-</div>
-
-<!-- Already Bought Modal -->
-<div class="modal-overlay" id="alreadyBoughtModal">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-header">
-      <div class="modal-title">❌ Already Bought — Enter Details</div>
-      <button class="modal-close" onclick="closeAlreadyBoughtModal()">✕</button>
-    </div>
-    <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Developer/Project</label><input type="text" id="ab_project" placeholder="e.g. Emaar — Creek Harbour"/></div>
-      <div><label class="lbl">Agency Name</label><input type="text" id="ab_agency" placeholder="e.g. Betterhomes, Espace"/></div>
-    </div>
-    <div style="margin-bottom:16px;">
-      <label class="lbl">Notes</label>
-      <textarea id="ab_notes" placeholder="Any details..." style="min-height:60px;"></textarea>
-    </div>
-    <button class="btn btn-green" style="width:100%;" onclick="saveAlreadyBought()">💾 Save</button>
-  </div>
-</div>
-
-<script>
-let _dealContactId = null;
-
-function openDealModal(id){
-  _dealContactId = id;
-  const c = contacts.find(x=>parseInt(x.id)===parseInt(id));
-  document.getElementById('deal_developer').value = c?.deals?.length ? '' : '';
-  document.getElementById('deal_project').value = c?.community||'';
-  document.getElementById('deal_unit').value = '';
-  document.getElementById('deal_value').value = c?.budget||'';
-  document.getElementById('deal_commission').value = '';
-  document.getElementById('deal_date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('deal_notes').value = '';
-  document.getElementById('dealCloseModal').classList.add('open');
-}
-
-function closeDealModal(){ document.getElementById('dealCloseModal').classList.remove('open'); }
-
-function saveDeal(){
-  const c = contacts.find(x=>parseInt(x.id)===parseInt(_dealContactId));
-  if(!c) return;
-  const deal = {
-    developer: document.getElementById('deal_developer').value.trim(),
-    project: document.getElementById('deal_project').value.trim(),
-    unit: document.getElementById('deal_unit').value,
-    value: document.getElementById('deal_value').value.trim(),
-    commission: document.getElementById('deal_commission').value.trim(),
-    date: document.getElementById('deal_date').value,
-    notes: document.getElementById('deal_notes').value.trim(),
-    closedAt: new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-  };
-  if(!c.deals) c.deals = [];
-  // Check if repeat client
-  if(c.deals.length > 0) c.status = 'repeat';
-  c.deals.push(deal);
-  if(!c.notes) c.notes = [];
-  c.notes.push({
-    text: '🏆 Deal Closed — '+deal.developer+' '+deal.project+' '+deal.unit+(deal.value?' | AED '+deal.value:'')+(deal.commission?' | Commission: AED '+deal.commission:''),
-    time: deal.closedAt
-  });
-  save(); closeDealModal(); renderContacts(); renderDashboard();
-  toast('🏆 Deal saved!');
-}
-
-function openAlreadyBoughtModal(id){
-  _dealContactId = id;
-  document.getElementById('ab_project').value = '';
-  document.getElementById('ab_agency').value = '';
-  document.getElementById('ab_notes').value = '';
-  document.getElementById('alreadyBoughtModal').classList.add('open');
-}
-
-function closeAlreadyBoughtModal(){ document.getElementById('alreadyBoughtModal').classList.remove('open'); }
-
-function saveAlreadyBought(){
-  const c = contacts.find(x=>parseInt(x.id)===parseInt(_dealContactId));
-  if(!c) return;
-  c.alreadyBought = {
-    project: document.getElementById('ab_project').value.trim(),
-    agency: document.getElementById('ab_agency').value.trim(),
-    notes: document.getElementById('ab_notes').value.trim(),
-    date: new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
-  };
-  if(!c.notes) c.notes = [];
-  c.notes.push({
-    text: '❌ Already Bought — '+(c.alreadyBought.project||'')+(c.alreadyBought.agency?' via '+c.alreadyBought.agency:''),
-    time: c.alreadyBought.date
-  });
-  save(); closeAlreadyBoughtModal(); renderContacts();
-  toast('Saved — marked as already bought');
-}
-</script>
-
-<script>
-// ─── RESET CONTACT ────────────────────────────────────────────────
-function showResetMenu(id, event){
-  event.stopPropagation();
-  // Remove existing menu
-  const existing = document.getElementById('resetMenu');
-  if(existing) existing.remove();
-
-  const menu = document.createElement('div');
-  menu.id = 'resetMenu';
-  menu.style.cssText = 'position:fixed;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:6px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:200px;';
-  menu.innerHTML = `
-    <div style="font-size:11px;color:#555;padding:4px 8px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Reset Options</div>
-    <button onclick="resetNotes(${id})" style="display:block;width:100%;text-align:left;padding:8px 10px;background:transparent;border:none;color:#e8e8e8;font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">📋 Clear Activity History</button>
-    <button onclick="resetStatus(${id})" style="display:block;width:100%;text-align:left;padding:8px 10px;background:transparent;border:none;color:#e8e8e8;font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">🔄 Reset Status & Priority</button>
-    <button onclick="resetFull(${id})" style="display:block;width:100%;text-align:left;padding:8px 10px;background:transparent;border:none;color:#f87171;font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#2d1515'" onmouseout="this.style.background='transparent'">⚡ Full Reset (keep name & phone only)</button>
-  `;
-
-  // Position near click
-  const x = Math.min(event.clientX, window.innerWidth - 220);
-  const y = Math.min(event.clientY, window.innerHeight - 160);
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-
-  document.body.appendChild(menu);
-  setTimeout(()=>{ document.addEventListener('click', ()=>{ menu.remove(); }, {once:true}); }, 10);
-}
-
-function resetNotes(id){
-  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
-  if(!confirm('Clear all activity history for '+c.name+'?')) return;
-  c.notes = [];
-  c.lastContact = '';
-  c.fuCount = 0;
-  save(); renderContacts(); toast('📋 Activity history cleared!');
-}
-
-function resetStatus(id){
-  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
-  if(!confirm('Reset status & priority for '+c.name+'?')) return;
-  c.status = 'pending';
-  c.priority = 'cold';
-  c.callbackDate = '';
-  c.callbackTime = '';
-  c.msg = '';
-  c.msgGenerated = false;
-  save(); renderContacts(); toast('🔄 Status & priority reset!');
-}
-
-function resetFull(id){
-  const c=contacts.find(x=>parseInt(x.id)===parseInt(id)); if(!c) return;
-  if(!confirm('Full reset for '+c.name+'? Only name & phone will be kept.')) return;
-  const fresh = {
-    id: c.id,
-    name: c.name,
-    phone: c.phone,
-    nationality: '',
-    community: '',
-    source: 'Manual',
-    status: 'pending',
-    priority: 'cold',
-    msg: '', msgGenerated: false, fuCount: 0,
-    notes: [], callbackDate: '', lastContact: '',
-    referredBy: '', contactType: 'client', leadType: 'buyer'
-  };
-  const idx = contacts.findIndex(x=>parseInt(x.id)===parseInt(id));
-  if(idx>=0) contacts[idx] = fresh;
-  save(); renderContacts(); renderDashboard(); toast('⚡ Contact fully reset!');
-}
-</script>
-
-<script>
-// ─── BREAKING NEWS TICKER ────────────────────────────────────────────
-async function loadNewsTicker(){
-  // Show static headlines immediately while loading
-  const staticNews = [
-    {title:'Dubai real estate market hits record transaction volumes in 2026', link:'https://www.khaleejtimes.com/business/property'},
-    {title:'DLD reports strong demand for off-plan properties across Dubai', link:'https://dubailand.gov.ae'},
-    {title:'UAE property prices continue upward trend amid strong demand', link:'https://www.arabianbusiness.com/property'},
-    {title:'Dubai Marina and Downtown see highest rental yields in Q1 2026', link:'https://www.gulfnews.com/business/property'},
-    {title:'New visa reforms boost foreign investment in UAE real estate', link:'https://www.khaleejtimes.com/uae'},
-  ];
-
-  const ticker = document.getElementById('newsTicker');
-  if(!ticker) return;
-
-  function setTicker(items){
-    const html = items.map(h=>`<span class="news-ticker-item">⚡ <a href="${h.link}" target="_blank">${h.title}</a></span>`).join('');
-    ticker.innerHTML = html + html;
-    const totalLen = items.reduce((a,h)=>a+h.title.length,0);
-    ticker.style.animationDuration = Math.max(25, totalLen * 0.12)+'s';
-  }
-
-  // Show static immediately
-  setTicker(staticNews);
-
-  // Try to load live news
-  try {
-    const feed = 'https://www.arabianbusiness.com/rss/property';
-    const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feed)+'&count=8', {signal: AbortSignal.timeout(5000)});
-    const data = await res.json();
-    if(data.status==='ok' && data.items && data.items.length > 0){
-      const live = data.items.map(i=>({title:i.title, link:i.link}));
-      setTicker(live);
-    }
-  } catch(e){
-    // Keep static headlines - already showing
-  }
-}
-
-// ─── MARKET DATA ─────────────────────────────────────────────────────
-async function loadMarketData(){
-  // 1. Currency rates
-  try {
-    const res = await fetch('https://open.er-api.com/v6/latest/AED');
-    const data = await res.json();
-    const pairs = {INR:'🇮🇳 INR', USD:'🇺🇸 USD', GBP:'🇬🇧 GBP', EUR:'🇪🇺 EUR', PKR:'🇵🇰 PKR', SAR:'🇸🇦 SAR', QAR:'🇶🇦 QAR', KWD:'🇰🇼 KWD', BHD:'🇧🇭 BHD', OMR:'🇴🇲 OMR'};
-    const ratesEl = document.getElementById('currencyRates');
-    if(ratesEl && data.rates) ratesEl.innerHTML = Object.entries(pairs).map(([code, label])=>{
-      const rate = data.rates[code];
-      return rate ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:110px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">${label}</div><div style="font-size:14px;font-weight:600;color:var(--blue);">1 AED = ${rate.toFixed(2)}</div></div>` : '';
-    }).join('');
-  } catch(e) {
-    const el = document.getElementById('currencyRates');
-    if(el) el.innerHTML = '<div style="color:var(--text3);font-size:12px;">Unable to load</div>';
-  }
-
-  // 2. Commodity prices (Gold & Petrol UAE)
-  const petrolPrices = {'Special 95':'2.89','Super 98':'3.02','Diesel':'2.77','E-Plus 91':'2.77'};
-  const comEl = document.getElementById('commodityPrices');
-  
-  // Show petrol immediately (static - UAE govt updates quarterly)
-  const petrolCards = Object.entries(petrolPrices).map(([grade,price])=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">⛽ ${grade}</div><div style="font-size:14px;font-weight:600;color:var(--orange);">AED ${price}</div><div style="font-size:10px;color:var(--text3);">May 2026</div></div>`).join('');
-  if(comEl) comEl.innerHTML = `<div id="goldCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">Loading...</div></div>${petrolCards}`;
-
-  // Try multiple gold APIs
-  try {
-    let goldUSD = 0;
-    // Use frankfurter API - reliable and free
-    try {
-      const r = await fetch('https://api.frankfurter.app/latest?from=XAU&to=USD,AED', {signal: AbortSignal.timeout(5000)});
-      const d = await r.json();
-      if(d.rates?.USD) {
-        goldUSD = d.rates.USD;
-        const goldAED = d.rates.AED || (goldUSD * 3.6725);
-        const goldCard = document.getElementById('goldCard');
-        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ${Math.round(goldAED).toLocaleString()}</div><div style="font-size:10px;color:var(--text3);">USD ${Math.round(goldUSD).toLocaleString()}</div>`;
-      }
-    } catch(e1){
-      // Fallback to metals-api
-      try {
-        const r = await fetch('https://metals-api.com/api/latest?access_key=demo&base=XAU&symbols=USD', {signal: AbortSignal.timeout(4000)});
-        const d = await r.json();
-        goldUSD = 1 / (d.rates?.USD || 0.000303);
-        const goldAED = goldUSD * 3.6725;
-        const goldCard = document.getElementById('goldCard');
-        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ${Math.round(goldAED).toLocaleString()}</div><div style="font-size:10px;color:var(--text3);">USD ${Math.round(goldUSD).toLocaleString()}</div>`;
-      } catch(e2){
-        // Static fallback - approximate current price
-        const goldCard = document.getElementById('goldCard');
-        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ~12,100</div><div style="font-size:10px;color:var(--text3);">USD ~3,295</div>`;
-      }
-    }
-  } catch(e) {
-    const goldCard = document.getElementById('goldCard');
-    if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">~AED 12,100</div><div style="font-size:10px;color:var(--text3);">~USD 3,295</div>`;
-  }
-
-  // 3. News from multiple sources horizontally
-  try {
-    const feeds = [
-      'https://www.khaleejtimes.com/rss',
-      'https://www.arabianbusiness.com/rss/property',
-      'https://gulfnews.com/rss/business'
-    ];
-    let allNews = [];
-    for(const feed of feeds){
-      try {
-        const proxy = 'https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feed)+'&count=4';
-        const res = await fetch(proxy);
-        const data = await res.json();
-        if(data.items && data.items.length) allNews = allNews.concat(data.items.slice(0,4));
-        if(allNews.length >= 8) break;
-      } catch(err){}
-    }
-
-    const newsEl = document.getElementById('dubaiNews');
-    if(newsEl && allNews.length > 0){
-      newsEl.innerHTML = allNews.slice(0,8).map(item=>`
-        <a href="${item.link}" target="_blank" style="display:block;min-width:220px;max-width:220px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;flex-shrink:0;">
-          <div style="font-size:12px;color:var(--blue);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${item.title}</div>
-          <div style="font-size:10px;color:var(--text3);">${new Date(item.pubDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
-        </a>`).join('');
-    } else if(newsEl){
-      newsEl.innerHTML = `
-        <a href="https://www.khaleejtimes.com/uae" target="_blank" style="display:block;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;text-align:center;"><div style="font-size:13px;color:var(--blue);">🗞 Khaleej Times</div></a>
-        <a href="https://www.arabianbusiness.com/property" target="_blank" style="display:block;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;text-align:center;"><div style="font-size:13px;color:var(--blue);">📰 Arabian Business</div></a>
-        <a href="https://gulfnews.com/business/property" target="_blank" style="display:block;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;text-align:center;"><div style="font-size:13px;color:var(--blue);">📰 Gulf News</div></a>
-      `;
-    }
-  } catch(e) {
-    const newsEl = document.getElementById('dubaiNews');
-    if(newsEl) newsEl.innerHTML = '<a href="https://www.khaleejtimes.com" target="_blank" class="btn btn-ghost btn-sm">Open Khaleej Times →</a>';
-  }
-}
-
-
-function handleDirectCSV(e){
-  const file = e.target.files[0]; 
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const text = ev.target.result;
-      const lines = text.split(/\r?\n/).filter(l=>l.trim());
-      if(lines.length < 2){ toast('CSV file empty or invalid', 'error'); return; }
-      
-      // Parse headers
-      const headers = lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim().toLowerCase());
-      const nameIdx = headers.findIndex(h=>/name/.test(h));
-      const phoneIdx = headers.findIndex(h=>/phone|mobile|number|tel/.test(h));
-      const natIdx = headers.findIndex(h=>/nation|country/.test(h));
-      const comIdx = headers.findIndex(h=>/community|area|project/.test(h));
-      
-      if(nameIdx<0||phoneIdx<0){ 
-        toast('Name/Phone column not found in CSV', 'error'); 
-        return; 
-      }
-      
-      const existingPhones = new Set(contacts.map(c=>c.phone).filter(Boolean));
-      let maxId = contacts.length>0?Math.max(...contacts.map(c=>c.id))+1:0;
-      let added=0, dups=0;
-      
-      for(let i=1;i<lines.length;i++){
-        const cols = lines[i].split(',').map(c=>c.replace(/^"|"$/g,'').trim());
-        const name = cols[nameIdx]||'';
-        const rawPhone = cols[phoneIdx]||'';
-        const phone = extractPhone(rawPhone)||rawPhone.replace(/[\s\+\-\(\)]/g,'');
-        if(!name||!phone||phone.length<7){ continue; }
-        if(existingPhones.has(phone)){ dups++; continue; }
-        existingPhones.add(phone);
-        contacts.push({
-          id:maxId++, name, phone,
-          nationality: natIdx>=0?(cols[natIdx]||''):'',
-          community: comIdx>=0?(cols[comIdx]||''):'',
-          source:'CSV Import', status:'pending', priority:'cold',
-          msg:'', msgGenerated:false, fuCount:0,
-          notes:[], callbackDate:'', lastContact:''
-        });
-        added++;
-      }
-      
-      save(); renderContacts(); renderDashboard();
-      toast('✅ '+added+' contacts imported!'+(dups>0?' ('+dups+' duplicates skipped)':''));
-      e.target.value = '';
-    } catch(err){ toast('CSV parse error: '+err.message, 'error'); }
-  };
-  reader.readAsText(file);
-}
-
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
-  });
-}
-</script>
-
-<!-- CSV Import Modal -->
-<div class="modal-overlay" id="csvImportModal">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-header">
-      <div class="modal-title">Import CSV File</div>
-      <button class="modal-close" onclick="closeCSVImport()">✕</button>
-    </div>
-    <p style="font-size:12px;color:var(--text3);margin-bottom:12px;">CSV file upload karo — Name aur Phone columns zaroori hain. First row headers honi chahiye.</p>
-    <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none;" onchange="handleCSVFile(event)"/>
-    <div class="upload-zone" style="cursor:pointer;" onclick="document.getElementById('csvFileInput').click()">
-      <p style="font-size:16px;">📄</p>
-      <p style="font-size:13px;margin-top:6px;">Click here to upload CSV file</p>
-      <p style="font-size:11px;margin-top:4px;color:#aaa;">Required: Name, Phone columns</p>
-    </div>
-    <div id="csvPreview" style="margin-top:12px;"></div>
-    <div id="csvImportBtn" style="display:none;margin-top:12px;">
-      <div style="margin-bottom:8px;"><label class="lbl">Default community (optional)</label><input type="text" id="csvDefCom" placeholder="e.g. District One"/></div>
-      <button class="btn btn-green" style="width:100%;" onclick="importCSVData()">Import →</button>
-    </div>
-  </div>
-</div>
-
-<script>
-let _csvData = [];
-
-function openCSVImport(){
-  _csvData = [];
-  document.getElementById('csvPreview').innerHTML = '';
-  document.getElementById('csvImportBtn').style.display = 'none';
-  document.getElementById('csvFileInput').value = '';
-  document.getElementById('csvImportModal').classList.add('open');
-}
-
-function closeCSVImport(){ document.getElementById('csvImportModal').classList.remove('open'); }
-
-function handleCSVFile(e){
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const text = ev.target.result;
-    const rows = parseCSVText(text);
-    if(rows.length < 2){ 
-      document.getElementById('csvPreview').innerHTML = '<div style="color:var(--red);font-size:13px;">❌ File empty or invalid</div>'; 
-      return; 
-    }
-    
-    const headers = rows[0];
-    const nameIdx = headers.findIndex(h=>/name/i.test(h));
-    const phoneIdx = headers.findIndex(h=>/phone|mobile|number|tel/i.test(h));
-    const natIdx = headers.findIndex(h=>/nation|country/i.test(h));
-    const comIdx = headers.findIndex(h=>/community|area|project/i.test(h));
-    
-    if(nameIdx < 0 || phoneIdx < 0){
-      document.getElementById('csvPreview').innerHTML = `<div style="color:var(--red);font-size:13px;">❌ Name/Phone column not found.<br>Columns found: ${headers.join(', ')}</div>`;
-      return;
-    }
-    
-    _csvData = {rows: rows.slice(1), nameIdx, phoneIdx, natIdx, comIdx};
-    
-    document.getElementById('csvPreview').innerHTML = `
-      <div style="background:var(--bg2);border-radius:8px;padding:12px;border:1px solid var(--border);">
-        <div style="color:var(--green);font-size:13px;font-weight:600;margin-bottom:6px;">✅ ${rows.length-1} rows found</div>
-        <div style="font-size:12px;color:var(--text2);">Name: column ${nameIdx+1} · Phone: column ${phoneIdx+1}</div>
-        ${natIdx>=0?'<div style="font-size:12px;color:var(--text2);">Nationality: column '+(natIdx+1)+'</div>':''}
-        ${comIdx>=0?'<div style="font-size:12px;color:var(--text2);">Community: column '+(comIdx+1)+'</div>':''}
-        <div style="font-size:12px;color:var(--text3);margin-top:6px;">Preview: ${rows[1][nameIdx]} — ${rows[1][phoneIdx]}</div>
-      </div>`;
-    document.getElementById('csvImportBtn').style.display = 'block';
-  };
-  reader.readAsText(file);
-}
-
-function parseCSVText(text){
-  const rows=[];let row=[],cur='',inQ=false;
-  for(let i=0;i<text.length;i++){
-    const ch=text[i],nx=text[i+1];
-    if(ch==='"'&&inQ&&nx==='"'){cur+='"';i++;}
-    else if(ch==='"'){inQ=!inQ;}
-    else if(ch===','&&!inQ){row.push(cur.trim());cur='';}
-    else if((ch==='\n'||ch==='\r')&&!inQ){
-      if(cur||row.length){row.push(cur.trim());rows.push(row);}
-      row=[];cur='';
-      if(ch==='\r'&&nx==='\n')i++;
-    }else{cur+=ch;}
-  }
-  if(cur||row.length){row.push(cur.trim());rows.push(row);}
-  return rows.filter(r=>r.some(c=>c));
-}
-
-function importCSVData(){
-  if(!_csvData || !_csvData.rows) return;
-  const defCom = document.getElementById('csvDefCom').value.trim();
-  const existingPhones = new Set(contacts.map(c=>c.phone).filter(Boolean));
-  let maxId = contacts.length>0?Math.max(...contacts.map(c=>c.id))+1:0;
-  let added=0, dups=0, skipped=0;
-
-  _csvData.rows.forEach(row=>{
-    const name = (row[_csvData.nameIdx]||'').trim();
-    const rawPhone = (row[_csvData.phoneIdx]||'').trim();
-    const phone = extractPhone(rawPhone)||rawPhone.replace(/[\s\+\-\(\)]/g,'');
-    
-    if(!name||name.length<2){ skipped++; return; }
-    if(!phone||phone.length<7){ skipped++; return; }
-    if(existingPhones.has(phone)){ dups++; return; }
-    existingPhones.add(phone);
-    
-    contacts.push({
-      id: maxId++, name, phone,
-      nationality: _csvData.natIdx>=0?(row[_csvData.natIdx]||'').trim():'',
-      community: _csvData.comIdx>=0?((row[_csvData.comIdx]||'').trim()||defCom):defCom,
-      source: 'CSV Import',
-      status:'pending', priority:'cold',
-      msg:'', msgGenerated:false, fuCount:0,
-      notes:[], callbackDate:'', lastContact:''
-    });
-    added++;
-  });
-
-  save(); closeCSVImport(); renderContacts(); renderDashboard();
-  toast(`✅ ${added} contacts imported!${dups>0?' ('+dups+' duplicates skipped)':''}${skipped>0?' ('+skipped+' skipped)':''}`);
-}
-</script>
-
-
-<!-- QR Scanner Modal -->
-<div class="modal-overlay" id="qrScanModal">
-  <div class="modal" style="max-width:420px;">
-    <div class="modal-header">
-      <div class="modal-title">📷 QR Code Scanner</div>
-      <button class="modal-close" onclick="closeQRScan()">✕</button>
-    </div>
-    <p style="font-size:12px;color:#aaa;margin-bottom:12px;">Camera se QR code scan karo — contact info automatically fill hogi</p>
-    <div style="position:relative;background:#000;border-radius:10px;overflow:hidden;margin-bottom:12px;">
-      <video id="qrVideo" style="width:100%;display:block;" playsinline></video>
-      <canvas id="qrCanvas" style="display:none;"></canvas>
-      <div style="position:absolute;inset:0;border:2px solid #25D366;border-radius:10px;pointer-events:none;">
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60%;height:60%;border:2px solid #25D366;border-radius:8px;"></div>
-      </div>
-    </div>
-    <div id="qrStatus" style="font-size:13px;color:#aaa;text-align:center;margin-bottom:12px;">Scanning...</div>
-    <div id="qrResult" style="display:none;background:var(--bg2);border-radius:8px;padding:12px;margin-bottom:12px;">
-      <div style="font-size:11px;color:#aaa;margin-bottom:8px;text-transform:uppercase;">Scanned Info</div>
-      <div id="qrResultText" style="font-size:13px;color:var(--text);word-break:break-all;"></div>
-    </div>
-    <button class="btn btn-ghost" style="width:100%;" onclick="closeQRScan()">Close</button>
-  </div>
-</div>
-
-<script>
-let _qrStream = null;
-let _qrScanning = false;
-
-async function openQRScan(){
-  document.getElementById('qrScanModal').classList.add('open');
-  document.getElementById('qrStatus').textContent = 'Starting camera...';
-  document.getElementById('qrResult').style.display = 'none';
-  _qrScanning = true;
-  
-  try {
-    _qrStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: {ideal: 640}, height: {ideal: 480} }
-    });
-    const video = document.getElementById('qrVideo');
-    video.srcObject = _qrStream;
-    video.play();
-    document.getElementById('qrStatus').textContent = 'Point camera at QR code...';
-    scanQRFrame();
-  } catch(e) {
-    document.getElementById('qrStatus').textContent = '❌ Camera access denied. Allow camera permission and try again.';
-  }
-}
-
-function scanQRFrame(){
-  if(!_qrScanning) return;
-  const video = document.getElementById('qrVideo');
-  const canvas = document.getElementById('qrCanvas');
-  
-  if(video.readyState === video.HAVE_ENOUGH_DATA){
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    
-    if(typeof jsQR !== 'undefined'){
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-      if(code){
-        _qrScanning = false;
-        processQRResult(code.data);
-        return;
-      }
-    } else {
-      // BarcodeDetector fallback
-      if('BarcodeDetector' in window){
-        const detector = new BarcodeDetector({formats:['qr_code']});
-        detector.detect(video).then(barcodes => {
-          if(barcodes.length > 0 && _qrScanning){
-            _qrScanning = false;
-            processQRResult(barcodes[0].rawValue);
-          }
-        }).catch(()=>{});
-      }
-    }
-  }
-  requestAnimationFrame(scanQRFrame);
-}
-
-function processQRResult(data){
-  document.getElementById('qrStatus').textContent = '✅ QR Code scanned!';
-  document.getElementById('qrResult').style.display = 'block';
-  document.getElementById('qrResultText').textContent = data;
-  
-  // Try to parse contact info from QR
-  let name = '', phone = '', email = '';
-  
-  // vCard format
-  if(data.includes('BEGIN:VCARD')){
-    const fnMatch = data.match(/FN[^:]*:([^\n\r]+)/);
-    const telMatch = data.match(/TEL[^:]*:([^\n\r]+)/);
-    const emailMatch = data.match(/EMAIL[^:]*:([^\n\r]+)/);
-    if(fnMatch) name = fnMatch[1].trim();
-    if(telMatch) phone = telMatch[1].trim().replace(/[\s\-\(\)]/g,'');
-    if(emailMatch) email = emailMatch[1].trim();
-  }
-  // Phone number only
-  else if(/^\+?[\d\s\-\(\)]{7,15}$/.test(data.trim())){
-    phone = data.trim().replace(/[\s\-\(\)]/g,'');
-  }
-  // WhatsApp link
-  else if(data.includes('wa.me/')){
-    const match = data.match(/wa\.me\/([\d]+)/);
-    if(match) phone = match[1];
-  }
-  // URL with phone
-  else if(data.includes('tel:')){
-    const match = data.match(/tel:([\d\+]+)/);
-    if(match) phone = match[1];
-  }
-  
-  // Stop camera and open add contact
-  setTimeout(()=>{
-    closeQRScan();
-    openAddContact();
-    if(name) document.getElementById('ac_name').value = name;
-    if(phone) document.getElementById('ac_phone').value = extractPhone(phone)||phone;
-    document.getElementById('ac_source').value = 'QR Code';
-    if(name||phone) toast('✅ Contact info filled from QR!');
-    else toast('QR scanned — please fill contact details manually');
-  }, 1000);
-}
-
-function closeQRScan(){
-  _qrScanning = false;
-  if(_qrStream){
-    _qrStream.getTracks().forEach(t=>t.stop());
-    _qrStream = null;
-  }
-  document.getElementById('qrScanModal').classList.remove('open');
-  document.getElementById('qrVideo').srcObject = null;
-}
-</script>
-
-
-<!-- Area Price Popup -->
-<div class="area-popup" id="areaPricePopup" style="display:none;" onclick="nextAreaPopup()">
-  <button class="area-popup-close" onclick="event.stopPropagation();pauseAreaPopup()">✕</button>
-  <div class="area-popup-label">🏙️ Dubai Area Price</div>
-  <div class="area-popup-area" id="popupArea">Downtown Dubai</div>
-  <div class="area-popup-price" id="popupPrice">AED 2,800/sqft</div>
-  <div class="area-popup-sub" id="popupSub">Avg | May 2026</div>
-</div>
-
-<script>
-const AREA_PRICES = [
-  {area:'Downtown Dubai', price:'AED 2,800', type:'Apartment', trend:'↑ 8%'},
-  {area:'Dubai Marina', price:'AED 1,950', type:'Apartment', trend:'↑ 5%'},
-  {area:'Palm Jumeirah', price:'AED 3,200', type:'Villa/Apt', trend:'↑ 12%'},
-  {area:'Business Bay', price:'AED 1,800', type:'Apartment', trend:'↑ 6%'},
-  {area:'JVC', price:'AED 1,100', type:'Apartment', trend:'↑ 3%'},
-  {area:'Dubai Hills', price:'AED 1,650', type:'Villa/Apt', trend:'↑ 9%'},
-  {area:'Arabian Ranches', price:'AED 1,400', type:'Villa', trend:'↑ 7%'},
-  {area:'DAMAC Hills', price:'AED 1,200', type:'Villa/Apt', trend:'↑ 4%'},
-  {area:'Jumeirah', price:'AED 2,100', type:'Villa', trend:'↑ 6%'},
-  {area:'Al Barsha', price:'AED 1,050', type:'Apartment', trend:'↑ 2%'},
-  {area:'Mirdif', price:'AED 900', type:'Villa/Apt', trend:'↑ 3%'},
-  {area:'Deira', price:'AED 750', type:'Apartment', trend:'↑ 1%'},
-  {area:'Bur Dubai', price:'AED 850', type:'Apartment', trend:'↑ 2%'},
-  {area:'Creek Harbour', price:'AED 2,200', type:'Apartment', trend:'↑ 11%'},
-  {area:'Emaar Beachfront', price:'AED 3,500', type:'Apartment', trend:'↑ 15%'},
-  {area:'MBR City', price:'AED 1,750', type:'Villa/Apt', trend:'↑ 8%'},
-  {area:'Sobha Hartland', price:'AED 1,900', type:'Apartment', trend:'↑ 10%'},
-  {area:'Bluewaters Island', price:'AED 3,800', type:'Apartment', trend:'↑ 13%'},
-  {area:'Sports City', price:'AED 900', type:'Apartment', trend:'↑ 2%'},
-  {area:'Motor City', price:'AED 850', type:'Apartment', trend:'↑ 2%'},
-  {area:'Discovery Gardens', price:'AED 750', type:'Apartment', trend:'↑ 1%'},
-  {area:'International City', price:'AED 550', type:'Apartment', trend:'↑ 1%'},
-  {area:'Al Furjan', price:'AED 1,050', type:'Apartment', trend:'↑ 4%'},
-  {area:'DIFC', price:'AED 3,000', type:'Apartment', trend:'↑ 9%'},
-];
-
-let _areaIdx = 0;
-let _areaTimer = null;
-let _areaPaused = false;
-
-function showAreaPopup(){
-  const popup = document.getElementById('areaPricePopup');
-  if(!popup || _areaPaused) return;
-  
-  const area = AREA_PRICES[_areaIdx];
-  document.getElementById('popupArea').textContent = area.area;
-  document.getElementById('popupPrice').textContent = area.price + '/sqft';
-  document.getElementById('popupSub').textContent = area.type + ' | ' + area.trend + ' YoY | May 2026';
-  
-  popup.style.display = 'block';
-  popup.classList.remove('hide');
-  
-  // Auto hide after 4 seconds then show next
-  clearTimeout(_areaTimer);
-  _areaTimer = setTimeout(()=>{
-    popup.classList.add('hide');
-    setTimeout(()=>{
-      _areaIdx = (_areaIdx + 1) % AREA_PRICES.length;
-      showAreaPopup();
-    }, 400);
-  }, 4000);
-}
-
-function nextAreaPopup(){
-  const popup = document.getElementById('areaPricePopup');
-  popup.classList.add('hide');
-  clearTimeout(_areaTimer);
-  setTimeout(()=>{
-    _areaIdx = (_areaIdx + 1) % AREA_PRICES.length;
-    showAreaPopup();
-  }, 300);
-}
-
-function pauseAreaPopup(){
-  _areaPaused = true;
-  clearTimeout(_areaTimer);
-  const popup = document.getElementById('areaPricePopup');
-  popup.classList.add('hide');
-  setTimeout(()=>{ popup.style.display='none'; }, 400);
-  // Resume after 30 seconds
-  setTimeout(()=>{ _areaPaused=false; showAreaPopup(); }, 30000);
-}
-
-// Start popup after 3 seconds
-setTimeout(()=>{ showAreaPopup(); }, 3000);
-</script>
-
 </body>
 </html>
