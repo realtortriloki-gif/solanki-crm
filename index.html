@@ -1485,18 +1485,15 @@ function timeAgo(dateStr){
     const now = new Date();
     const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
     let d = null;
-    // Format 1: "28 May at 06:59" or "28 May 2026 at 06:59"
     let parts = dateStr.match(/(\d+)\s+(\w+)(?:\s+(\d{4}))?\s+at\s+(\d+):(\d+)/);
     if(parts){
       const year = parts[3] ? parseInt(parts[3]) : now.getFullYear();
       d = new Date(year, months[parts[2]], parseInt(parts[1]), parseInt(parts[4]), parseInt(parts[5]));
     }
-    // Format 2: "27 May, 20:28" or "27 May, 08:45"
     if(!d){
-      parts = dateStr.match(/(\d+)\s+(\w+),?\s+(\d+):(\d+)/);
+      parts = dateStr.match(/(\d+)\s+(\w+),\s*(\d+):(\d+)/);
       if(parts){
         d = new Date(now.getFullYear(), months[parts[2]], parseInt(parts[1]), parseInt(parts[3]), parseInt(parts[4]));
-        // If date is in future, it's last year
         if(d > now) d.setFullYear(d.getFullYear()-1);
       }
     }
@@ -1505,9 +1502,13 @@ function timeAgo(dateStr){
     if(diff < 60) return 'Just now';
     if(diff < 3600) return Math.floor(diff/60)+' min ago';
     if(diff < 86400) return Math.floor(diff/3600)+' hr ago';
-    if(diff < 172800) return 'Yesterday';
-    if(diff < 2592000) return Math.floor(diff/86400)+' days ago';
-    return Math.floor(diff/2592000)+' months ago';
+    const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const calDays = Math.round((nowDate - dDate) / 86400000);
+    if(calDays === 1) return 'Yesterday';
+    if(calDays < 30) return calDays+' days ago';
+    if(calDays < 365) return Math.floor(calDays/30)+' months ago';
+    return Math.floor(calDays/365)+' yr ago';
   } catch(e){ return dateStr; }
 }
 
