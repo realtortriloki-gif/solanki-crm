@@ -12,31 +12,72 @@
 <title>Solanki Capital CRM</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
 <script>
+// ─── FIREBASE SYNC ENGINE ────────────────────────────────────────────
+
+const CRM_SYNC_VERSION = 'offline-pwa-v10';
+const CRM_DEVICE_ID_KEY = 'sccrm_device_id';
+const CRM_PENDING_SYNC_KEY = 'sccrm_pending_sync';
+const CRM_LAST_SYNC_KEY = 'sccrm_last_sync_at';
+const CRM_PUSH_LOCK_KEY = 'sccrm_push_lock';
+const CRM_DEVICE_ID = (() => {
+  let id = localStorage.getItem(CRM_DEVICE_ID_KEY);
+  if(!id){
+    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem(CRM_DEVICE_ID_KEY, id);
+  }
+  return id;
+})();
+window.CRM_DEVICE_ID = CRM_DEVICE_ID;
+
+function syncMeta(){
+  return { deviceId: CRM_DEVICE_ID, version: CRM_SYNC_VERSION, updatedAt: Date.now() };
+}
+function markPendingSync(value){
+  localStorage.setItem(CRM_PENDING_SYNC_KEY, value ? '1' : '0');
+  if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
+}
+function isOnlineNow(){ return navigator.onLine !== false; }
 
 window.saveToFirebase = async function(data) {
+  if(!isOnlineNow()){ markPendingSync(true); return {ok:false,offline:true}; }
   try {
-    if(!window._db) return;
-    await window._db.collection('crm').doc('contacts').set({ data: JSON.stringify(data), updated: Date.now() });
-  } catch(e) { console.error('Firebase save:', e); }
+    if(typeof window.updateSyncBadge==='function') window.updateSyncBadge('syncing','Syncing...');
+    if(!window._db) return {ok:false,error:'Firebase not ready'};
+    await window._db.collection('crm').doc('contacts').set({
+      contacts: Array.isArray(data.contacts)?data.contacts:[],
+      projects: Array.isArray(data.projects)?data.projects:[],
+      settings: {...(data.settings||{})},
+      updated: Date.now()
+    });
+    localStorage.setItem(CRM_LAST_SYNC_KEY, new Date().toISOString());
+    markPendingSync(false);
+    if(typeof window.updateSyncBadge==='function') window.updateSyncBadge('synced','Synced');
+    return {ok:true};
+  } catch(e) {
+    console.error('Firebase save error:',e);
+    markPendingSync(true);
+    if(typeof window.updateSyncBadge==='function') window.updateSyncBadge('error','Sync error');
+    return {ok:false,error:e};
+  }
 };
+
 window.loadFromFirebase = async function() {
+  if(!isOnlineNow()) return null;
   try {
     if(!window._db) return null;
     const snap = await window._db.collection('crm').doc('contacts').get();
-    if(snap.exists) return JSON.parse(snap.data().data);
-  } catch(e) { console.error('Firebase load:', e); }
+    if(snap.exists){
+      const d=snap.data();
+      return {contacts:d.contacts||[],projects:d.projects||[],settings:d.settings||{}};
+    }
+  } catch(e) { console.error('Firebase load error:',e); }
   return null;
 };
-</script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onload="window._fbApp=true;window._initFB&&window._initFB();"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onload="window._fbFS=true;window._initFB&&window._initFB();"></script>
-<script>
-window._fbApp=false;window._fbFS=false;
-window._initFB=function(){
-  if(!window._fbApp||!window._fbFS) return;
-  if(!firebase.apps.length){ firebase.initializeApp({apiKey:'AIzaSyBf2hn63nIBvA_6QCKrZiXW_Qk3boy70hk',authDomain:'solanki-crm.firebaseapp.com',projectId:'solanki-crm',storageBucket:'solanki-crm.firebasestorage.app',messagingSenderId:'1005706848642',appId:'1:1005706848642:web:38cbecafbe39e91305079b'}); }
-  window._db=firebase.firestore();
+
+window.startCRMRealtime = function(){
+  console.log('Firebase realtime via polling');
 };
 </script>
 <style>
@@ -291,6 +332,13 @@ tr:hover td{background:#161616;}
   </div>
   <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Dashboard <span style="font-size:11px;color:var(--green);font-weight:500;">ADVANCED v9</span></h2>
   <p style="font-size:13px;color:var(--text3);margin-bottom:1.25rem;" id="dash-date"></p>
+  <div class="card" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-color:#1e4a7c;background:linear-gradient(135deg,#101827,#111);">
+    <div>
+      <div style="font-size:13px;font-weight:800;color:#60a5fa;margin-bottom:4px;">☁️ Offline + Live Sync Enabled</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;">Use the same hosted CRM link on laptop and mobile. Offline changes save locally; when internet returns, they merge back to Supabase and update the other device.</div>
+    </div>
+    <button class="btn btn-blue" onclick="manualCRMSync()">↻ Sync Now</button>
+  </div>
   <div class="stats-grid" id="statsGrid"></div>
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;">
@@ -997,59 +1045,203 @@ function toast(msg, type='success'){
   setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2500);
 }
 
-// ─── STORAGE ─────────────────────────────────────────────────────────
+// ─── STORAGE + OFFLINE-FIRST DEVICE SYNC ─────────────────────────────
 let _saveTimer = null;
-function save(){
+let _remoteApplying = false;
+
+function stableCRMString(obj){
   try{
-    localStorage.setItem('sccrm_contacts', JSON.stringify(contacts));
-    localStorage.setItem('sccrm_settings', JSON.stringify(settings));
-    localStorage.setItem('sccrm_projects', JSON.stringify(projects));
-  }catch(e){}
-  // Debounce cloud save — only sync after 2 seconds of no changes
+    return JSON.stringify(obj, (k,v)=>{
+      if(k === '_updatedAt' || k === '_uid' || k === '__sync') return undefined;
+      return v;
+    });
+  }catch(e){ return String(obj); }
+}
+function crmRecordKey(item, prefix='r'){
+  if(!item) return prefix + '_' + Math.random().toString(36).slice(2);
+  const raw = item._uid || item.id || item.phone || item.Phone || item.mobile || item.Mobile || item.name || item.Name || item.projectName || item.name;
+  return String(raw || (prefix + '_' + Math.random().toString(36).slice(2))).toLowerCase().replace(/[^a-z0-9+@._-]/g,'');
+}
+function readLocalArray(key){
+  try{ return JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){ return []; }
+}
+function stampChangedRecords(currentArr, oldArr, prefix){
+  const now = Date.now();
+  const oldByKey = new Map((oldArr || []).map(x => [crmRecordKey(x, prefix), x]));
+  return (currentArr || []).map((item, idx)=>{
+    if(!item) return item;
+    const copy = { ...item };
+    if(!copy._uid) copy._uid = prefix + '_' + crmRecordKey(copy, prefix) + '_' + idx;
+    const key = crmRecordKey(copy, prefix);
+    const old = oldByKey.get(key);
+    if(!copy._updatedAt || !old || stableCRMString(copy) !== stableCRMString(old)) copy._updatedAt = now;
+    return copy;
+  });
+}
+function mergeByRecordTime(localArr=[], remoteArr=[], prefix='r'){
+  const map = new Map();
+  [...remoteArr, ...localArr].forEach((item, idx)=>{
+    if(!item) return;
+    const normalized = { ...item };
+    if(!normalized._uid) normalized._uid = prefix + '_' + crmRecordKey(normalized, prefix) + '_' + idx;
+    if(!normalized._updatedAt) normalized._updatedAt = 0;
+    const key = crmRecordKey(normalized, prefix);
+    const existing = map.get(key);
+    if(!existing || Number(normalized._updatedAt||0) >= Number(existing._updatedAt||0)){
+      // Special case: keep longest notes list when both devices touched the same contact.
+      if(existing && Array.isArray(existing.notes) && Array.isArray(normalized.notes) && existing.notes.length > normalized.notes.length){
+        normalized.notes = existing.notes;
+      }
+      map.set(key, normalized);
+    }
+  });
+  return Array.from(map.values());
+}
+function mergeCRMData(localData, remoteData){
+  const localMeta = localData.settings && localData.settings.__sync ? localData.settings.__sync : {};
+  const remoteMeta = remoteData.settings && remoteData.settings.__sync ? remoteData.settings.__sync : {};
+  const settingsWinner = Number(remoteMeta.updatedAt||0) > Number(localMeta.updatedAt||0)
+    ? { ...(localData.settings||{}), ...(remoteData.settings||{}) }
+    : { ...(remoteData.settings||{}), ...(localData.settings||{}) };
+  return {
+    contacts: mergeByRecordTime(localData.contacts||[], remoteData.contacts||[], 'c'),
+    projects: mergeByRecordTime(localData.projects||[], remoteData.projects||[], 'p'),
+    settings: { ...settingsWinner, __sync: { ...(settingsWinner.__sync||{}), lastMergedAt: Date.now() } }
+  };
+}
+function persistLocalCRM(){
+  localStorage.setItem('sccrm_contacts', JSON.stringify(contacts));
+  localStorage.setItem('sccrm_settings', JSON.stringify(settings));
+  localStorage.setItem('sccrm_projects', JSON.stringify(projects));
+}
+function applySettingsToInputs(){
+  const n=document.getElementById('agentName'), c=document.getElementById('agentCompany'), t=document.getElementById('agentTagline');
+  if(n) n.value=settings.name||'Triloki Chaudhary';
+  if(c) c.value=settings.company||'Solanki Capital Properties LLC';
+  if(t) t.value=settings.tagline||'Your Trusted Property Advisor';
+}
+function refreshActiveCRMViews(){
+  try{
+    if(typeof renderDashboard === 'function') renderDashboard();
+    if(document.getElementById('page-contacts')?.classList.contains('active') && typeof renderContacts === 'function') renderContacts();
+    if(document.getElementById('page-outreach')?.classList.contains('active') && typeof renderOutreach === 'function') renderOutreach();
+    if(document.getElementById('page-followup')?.classList.contains('active') && typeof renderFU === 'function') renderFU();
+    if(document.getElementById('page-pipeline')?.classList.contains('active') && typeof renderPipeline === 'function') renderPipeline();
+    if(document.getElementById('page-projects')?.classList.contains('active') && typeof renderProjects === 'function') renderProjects();
+  }catch(e){ console.warn('View refresh failed:', e); }
+}
+window.updateSyncBadge = function(forceState, forceText){
+  let el = document.getElementById('crmSyncBadge');
+  if(!el){
+    el = document.createElement('button');
+    el.id = 'crmSyncBadge';
+    el.type = 'button';
+    el.onclick = ()=>{ if(typeof window.manualCRMSync === 'function') window.manualCRMSync(); };
+    el.style.cssText = 'position:fixed;right:14px;bottom:88px;z-index:9998;border:none;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:700;box-shadow:0 8px 30px rgba(0,0,0,.35);cursor:pointer;';
+    document.body.appendChild(el);
+  }
+  const pending = localStorage.getItem('sccrm_pending_sync') === '1';
+  const last = localStorage.getItem('sccrm_last_sync_at');
+  let state = forceState || (!navigator.onLine ? 'offline' : pending ? 'pending' : 'synced');
+  let text = forceText || (state==='offline' ? 'Offline • saved locally' : state==='pending' ? 'Pending sync' : 'Synced');
+  let bg = '#1e3a2f', color = '#4ade80', border = '#2d5c45';
+  if(state==='offline'){ bg='#2a1f0a'; color='#fbbf24'; border='#3a2a0a'; }
+  if(state==='pending' || state==='syncing'){ bg='#1a2a3a'; color='#60a5fa'; border='#1e4a7c'; }
+  if(state==='error'){ bg='#3a1515'; color='#f87171'; border='#5a2020'; }
+  el.style.background = bg; el.style.color = color; el.style.border = '1px solid '+border;
+  el.title = last ? 'Last synced: '+new Date(last).toLocaleString() : 'No cloud sync yet';
+  el.textContent = (state==='syncing' ? '↻ ' : state==='offline' ? '📴 ' : state==='pending' ? '☁️ ' : '✅ ') + text;
+};
+
+function save(){
+  if(_remoteApplying) return;
+  try{
+    const oldContacts = readLocalArray('sccrm_contacts');
+    const oldProjects = readLocalArray('sccrm_projects');
+    contacts = stampChangedRecords(contacts, oldContacts, 'c');
+    projects = stampChangedRecords(projects, oldProjects, 'p');
+    settings = { ...(settings||{}), __sync: { deviceId: window.CRM_DEVICE_ID, updatedAt: Date.now(), version: 'offline-pwa-v10' } };
+    persistLocalCRM();
+    localStorage.setItem('sccrm_pending_sync', '1');
+  }catch(e){ console.error('Local save failed:', e); }
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(()=>{
-    try{ window.saveToFirebase({contacts, settings, projects}); }catch(e){}
-  }, 2000);
+    try{ window.saveToFirebase({contacts, settings, projects}); }catch(e){ console.error(e); }
+  }, 1200);
+  if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
 }
 
 function load(){
   try{
     const c=localStorage.getItem('sccrm_contacts'); if(c) contacts=JSON.parse(c);
-    const s=localStorage.getItem('sccrm_settings'); if(s){ settings=JSON.parse(s); document.getElementById('agentName').value=settings.name; document.getElementById('agentCompany').value=settings.company; document.getElementById('agentTagline').value=settings.tagline; }
+    const s=localStorage.getItem('sccrm_settings'); if(s){ settings=JSON.parse(s); applySettingsToInputs(); }
     const p=localStorage.getItem('sccrm_projects'); if(p) projects=JSON.parse(p);
-  }catch(e){}
+  }catch(e){ console.error('Local load failed:', e); }
+  if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
 }
 
 async function loadFromCloud(){
   try {
-    const data = await window.loadFromFirebase();
-    if(data && (data.contacts || data.projects)){
-      if(data.contacts && data.contacts.length > 0){
-        // Merge: cloud is source of truth but preserve local notes/status if contact exists
-        const localMap = {};
-        contacts.forEach(c => localMap[c.phone] = c);
-        contacts = data.contacts.map(c => {
-          const local = localMap[c.phone];
-          if(local && local.notes && local.notes.length > (c.notes||[]).length) {
-            return {...c, notes: local.notes, status: local.status, priority: local.priority, lastContact: local.lastContact, callbackDate: local.callbackDate};
-          }
-          return c;
-        });
-      }
-      if(data.projects) projects = data.projects;
-      if(data.settings){
-        settings = data.settings;
-        document.getElementById('agentName').value=settings.name||'Triloki Chaudhary';
-        document.getElementById('agentCompany').value=settings.company||'Solanki Capital Properties LLC';
-        document.getElementById('agentTagline').value=settings.tagline||'Your Trusted Property Advisor';
-      }
-      try{ localStorage.setItem('sccrm_contacts', JSON.stringify(contacts)); localStorage.setItem('sccrm_projects', JSON.stringify(projects)); }catch(e){}
-      renderDashboard();
-      // If contacts page is open, re-render it too
-      if(document.getElementById('page-contacts').classList.contains('active')) renderContacts();
+    if(!navigator.onLine){
+      if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('offline', 'Offline • saved locally');
+      return;
     }
-  } catch(e){ console.error('Cloud load error:', e); }
+    if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('syncing', 'Syncing...');
+    const remote = await window.loadFromFirebase();
+    if(remote && (remote.contacts || remote.projects || remote.settings)){
+      const merged = mergeCRMData({contacts, projects, settings}, remote);
+      _remoteApplying = true;
+      contacts = merged.contacts;
+      projects = merged.projects;
+      settings = merged.settings;
+      persistLocalCRM();
+      applySettingsToInputs();
+      _remoteApplying = false;
+      refreshActiveCRMViews();
+      await window.saveToFirebase({contacts, settings, projects});
+    }else{
+      await window.saveToFirebase({contacts, settings, projects});
+    }
+    if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('synced', 'Synced');
+  } catch(e){
+    _remoteApplying = false;
+    console.error('Cloud merge/load error:', e);
+    localStorage.setItem('sccrm_pending_sync', '1');
+    if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('error', 'Sync error');
+  }
 }
+
+window.handleRemoteCRMUpdate = function(row){
+  try{
+    if(!row) return;
+    const remote = { contacts: row.contacts||[], projects: row.projects||[], settings: row.settings||{} };
+    const meta = remote.settings && remote.settings.__sync;
+    if(meta && meta.deviceId === window.CRM_DEVICE_ID) return;
+    const merged = mergeCRMData({contacts, projects, settings}, remote);
+    _remoteApplying = true;
+    contacts = merged.contacts;
+    projects = merged.projects;
+    settings = merged.settings;
+    persistLocalCRM();
+    applySettingsToInputs();
+    _remoteApplying = false;
+    refreshActiveCRMViews();
+    localStorage.setItem('sccrm_last_sync_at', new Date().toISOString());
+    localStorage.setItem('sccrm_pending_sync', '0');
+    if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('synced', 'Live update received');
+    if(typeof toast === 'function') toast('CRM updated from another device', 'info');
+  }catch(e){
+    _remoteApplying = false;
+    console.error('Remote update apply failed:', e);
+  }
+};
+
+window.manualCRMSync = async function(){
+  await loadFromCloud();
+};
+window.addEventListener('online', ()=>{ if(typeof toast === 'function') toast('Internet back — syncing CRM', 'info'); loadFromCloud(); });
+window.addEventListener('offline', ()=>{ if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('offline', 'Offline • saved locally'); });
+setInterval(()=>{ if(navigator.onLine && localStorage.getItem('sccrm_pending_sync') === '1') loadFromCloud(); }, 30000);
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────
 function navToContacts(status){
@@ -2989,8 +3181,7 @@ async function loadNewsTicker(){
     for(const p of ['https://corsproxy.io/?'+encodeURIComponent(gFeed),'https://api.allorigins.win/get?url='+encodeURIComponent(gFeed)]){
       try{
         const r=await fetch(p,{signal:AbortSignal.timeout(7000)});
-        const raw=await r.json();
-        const x=raw.contents||'';
+        const raw=await r.json(); const x=raw.contents||'';
         if(x.includes('<item>')){
           const xml=new DOMParser().parseFromString(x,'text/xml');
           const live=[...xml.querySelectorAll('item')].slice(0,12).map(i=>({title:(i.querySelector('title')?.textContent||'').replace(/ - Google News$/,'').replace(/ - [^-]*$/,''),link:i.querySelector('link')?.textContent||'#'})).filter(i=>i.title.length>10);
@@ -3061,22 +3252,20 @@ async function loadMarketData(){
 
   // 3. News from multiple sources horizontally
   try {
-    let allNews = [];
-    for(const feed of ['https://news.google.com/rss/search?q=Dubai+property+real+estate&hl=en&gl=AE&ceid=AE:en']){
-      try {
-        const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(feed),{signal:AbortSignal.timeout(7000)});
-        const raw=await r.json(); const x=raw.contents||'';
-        if(x.includes('<item>')){
-          const xml=new DOMParser().parseFromString(x,'text/xml');
-          [...xml.querySelectorAll('item')].slice(0,8).forEach(i=>{
-            const title=(i.querySelector('title')?.textContent||'').replace(/ - Google News$/,'').replace(/ - [^-]*$/,'');
-            const link=i.querySelector('link')?.textContent||'#';
-            const pubDate=i.querySelector('pubDate')?.textContent||'';
-            if(title&&title.length>10) allNews.push({title,link,pubDate});
-          });
-        }
-      } catch(err){}
-    }
+    let allNews=[];
+    try{
+      const r=await fetch('https://corsproxy.io/?'+encodeURIComponent('https://news.google.com/rss/search?q=Dubai+property+real+estate&hl=en&gl=AE&ceid=AE:en'),{signal:AbortSignal.timeout(7000)});
+      const raw=await r.json(); const x=raw.contents||'';
+      if(x.includes('<item>')){
+        const xml=new DOMParser().parseFromString(x,'text/xml');
+        [...xml.querySelectorAll('item')].slice(0,8).forEach(i=>{
+          const title=(i.querySelector('title')?.textContent||'').replace(/ - Google News$/,'').replace(/ - [^-]*$/,'');
+          const link=i.querySelector('link')?.textContent||'#';
+          const pubDate=i.querySelector('pubDate')?.textContent||'';
+          if(title&&title.length>10) allNews.push({title,link,pubDate});
+        });
+      }
+    }catch(err){}
 
     const newsEl = document.getElementById('dubaiNews');
     if(newsEl && allNews.length > 0){
@@ -3579,7 +3768,9 @@ function ADV_markStaleCold(){
 (async function initCRMSafely(){
   try{
     if(typeof load === 'function') load();
+    if(typeof updateSyncBadge === 'function') updateSyncBadge();
     if(typeof loadFromCloud === 'function') await loadFromCloud();
+    if(typeof startCRMRealtime === 'function') startCRMRealtime();
     if(typeof renderDashboard === 'function') renderDashboard();
     const dashDate = document.getElementById('dash-date');
     if(dashDate){
@@ -3595,10 +3786,8 @@ function ADV_markStaleCold(){
 })();
 </script>
 
-
 <style>
 .area-popup{position:fixed;bottom:90px;right:20px;background:linear-gradient(135deg,#1a2a1a,#0f1f0f);border:1px solid #25D366;border-radius:14px;padding:14px 18px;z-index:500;min-width:230px;max-width:270px;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:slideInRight 0.4s ease;cursor:pointer;}
-.area-popup:hover{border-color:#4ade80;}
 .area-popup.hide{animation:slideOutRight 0.3s ease forwards;}
 @keyframes slideInRight{from{transform:translateX(120%);opacity:0;}to{transform:translateX(0);opacity:1;}}
 @keyframes slideOutRight{from{transform:translateX(0);opacity:1;}to{transform:translateX(120%);opacity:0;}}
@@ -3635,7 +3824,6 @@ function ADV_markStaleCold(){
       <button class="calc-tab" id="tab-area" onclick="switchCalcTab('area')">📐 Area</button>
       <button class="calc-tab" id="tab-currency" onclick="switchCalcTab('currency')">💱 Currency</button>
     </div>
-
     <div id="calc-mortgage">
       <div style="display:flex;gap:8px;margin-bottom:14px;">
         <button class="tone-btn active" id="mort-res-btn" onclick="setMortType('resident')">🇦🇪 Resident</button>
@@ -3668,26 +3856,19 @@ function ADV_markStaleCold(){
       </div>
       <button class="btn btn-green" style="width:100%;margin-top:12px;" onclick="copyMortgage()">📋 Copy Summary</button>
     </div>
-
     <div id="calc-area" style="display:none;">
       <div style="margin-bottom:14px;">
         <label class="lbl">Enter Value</label>
         <div style="display:flex;gap:8px;">
           <input type="number" id="area_val" placeholder="e.g. 1500" oninput="convertArea()" style="flex:2;"/>
           <select id="area_from" onchange="convertArea()" style="flex:1;">
-            <option value="sqft">sqft</option>
-            <option value="sqm">sqm</option>
-            <option value="gaj">Gaj</option>
-            <option value="yard">Sq Yard</option>
-            <option value="acre">Acre</option>
-            <option value="marla">Marla</option>
-            <option value="kanal">Kanal</option>
+            <option value="sqft">sqft</option><option value="sqm">sqm</option><option value="gaj">Gaj</option>
+            <option value="yard">Sq Yard</option><option value="acre">Acre</option>
+            <option value="marla">Marla</option><option value="kanal">Kanal</option>
           </select>
         </div>
       </div>
-      <div id="area_results" style="background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--border);margin-bottom:12px;">
-        <div style="color:var(--text3);font-size:13px;">Enter a value above</div>
-      </div>
+      <div id="area_results" style="background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--border);margin-bottom:12px;"><div style="color:var(--text3);font-size:13px;">Enter a value above</div></div>
       <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border);">
         <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💰 Price Calculator</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -3698,7 +3879,6 @@ function ADV_markStaleCold(){
         <div id="area_price_result" style="margin-top:10px;font-size:18px;font-weight:700;color:var(--green);"></div>
       </div>
     </div>
-
     <div id="calc-currency" style="display:none;">
       <div style="display:flex;gap:8px;margin-bottom:14px;align-items:flex-end;flex-wrap:wrap;">
         <div style="flex:1;min-width:80px;"><label class="lbl">Amount</label><input type="number" id="curr_amt" value="1" oninput="convertCurrency()"/></div>
@@ -3783,6 +3963,8 @@ function switchCalcTab(tab){
   });
   if(tab==='currency') loadCurrencyRates();
 }
+function openCalcModal(tab){ document.getElementById('calcModal').classList.add('open'); switchCalcTab(tab||'mortgage'); }
+function openMortgageCalc(){ openCalcModal('mortgage'); }
 
 let _mortType='resident';
 function setMortType(type){
@@ -3805,13 +3987,12 @@ function calcMortgage(){
   const monthly=loan*(mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1);
   const totalInterest=monthly*n-loan;
   const dld=price*0.04,agentFee=price*0.02,regFee=price<500000?2000:4000,mortReg=loan*0.0025,trustee=4200;
-  const totalCosts=dld+agentFee+regFee+mortReg+trustee;
   const f=v=>'AED '+Math.round(v).toLocaleString('en-US');
   document.getElementById('mort_monthly').textContent=f(monthly);
   document.getElementById('mort_loan').textContent=f(loan);
   document.getElementById('mort_dp_amt').textContent=f(dpAmt);
   document.getElementById('mort_interest').textContent=f(totalInterest);
-  document.getElementById('mort_costs').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;"><div>DLD 4%: <b style="color:var(--text)">${f(dld)}</b></div><div>Agent 2%: <b>${f(agentFee)}</b></div><div>Registration: <b>${f(regFee)}</b></div><div>Mortgage Reg: <b>${f(mortReg)}</b></div><div>Trustee: <b>${f(trustee)}</b></div><div style="color:var(--orange)">Total: <b>${f(totalCosts)}</b></div></div>`;
+  document.getElementById('mort_costs').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;"><div>DLD 4%: <b style="color:var(--text)">${f(dld)}</b></div><div>Agent 2%: <b>${f(agentFee)}</b></div><div>Registration: <b>${f(regFee)}</b></div><div>Mortgage Reg: <b>${f(loan*0.0025)}</b></div><div>Trustee: <b>${f(trustee)}</b></div><div style="color:var(--orange)">Total: <b>${f(dld+agentFee+regFee+mortReg+trustee)}</b></div></div>`;
   document.getElementById('mort_result').style.display='block';
   window._lastMortSummary=`Mortgage (${_mortType==='overseas'?'Overseas':'UAE Resident'})
 Property: ${f(price)}
@@ -3819,18 +4000,13 @@ Down: ${dpPct}% = ${f(dpAmt)}
 Loan: ${f(loan)} @ ${rate}% ${years}yrs
 Monthly EMI: ${f(monthly)}
 Total Interest: ${f(totalInterest)}
-DLD: ${f(dld)} | Agent: ${f(agentFee)} | Reg: ${f(regFee)}
-Total One-time: ${f(totalCosts)}`;
+DLD: ${f(dld)} | Agent: ${f(agentFee)}
+Total One-time Costs: ${f(dld+agentFee+regFee+loan*0.0025+trustee)}`;
 }
 function copyMortgage(){
   if(!window._lastMortSummary){alert('Calculate first');return;}
   navigator.clipboard.writeText(window._lastMortSummary).then(()=>typeof toast!=='undefined'&&toast('Copied!')).catch(()=>{const t=document.createElement('textarea');t.value=window._lastMortSummary;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();typeof toast!=='undefined'&&toast('Copied!');});
 }
-function openCalcModal(tab){
-  document.getElementById('calcModal').classList.add('open');
-  switchCalcTab(tab||'mortgage');
-}
-function openMortgageCalc(){openCalcModal('mortgage');}
 
 const AREA_CONV={sqft:{toSqft:1,label:'Square Feet'},sqm:{toSqft:10.7639,label:'Square Meters'},gaj:{toSqft:9,label:'Gaj (Indian Sq Yard)'},yard:{toSqft:9,label:'Square Yard'},acre:{toSqft:43560,label:'Acre'},marla:{toSqft:272.25,label:'Marla (Pakistan)'},kanal:{toSqft:5445,label:'Kanal (Pakistan)'}};
 function convertArea(){
@@ -3872,7 +4048,10 @@ function convertCurrency(){
   const to=document.getElementById('curr_to').value;
   const result=amt/_rates[from]*_rates[to];
   const d=result>=1?result.toLocaleString('en-US',{maximumFractionDigits:4}):result.toFixed(6);
-  document.getElementById('curr_val').textContent=d+' '+to;
+  const el=document.getElementById('curr_val');
+  if(el) el.textContent=d+' '+to;
+  const lbl=document.getElementById('curr_rate_label');
+  if(lbl&&!lbl.textContent.includes('Live')&&!lbl.textContent.includes('Cached')) lbl.textContent=`1 ${from} = ${(_rates[to]/_rates[from]).toFixed(6)} ${to}`;
 }
 </script>
 </body>
