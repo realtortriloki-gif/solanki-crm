@@ -1555,8 +1555,6 @@ function renderContacts(){
     // Shorten source filename
     const srcShort=c.source?c.source.replace(/\.xlsx?$/i,'').slice(0,20)+(c.source.length>24?'…':''):'—';
     const tr=document.createElement('tr');
-    tr.style.cursor='pointer';
-    tr.onclick=function(e){ if(e.target.tagName==='SELECT'||e.target.tagName==='INPUT'||e.target.tagName==='BUTTON'||e.target.tagName==='A') return; openContact(c.id); };
     tr.innerHTML=`
       <td style="color:var(--text3);">${i+1}</td>
       <td><div style="font-weight:500;cursor:pointer;color:var(--blue);" onclick="openContact(${c.id})">${c.name}</div><div style="font-size:10px;color:var(--text3);">${c.community||'—'}</div></td>
@@ -3240,61 +3238,59 @@ async function loadNewsTicker(){
 }
 
 // ─── MARKET DATA ─────────────────────────────────────────────────────
+// Auto refresh market data every 5 minutes
+let _marketRefreshTimer = null;
+function startMarketAutoRefresh(){
+  clearInterval(_marketRefreshTimer);
+  _marketRefreshTimer = setInterval(()=>loadMarketData(), 5*60*1000);
+}
+
 async function loadMarketData(){
-  // 1. Currency rates
+  // 1. Currency rates — INR, USD, GBP highlighted first
   try {
-    const res = await fetch('https://open.er-api.com/v6/latest/AED');
+    const res = await fetch('https://open.er-api.com/v6/latest/AED', {signal:AbortSignal.timeout(6000)});
     const data = await res.json();
     const pairs = {INR:'🇮🇳 INR', USD:'🇺🇸 USD', GBP:'🇬🇧 GBP', EUR:'🇪🇺 EUR', PKR:'🇵🇰 PKR', SAR:'🇸🇦 SAR', QAR:'🇶🇦 QAR', KWD:'🇰🇼 KWD', BHD:'🇧🇭 BHD', OMR:'🇴🇲 OMR'};
+    const highlight = ['INR','USD','GBP'];
     const ratesEl = document.getElementById('currencyRates');
     if(ratesEl && data.rates) ratesEl.innerHTML = Object.entries(pairs).map(([code, label])=>{
       const rate = data.rates[code];
-      return rate ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:110px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">${label}</div><div style="font-size:14px;font-weight:600;color:var(--blue);">1 AED = ${rate.toFixed(2)}</div></div>` : '';
+      const isHL = highlight.includes(code);
+      return rate ? `<div style="background:var(--bg2);border:1px solid ${isHL?'#2a4a6a':' var(--border)'};border-radius:8px;padding:8px 12px;min-width:110px;flex-shrink:0;">
+        <div style="font-size:11px;color:var(--text3);">${label}</div>
+        <div style="font-size:${isHL?'15':'14'}px;font-weight:${isHL?'700':'600'};color:${isHL?'#60a5fa':'var(--blue)'};">1 AED = ${rate.toFixed(4)}</div>
+        ${isHL?`<div style="font-size:10px;color:var(--text3);">${(1/rate).toFixed(4)} ${code} = 1 AED</div>`:''}
+      </div>` : '';
     }).join('');
   } catch(e) {
     const el = document.getElementById('currencyRates');
-    if(el) el.innerHTML = '<div style="color:var(--text3);font-size:12px;">Unable to load</div>';
+    if(el) el.innerHTML = '<div style="color:var(--text3);font-size:12px;">Unable to load rates</div>';
   }
 
-  // 2. Commodity prices (Gold & Petrol UAE)
+  // 2. Gold (per gram) + Petrol UAE
   const petrolPrices = {'Special 95':'2.89','Super 98':'3.02','Diesel':'2.77','E-Plus 91':'2.77'};
   const comEl = document.getElementById('commodityPrices');
-  
-  // Show petrol immediately (static - UAE govt updates quarterly)
   const petrolCards = Object.entries(petrolPrices).map(([grade,price])=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">⛽ ${grade}</div><div style="font-size:14px;font-weight:600;color:var(--orange);">AED ${price}</div><div style="font-size:10px;color:var(--text3);">May 2026</div></div>`).join('');
-  if(comEl) comEl.innerHTML = `<div id="goldCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">Loading...</div></div>${petrolCards}`;
+  if(comEl) comEl.innerHTML = `<div id="goldCard" style="background:var(--bg2);border:1px solid #3a2a0a;border-radius:8px;padding:8px 12px;flex-shrink:0;min-width:130px;"><div style="font-size:11px;color:var(--text3);">🥇 Gold (per gram)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">Loading...</div></div>${petrolCards}`;
 
-  // Try multiple gold APIs
+  // Gold price — convert oz to gram (1 oz = 31.1035 grams)
   try {
-    let goldUSD = 0;
-    // Use frankfurter API - reliable and free
-    try {
-      const r = await fetch('https://api.frankfurter.app/latest?from=XAU&to=USD,AED', {signal: AbortSignal.timeout(5000)});
-      const d = await r.json();
-      if(d.rates?.USD) {
-        goldUSD = d.rates.USD;
-        const goldAED = d.rates.AED || (goldUSD * 3.6725);
-        const goldCard = document.getElementById('goldCard');
-        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ${Math.round(goldAED).toLocaleString()}</div><div style="font-size:10px;color:var(--text3);">USD ${Math.round(goldUSD).toLocaleString()}</div>`;
-      }
-    } catch(e1){
-      // Fallback to metals-api
-      try {
-        const r = await fetch('https://metals-api.com/api/latest?access_key=demo&base=XAU&symbols=USD', {signal: AbortSignal.timeout(4000)});
-        const d = await r.json();
-        goldUSD = 1 / (d.rates?.USD || 0.000303);
-        const goldAED = goldUSD * 3.6725;
-        const goldCard = document.getElementById('goldCard');
-        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ${Math.round(goldAED).toLocaleString()}</div><div style="font-size:10px;color:var(--text3);">USD ${Math.round(goldUSD).toLocaleString()}</div>`;
-      } catch(e2){
-        // Static fallback - approximate current price
-        const goldCard = document.getElementById('goldCard');
-        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ~12,100</div><div style="font-size:10px;color:var(--text3);">USD ~3,295</div>`;
-      }
+    const r = await fetch('https://api.frankfurter.app/latest?from=XAU&to=USD,AED', {signal: AbortSignal.timeout(6000)});
+    const d = await r.json();
+    if(d.rates?.USD) {
+      const goldUSDoz = d.rates.USD;
+      const goldAEDoz = d.rates.AED || (goldUSDoz * 3.6725);
+      const goldAEDgm = goldAEDoz / 31.1035;
+      const goldUSDgm = goldUSDoz / 31.1035;
+      const goldCard = document.getElementById('goldCard');
+      if(goldCard) goldCard.innerHTML = `
+        <div style="font-size:11px;color:var(--text3);">🥇 Gold (per gram)</div>
+        <div style="font-size:15px;font-weight:700;color:#fbbf24;">AED ${goldAEDgm.toFixed(2)}</div>
+        <div style="font-size:10px;color:var(--text3);">USD ${goldUSDgm.toFixed(2)} | oz: AED ${Math.round(goldAEDoz).toLocaleString()}</div>`;
     }
   } catch(e) {
     const goldCard = document.getElementById('goldCard');
-    if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">~AED 12,100</div><div style="font-size:10px;color:var(--text3);">~USD 3,295</div>`;
+    if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per gram)</div><div style="font-size:15px;font-weight:700;color:#fbbf24;">AED ~389</div><div style="font-size:10px;color:var(--text3);">USD ~106 | oz: ~AED 12,100</div>`;
   }
 
   // 3. News from multiple sources horizontally
