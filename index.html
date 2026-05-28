@@ -240,9 +240,11 @@ tr:hover td{background:#161616;}
   <button class="nav-item" onclick="nav('pipeline',this)"><span class="nav-icon">🏆</span> Pipeline</button>
   <button class="nav-item" onclick="nav('projects',this)"><span class="nav-icon">🏗️</span> Projects</button>
   <button class="nav-item" onclick="nav('settings',this)"><span class="nav-icon">⚙️</span> Settings</button>
-  <button class="nav-item" onclick="openCalcModal('mortgage')" style="margin-top:8px;background:#0a2a1a;color:#25D366;border:1px solid #1a4a2a;"><span class="nav-icon">🏦</span> Mortgage Calc</button>
+  <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+  <button class="nav-item" onclick="openCalcModal('mortgage')" style="background:#0a2a1a;color:#25D366;border:1px solid #1a4a2a;"><span class="nav-icon">🏦</span> Mortgage</button>
   <button class="nav-item" onclick="openCalcModal('area')" style="background:#0a1a2a;color:#60a5fa;border:1px solid #1a2a4a;"><span class="nav-icon">📐</span> Area Convert</button>
   <button class="nav-item" onclick="openCalcModal('currency')" style="background:#1a1a0a;color:#f59e0b;border:1px solid #3a3a0a;"><span class="nav-icon">💱</span> Currency</button>
+  </div>
   <div style="position:absolute;bottom:1rem;left:1rem;right:1rem;">
     <button class="btn btn-ghost" style="width:100%;font-size:11px;" onclick="exportCSV()">⬇ Export CSV</button>
   </div>
@@ -267,6 +269,9 @@ tr:hover td{background:#161616;}
   </button>
   <button onclick="nav('projects',this);syncBottomNav('projects')" id="bnav-projects">
     <span class="bnav-icon">🏗️</span><span>Projects</span>
+  </button>
+  <button onclick="openCalcModal('mortgage')" id="bnav-calc">
+    <span class="bnav-icon">🧮</span><span>Calc</span>
   </button>
 </div>
 
@@ -600,7 +605,7 @@ tr:hover td{background:#161616;}
       <h2 style="font-size:18px;font-weight:700;">⚡ Advanced Command Center</h2>
       <p style="font-size:12px;color:var(--text3);margin-top:4px;">Lead health, duplicate cleaner, DLD calculator, daily action plan and WhatsApp scripts.</p>
     </div>
-    <button class="btn btn-green" onclick="ADV_refreshAdvanced();toast('✅ Advanced refreshed!')">↻ Refresh Advanced</button>
+    <button class="btn btn-green" onclick="ADV_refreshAdvanced()">↻ Refresh Advanced</button>
   </div>
 
   <div class="stats-grid" id="advStatsGrid"></div>
@@ -3060,8 +3065,7 @@ async function loadMarketData(){
     for(const feed of ['https://news.google.com/rss/search?q=Dubai+property+real+estate&hl=en&gl=AE&ceid=AE:en']){
       try {
         const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(feed),{signal:AbortSignal.timeout(7000)});
-        const raw=await r.json();
-        const x=raw.contents||'';
+        const raw=await r.json(); const x=raw.contents||'';
         if(x.includes('<item>')){
           const xml=new DOMParser().parseFromString(x,'text/xml');
           [...xml.querySelectorAll('item')].slice(0,8).forEach(i=>{
@@ -3592,8 +3596,6 @@ function ADV_markStaleCold(){
 </script>
 
 
-<!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- AREA PRICE POPUP -->
 <style>
 .area-popup{position:fixed;bottom:90px;right:20px;background:linear-gradient(135deg,#1a2a1a,#0f1f0f);border:1px solid #25D366;border-radius:14px;padding:14px 18px;z-index:500;min-width:230px;max-width:270px;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:slideInRight 0.4s ease;cursor:pointer;}
 .area-popup:hover{border-color:#4ade80;}
@@ -3605,12 +3607,12 @@ function ADV_markStaleCold(){
 .area-popup-price{font-size:22px;font-weight:800;color:#25D366;}
 .area-popup-sub{font-size:11px;color:#888;margin-top:3px;}
 .area-popup-close{position:absolute;top:8px;right:10px;color:#555;font-size:14px;cursor:pointer;background:none;border:none;}
-@media(max-width:768px){.area-popup{bottom:80px;right:10px;left:10px;min-width:auto;}}
+@media(max-width:768px){.area-popup{bottom:80px;right:10px;left:10px;min-width:auto;max-width:none;}}
 .mort-section{background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid var(--border);}
 .mort-result{background:linear-gradient(135deg,#0a2a1a,#051510);border:1px solid #25D366;border-radius:10px;padding:16px;margin-top:12px;}
-.mort-result-val{font-size:26px;font-weight:800;color:#25D366;}
+.mort-result-val{font-size:24px;font-weight:800;color:#25D366;}
 .mort-result-lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;}
-.calc-tab{flex:1;padding:8px;font-size:12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;transition:all 0.15s;text-align:center;}
+.calc-tab{flex:1;padding:8px 4px;font-size:12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;transition:all 0.15s;text-align:center;}
 .calc-tab.active{background:#1a2a3a;border-color:#2a4a6a;color:var(--blue);}
 </style>
 
@@ -3622,25 +3624,22 @@ function ADV_markStaleCold(){
   <div class="area-popup-sub" id="popupSub">Apartment • ↑ 11% YoY</div>
 </div>
 
-<!-- CALCULATORS MODAL -->
 <div class="modal-overlay" id="calcModal">
   <div class="modal" style="max-width:560px;">
     <div class="modal-header">
       <div class="modal-title">🧮 Calculators</div>
       <button class="modal-close" onclick="document.getElementById('calcModal').classList.remove('open')">✕</button>
     </div>
-    <!-- Tabs -->
     <div style="display:flex;gap:6px;margin-bottom:16px;">
       <button class="calc-tab active" id="tab-mortgage" onclick="switchCalcTab('mortgage')">🏦 Mortgage</button>
-      <button class="calc-tab" id="tab-area" onclick="switchCalcTab('area')">📐 Area Convert</button>
+      <button class="calc-tab" id="tab-area" onclick="switchCalcTab('area')">📐 Area</button>
       <button class="calc-tab" id="tab-currency" onclick="switchCalcTab('currency')">💱 Currency</button>
     </div>
 
-    <!-- MORTGAGE TAB -->
     <div id="calc-mortgage">
       <div style="display:flex;gap:8px;margin-bottom:14px;">
-        <button class="tone-btn active" id="mort-res-btn" onclick="setMortType('resident')">🇦🇪 UAE Resident</button>
-        <button class="tone-btn" id="mort-ovs-btn" onclick="setMortType('overseas')">✈️ Overseas Buyer</button>
+        <button class="tone-btn active" id="mort-res-btn" onclick="setMortType('resident')">🇦🇪 Resident</button>
+        <button class="tone-btn" id="mort-ovs-btn" onclick="setMortType('overseas')">✈️ Overseas</button>
       </div>
       <div class="mort-section">
         <div class="row2" style="gap:10px;margin-bottom:10px;">
@@ -3648,14 +3647,14 @@ function ADV_markStaleCold(){
           <div><label class="lbl">Down Payment %</label><input type="number" id="mort_dp" value="20" min="15" max="50" oninput="calcMortgage()"/></div>
         </div>
         <div class="row2" style="gap:10px;">
-          <div><label class="lbl">Interest Rate % (p.a.)</label><input type="number" id="mort_rate" value="4.5" step="0.1" min="1" max="15" oninput="calcMortgage()"/></div>
+          <div><label class="lbl">Interest Rate %</label><input type="number" id="mort_rate" value="4.5" step="0.1" oninput="calcMortgage()"/></div>
           <div><label class="lbl">Loan Term (Years)</label><input type="number" id="mort_term" value="25" min="5" max="25" oninput="calcMortgage()"/></div>
         </div>
-        <div id="mort_dpnote" style="font-size:11px;color:var(--orange);margin-top:8px;">🇦🇪 UAE Residents: minimum 20% down payment</div>
+        <div id="mort_dpnote" style="font-size:11px;color:var(--orange);margin-top:8px;">🇦🇪 UAE Residents: min 20% down payment</div>
       </div>
       <div class="mort-result" id="mort_result" style="display:none;">
         <div class="row2" style="gap:12px;margin-bottom:12px;">
-          <div><div class="mort-result-lbl">Monthly Payment</div><div class="mort-result-val" id="mort_monthly">—</div></div>
+          <div><div class="mort-result-lbl">Monthly EMI</div><div class="mort-result-val" id="mort_monthly">—</div></div>
           <div><div class="mort-result-lbl">Loan Amount</div><div class="mort-result-val" style="font-size:18px;color:var(--blue);" id="mort_loan">—</div></div>
         </div>
         <div class="row2" style="gap:12px;margin-bottom:10px;">
@@ -3670,113 +3669,96 @@ function ADV_markStaleCold(){
       <button class="btn btn-green" style="width:100%;margin-top:12px;" onclick="copyMortgage()">📋 Copy Summary</button>
     </div>
 
-    <!-- AREA CONVERTER TAB -->
     <div id="calc-area" style="display:none;">
       <div style="margin-bottom:14px;">
         <label class="lbl">Enter Value</label>
         <div style="display:flex;gap:8px;">
           <input type="number" id="area_val" placeholder="e.g. 1500" oninput="convertArea()" style="flex:2;"/>
           <select id="area_from" onchange="convertArea()" style="flex:1;">
-            <option value="sqft">Square Feet (sqft)</option>
-            <option value="sqm">Square Meters (sqm)</option>
-            <option value="gaj">Gaj (sq yard India)</option>
-            <option value="yard">Square Yard</option>
+            <option value="sqft">sqft</option>
+            <option value="sqm">sqm</option>
+            <option value="gaj">Gaj</option>
+            <option value="yard">Sq Yard</option>
             <option value="acre">Acre</option>
-            <option value="marla">Marla (Pakistan)</option>
-            <option value="kanal">Kanal (Pakistan)</option>
+            <option value="marla">Marla</option>
+            <option value="kanal">Kanal</option>
           </select>
         </div>
       </div>
-      <div id="area_results" style="background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--border);">
-        <div style="color:var(--text3);font-size:13px;">Enter a value to convert</div>
+      <div id="area_results" style="background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--border);margin-bottom:12px;">
+        <div style="color:var(--text3);font-size:13px;">Enter a value above</div>
       </div>
-      <div style="margin-top:14px;background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border);">
+      <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border);">
         <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💰 Price Calculator</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <input type="number" id="area_price_sqft" placeholder="Price per sqft (AED)" oninput="calcAreaPrice()" style="flex:1;min-width:150px;"/>
-          <div style="font-size:13px;color:var(--text3);">×</div>
-          <input type="number" id="area_sqft_count" placeholder="Total sqft" oninput="calcAreaPrice()" style="flex:1;min-width:120px;"/>
+          <input type="number" id="area_price_sqft" placeholder="AED per sqft" oninput="calcAreaPrice()" style="flex:1;min-width:120px;"/>
+          <span style="color:var(--text3);">×</span>
+          <input type="number" id="area_sqft_count" placeholder="Total sqft" oninput="calcAreaPrice()" style="flex:1;min-width:100px;"/>
         </div>
-        <div id="area_price_result" style="margin-top:10px;font-size:16px;font-weight:700;color:var(--green);"></div>
+        <div id="area_price_result" style="margin-top:10px;font-size:18px;font-weight:700;color:var(--green);"></div>
       </div>
     </div>
 
-    <!-- CURRENCY TAB -->
     <div id="calc-currency" style="display:none;">
-      <div style="display:flex;gap:8px;margin-bottom:14px;align-items:flex-end;">
-        <div style="flex:1;"><label class="lbl">Amount</label><input type="number" id="curr_amt" value="1" oninput="convertCurrency()"/></div>
-        <div style="flex:1;"><label class="lbl">From</label>
+      <div style="display:flex;gap:8px;margin-bottom:14px;align-items:flex-end;flex-wrap:wrap;">
+        <div style="flex:1;min-width:80px;"><label class="lbl">Amount</label><input type="number" id="curr_amt" value="1" oninput="convertCurrency()"/></div>
+        <div style="flex:1;min-width:100px;"><label class="lbl">From</label>
           <select id="curr_from" onchange="convertCurrency()">
-            <option value="AED">🇦🇪 AED</option>
-            <option value="USD">🇺🇸 USD</option>
-            <option value="GBP">🇬🇧 GBP</option>
-            <option value="EUR">🇪🇺 EUR</option>
-            <option value="INR">🇮🇳 INR</option>
-            <option value="PKR">🇵🇰 PKR</option>
-            <option value="SAR">🇸🇦 SAR</option>
-            <option value="QAR">🇶🇦 QAR</option>
+            <option value="AED">🇦🇪 AED</option><option value="USD">🇺🇸 USD</option><option value="GBP">🇬🇧 GBP</option>
+            <option value="EUR">🇪🇺 EUR</option><option value="INR">🇮🇳 INR</option><option value="PKR">🇵🇰 PKR</option>
+            <option value="SAR">🇸🇦 SAR</option><option value="QAR">🇶🇦 QAR</option>
           </select>
         </div>
-        <div style="flex:1;"><label class="lbl">To</label>
+        <div style="flex:1;min-width:100px;"><label class="lbl">To</label>
           <select id="curr_to" onchange="convertCurrency()">
-            <option value="INR">🇮🇳 INR</option>
-            <option value="AED">🇦🇪 AED</option>
-            <option value="USD">🇺🇸 USD</option>
-            <option value="GBP">🇬🇧 GBP</option>
-            <option value="EUR">🇪🇺 EUR</option>
-            <option value="PKR">🇵🇰 PKR</option>
-            <option value="SAR">🇸🇦 SAR</option>
-            <option value="QAR">🇶🇦 QAR</option>
+            <option value="INR">🇮🇳 INR</option><option value="AED">🇦🇪 AED</option><option value="USD">🇺🇸 USD</option>
+            <option value="GBP">🇬🇧 GBP</option><option value="EUR">🇪🇺 EUR</option><option value="PKR">🇵🇰 PKR</option>
+            <option value="SAR">🇸🇦 SAR</option><option value="QAR">🇶🇦 QAR</option>
           </select>
         </div>
       </div>
-      <div id="curr_result" style="background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border);text-align:center;">
+      <div style="background:var(--bg2);border-radius:10px;padding:16px;border:1px solid var(--border);text-align:center;margin-bottom:12px;">
         <div style="font-size:28px;font-weight:800;color:var(--green);" id="curr_val">—</div>
         <div style="font-size:12px;color:var(--text3);margin-top:4px;" id="curr_rate_label">Loading rates...</div>
       </div>
-      <div style="margin-top:12px;">
-        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">All Rates (base: AED)</div>
-        <div id="curr_all_rates" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;"></div>
-      </div>
-      <button class="btn btn-ghost" style="width:100%;margin-top:10px;" onclick="loadCurrencyRates()">↻ Refresh Rates</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;" id="curr_all_rates"></div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:10px;" onclick="loadCurrencyRates()">↻ Refresh Live Rates</button>
     </div>
-
   </div>
 </div>
 
 <script>
-// ─── AREA PRICE POPUP ────────────────────────────────────────────
-const AREA_PRICES = [
-  {area:'Downtown Dubai', price:'AED 3,100', type:'Apartment', trend:'↑ 11%'},
-  {area:'Dubai Marina', price:'AED 2,200', type:'Apartment', trend:'↑ 8%'},
-  {area:'Palm Jumeirah', price:'AED 3,800', type:'Villa/Apt', trend:'↑ 15%'},
-  {area:'Business Bay', price:'AED 2,050', type:'Apartment', trend:'↑ 9%'},
-  {area:'JVC', price:'AED 1,250', type:'Apartment', trend:'↑ 5%'},
-  {area:'Dubai Hills Estate', price:'AED 1,950', type:'Villa/Apt', trend:'↑ 12%'},
-  {area:'Arabian Ranches 3', price:'AED 1,600', type:'Villa', trend:'↑ 8%'},
-  {area:'DAMAC Hills 2', price:'AED 1,100', type:'Villa/Apt', trend:'↑ 6%'},
-  {area:'Al Barsha', price:'AED 1,150', type:'Apartment', trend:'↑ 4%'},
-  {area:'Creek Harbour', price:'AED 2,600', type:'Apartment', trend:'↑ 14%'},
-  {area:'Emaar Beachfront', price:'AED 4,100', type:'Apartment', trend:'↑ 18%'},
-  {area:'MBR City', price:'AED 2,050', type:'Villa/Apt', trend:'↑ 10%'},
-  {area:'Sobha Hartland 2', price:'AED 2,200', type:'Apartment', trend:'↑ 14%'},
-  {area:'Bluewaters Island', price:'AED 4,300', type:'Apartment', trend:'↑ 16%'},
-  {area:'DIFC', price:'AED 3,400', type:'Apartment', trend:'↑ 11%'},
-  {area:'JBR', price:'AED 2,800', type:'Apartment', trend:'↑ 10%'},
-  {area:'Palm Jebel Ali', price:'AED 2,600', type:'Villa', trend:'↑ 22%'},
-  {area:'Dubai South', price:'AED 1,100', type:'Apartment', trend:'↑ 7%'},
-  {area:'Tilal Al Ghaf', price:'AED 1,850', type:'Villa', trend:'↑ 13%'},
-  {area:'Al Furjan', price:'AED 1,200', type:'Apartment', trend:'↑ 6%'},
-  {area:'Sports City', price:'AED 980', type:'Apartment', trend:'↑ 3%'},
-  {area:'Discovery Gardens', price:'AED 800', type:'Apartment', trend:'↑ 2%'},
-  {area:'International City', price:'AED 600', type:'Apartment', trend:'↑ 2%'},
-  {area:'Town Square', price:'AED 950', type:'Apt/Villa', trend:'↑ 4%'},
-  {area:'Arjan', price:'AED 1,050', type:'Apartment', trend:'↑ 5%'},
-  {area:'Mirdif', price:'AED 1,000', type:'Villa/Apt', trend:'↑ 4%'},
-  {area:'Deira', price:'AED 820', type:'Apartment', trend:'↑ 2%'},
-  {area:'Bur Dubai', price:'AED 950', type:'Apartment', trend:'↑ 3%'},
-  {area:'Motor City', price:'AED 920', type:'Apartment', trend:'↑ 3%'},
-  {area:'JVT', price:'AED 1,150', type:'Apartment', trend:'↑ 5%'},
+const AREA_PRICES=[
+  {area:'Downtown Dubai',price:'AED 3,100',type:'Apartment',trend:'↑ 11%'},
+  {area:'Dubai Marina',price:'AED 2,200',type:'Apartment',trend:'↑ 8%'},
+  {area:'Palm Jumeirah',price:'AED 3,800',type:'Villa/Apt',trend:'↑ 15%'},
+  {area:'Business Bay',price:'AED 2,050',type:'Apartment',trend:'↑ 9%'},
+  {area:'JVC',price:'AED 1,250',type:'Apartment',trend:'↑ 5%'},
+  {area:'Dubai Hills Estate',price:'AED 1,950',type:'Villa/Apt',trend:'↑ 12%'},
+  {area:'Arabian Ranches 3',price:'AED 1,600',type:'Villa',trend:'↑ 8%'},
+  {area:'DAMAC Hills 2',price:'AED 1,100',type:'Villa/Apt',trend:'↑ 6%'},
+  {area:'Al Barsha',price:'AED 1,150',type:'Apartment',trend:'↑ 4%'},
+  {area:'Creek Harbour',price:'AED 2,600',type:'Apartment',trend:'↑ 14%'},
+  {area:'Emaar Beachfront',price:'AED 4,100',type:'Apartment',trend:'↑ 18%'},
+  {area:'MBR City',price:'AED 2,050',type:'Villa/Apt',trend:'↑ 10%'},
+  {area:'Sobha Hartland 2',price:'AED 2,200',type:'Apartment',trend:'↑ 14%'},
+  {area:'Bluewaters Island',price:'AED 4,300',type:'Apartment',trend:'↑ 16%'},
+  {area:'DIFC',price:'AED 3,400',type:'Apartment',trend:'↑ 11%'},
+  {area:'JBR',price:'AED 2,800',type:'Apartment',trend:'↑ 10%'},
+  {area:'Palm Jebel Ali',price:'AED 2,600',type:'Villa',trend:'↑ 22%'},
+  {area:'Dubai South',price:'AED 1,100',type:'Apartment',trend:'↑ 7%'},
+  {area:'Tilal Al Ghaf',price:'AED 1,850',type:'Villa',trend:'↑ 13%'},
+  {area:'Al Furjan',price:'AED 1,200',type:'Apartment',trend:'↑ 6%'},
+  {area:'Sports City',price:'AED 980',type:'Apartment',trend:'↑ 3%'},
+  {area:'Discovery Gardens',price:'AED 800',type:'Apartment',trend:'↑ 2%'},
+  {area:'International City',price:'AED 600',type:'Apartment',trend:'↑ 2%'},
+  {area:'Town Square',price:'AED 950',type:'Apt/Villa',trend:'↑ 4%'},
+  {area:'Mirdif',price:'AED 1,000',type:'Villa/Apt',trend:'↑ 4%'},
+  {area:'Deira',price:'AED 820',type:'Apartment',trend:'↑ 2%'},
+  {area:'Bur Dubai',price:'AED 950',type:'Apartment',trend:'↑ 3%'},
+  {area:'Motor City',price:'AED 920',type:'Apartment',trend:'↑ 3%'},
+  {area:'JVT',price:'AED 1,150',type:'Apartment',trend:'↑ 5%'},
+  {area:'Arjan',price:'AED 1,050',type:'Apartment',trend:'↑ 5%'},
 ];
 let _areaIdx=0,_areaTimer=null,_areaPaused=false;
 function showAreaPopup(){
@@ -3786,41 +3768,30 @@ function showAreaPopup(){
   document.getElementById('popupArea').textContent=a.area;
   document.getElementById('popupPrice').textContent=a.price+'/sqft';
   document.getElementById('popupSub').textContent=a.type+' • '+a.trend+' YoY';
-  p.style.display='block'; p.classList.remove('hide');
+  p.style.display='block';p.classList.remove('hide');
   clearTimeout(_areaTimer);
-  _areaTimer=setTimeout(()=>{ p.classList.add('hide'); setTimeout(()=>{ _areaIdx=(_areaIdx+1)%AREA_PRICES.length; showAreaPopup(); },400); },4500);
+  _areaTimer=setTimeout(()=>{p.classList.add('hide');setTimeout(()=>{_areaIdx=(_areaIdx+1)%AREA_PRICES.length;showAreaPopup();},400);},4500);
 }
-function nextAreaPopup(){
-  const p=document.getElementById('areaPricePopup');
-  p.classList.add('hide'); clearTimeout(_areaTimer);
-  setTimeout(()=>{ _areaIdx=(_areaIdx+1)%AREA_PRICES.length; showAreaPopup(); },300);
-}
-function pauseAreaPopup(){
-  _areaPaused=true; clearTimeout(_areaTimer);
-  const p=document.getElementById('areaPricePopup');
-  p.classList.add('hide'); setTimeout(()=>{ p.style.display='none'; },400);
-  setTimeout(()=>{ _areaPaused=false; showAreaPopup(); },30000);
-}
+function nextAreaPopup(){const p=document.getElementById('areaPricePopup');p.classList.add('hide');clearTimeout(_areaTimer);setTimeout(()=>{_areaIdx=(_areaIdx+1)%AREA_PRICES.length;showAreaPopup();},300);}
+function pauseAreaPopup(){_areaPaused=true;clearTimeout(_areaTimer);const p=document.getElementById('areaPricePopup');p.classList.add('hide');setTimeout(()=>{p.style.display='none';},400);setTimeout(()=>{_areaPaused=false;showAreaPopup();},30000);}
 setTimeout(()=>showAreaPopup(),3000);
 
-// ─── CALC TAB SWITCHER ───────────────────────────────────────────
 function switchCalcTab(tab){
   ['mortgage','area','currency'].forEach(t=>{
-    document.getElementById('calc-'+t).style.display = t===tab?'block':'none';
-    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('calc-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
   });
   if(tab==='currency') loadCurrencyRates();
 }
 
-// ─── MORTGAGE CALCULATOR ─────────────────────────────────────────
 let _mortType='resident';
 function setMortType(type){
   _mortType=type;
   document.getElementById('mort-res-btn').classList.toggle('active',type==='resident');
   document.getElementById('mort-ovs-btn').classList.toggle('active',type==='overseas');
   const dp=document.getElementById('mort_dp');
-  if(type==='overseas'){dp.value=35;dp.min=35;} else {dp.value=20;dp.min=20;}
-  document.getElementById('mort_dpnote').textContent=type==='overseas'?'✈️ Overseas buyers: min 35% down payment (UAE Central Bank rule)':'🇦🇪 UAE Residents: min 20% down payment (first property under AED 5M)';
+  if(type==='overseas'){dp.value=35;dp.min=35;}else{dp.value=20;dp.min=20;}
+  document.getElementById('mort_dpnote').textContent=type==='overseas'?'✈️ Overseas: min 35% down payment (UAE Central Bank)':'🇦🇪 UAE Residents: min 20% down payment';
   calcMortgage();
 }
 function calcMortgage(){
@@ -3829,118 +3800,79 @@ function calcMortgage(){
   const rate=parseFloat(document.getElementById('mort_rate').value)||4.5;
   const years=parseFloat(document.getElementById('mort_term').value)||25;
   if(!price){document.getElementById('mort_result').style.display='none';return;}
-  const dpAmt=price*dpPct/100, loan=price-dpAmt;
-  const mr=rate/100/12, n=years*12;
+  const dpAmt=price*dpPct/100,loan=price-dpAmt;
+  const mr=rate/100/12,n=years*12;
   const monthly=loan*(mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1);
   const totalInterest=monthly*n-loan;
-  const dld=price*0.04, agentFee=price*0.02, regFee=price<500000?2000:4000, mortReg=loan*0.0025, trustee=4200;
+  const dld=price*0.04,agentFee=price*0.02,regFee=price<500000?2000:4000,mortReg=loan*0.0025,trustee=4200;
   const totalCosts=dld+agentFee+regFee+mortReg+trustee;
-  const f=n=>'AED '+Math.round(n).toLocaleString('en-US');
+  const f=v=>'AED '+Math.round(v).toLocaleString('en-US');
   document.getElementById('mort_monthly').textContent=f(monthly);
   document.getElementById('mort_loan').textContent=f(loan);
   document.getElementById('mort_dp_amt').textContent=f(dpAmt);
   document.getElementById('mort_interest').textContent=f(totalInterest);
   document.getElementById('mort_costs').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;"><div>DLD 4%: <b style="color:var(--text)">${f(dld)}</b></div><div>Agent 2%: <b>${f(agentFee)}</b></div><div>Registration: <b>${f(regFee)}</b></div><div>Mortgage Reg: <b>${f(mortReg)}</b></div><div>Trustee: <b>${f(trustee)}</b></div><div style="color:var(--orange)">Total: <b>${f(totalCosts)}</b></div></div>`;
   document.getElementById('mort_result').style.display='block';
-  window._lastMortSummary=`🏦 Mortgage (${_mortType==='overseas'?'Overseas':'UAE Resident'})
+  window._lastMortSummary=`Mortgage (${_mortType==='overseas'?'Overseas':'UAE Resident'})
 Property: ${f(price)}
-Down Payment: ${dpPct}% = ${f(dpAmt)}
-Loan: ${f(loan)} @ ${rate}% for ${years}yrs
+Down: ${dpPct}% = ${f(dpAmt)}
+Loan: ${f(loan)} @ ${rate}% ${years}yrs
 Monthly EMI: ${f(monthly)}
 Total Interest: ${f(totalInterest)}
-
-Buying Costs:
-DLD: ${f(dld)}
-Agent: ${f(agentFee)}
-Registration: ${f(regFee)}
-Mortgage Reg: ${f(mortReg)}
-Trustee: ${f(trustee)}
+DLD: ${f(dld)} | Agent: ${f(agentFee)} | Reg: ${f(regFee)}
 Total One-time: ${f(totalCosts)}`;
 }
 function copyMortgage(){
   if(!window._lastMortSummary){alert('Calculate first');return;}
-  navigator.clipboard.writeText(window._lastMortSummary).then(()=>typeof toast!=='undefined'&&toast('📋 Copied!')).catch(()=>{const t=document.createElement('textarea');t.value=window._lastMortSummary;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();typeof toast!=='undefined'&&toast('📋 Copied!');});
+  navigator.clipboard.writeText(window._lastMortSummary).then(()=>typeof toast!=='undefined'&&toast('Copied!')).catch(()=>{const t=document.createElement('textarea');t.value=window._lastMortSummary;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();typeof toast!=='undefined'&&toast('Copied!');});
 }
-function openMortgageCalc(){
-  switchCalcTab('mortgage');
-  setMortType('resident');
-  document.getElementById('mort_price').value='';
-  document.getElementById('mort_result').style.display='none';
+function openCalcModal(tab){
   document.getElementById('calcModal').classList.add('open');
+  switchCalcTab(tab||'mortgage');
 }
+function openMortgageCalc(){openCalcModal('mortgage');}
 
-// ─── AREA CONVERTER ───────────────────────────────────────────────
-const AREA_CONV = {
-  sqft:  {toSqft:1,         label:'Square Feet (sqft)'},
-  sqm:   {toSqft:10.7639,   label:'Square Meters (sqm)'},
-  gaj:   {toSqft:9,         label:'Gaj (Indian sq yard)'},
-  yard:  {toSqft:9,         label:'Square Yard'},
-  acre:  {toSqft:43560,     label:'Acre'},
-  marla: {toSqft:272.25,    label:'Marla (Pakistan)'},
-  kanal: {toSqft:5445,      label:'Kanal (Pakistan)'},
-};
+const AREA_CONV={sqft:{toSqft:1,label:'Square Feet'},sqm:{toSqft:10.7639,label:'Square Meters'},gaj:{toSqft:9,label:'Gaj (Indian Sq Yard)'},yard:{toSqft:9,label:'Square Yard'},acre:{toSqft:43560,label:'Acre'},marla:{toSqft:272.25,label:'Marla (Pakistan)'},kanal:{toSqft:5445,label:'Kanal (Pakistan)'}};
 function convertArea(){
   const val=parseFloat(document.getElementById('area_val').value)||0;
   const from=document.getElementById('area_from').value;
-  if(!val){document.getElementById('area_results').innerHTML='<div style="color:var(--text3);font-size:13px;">Enter a value to convert</div>';return;}
+  if(!val){document.getElementById('area_results').innerHTML='<div style="color:var(--text3);font-size:13px;">Enter a value above</div>';return;}
   const sqft=val*AREA_CONV[from].toSqft;
-  const rows=Object.entries(AREA_CONV).map(([k,v])=>{
-    const result=sqft/v.toSqft;
-    const disp=result>=1000?result.toLocaleString('en-US',{maximumFractionDigits:2}):result.toFixed(4).replace(/\.?0+$/,'');
-    return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text3);">${v.label}</span><b style="color:${k===from?'var(--green)':'var(--text)'};">${disp} ${k==='sqft'?'sqft':k==='sqm'?'sqm':k==='gaj'?'gaj':k==='yard'?'sq yd':k==='acre'?'acre':k==='marla'?'marla':'kanal'}</b></div>`;
+  document.getElementById('area_results').innerHTML=Object.entries(AREA_CONV).map(([k,v])=>{
+    const r=sqft/v.toSqft;
+    const d=r>=100?r.toLocaleString('en-US',{maximumFractionDigits:2}):r.toFixed(4).replace(/\.?0+$/,'');
+    return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);"><span style="color:var(--text3);font-size:12px;">${v.label}</span><b style="color:${k===from?'var(--green)':'var(--text)'};">${d}</b></div>`;
   }).join('');
-  document.getElementById('area_results').innerHTML=rows;
   document.getElementById('area_sqft_count').value=Math.round(sqft);
   calcAreaPrice();
 }
 function calcAreaPrice(){
-  const pricePerSqft=parseFloat(document.getElementById('area_price_sqft').value)||0;
-  const sqft=parseFloat(document.getElementById('area_sqft_count').value)||0;
-  if(!pricePerSqft||!sqft){document.getElementById('area_price_result').textContent='';return;}
-  const total=pricePerSqft*sqft;
-  document.getElementById('area_price_result').textContent='Total: AED '+Math.round(total).toLocaleString('en-US');
+  const p=parseFloat(document.getElementById('area_price_sqft').value)||0;
+  const s=parseFloat(document.getElementById('area_sqft_count').value)||0;
+  document.getElementById('area_price_result').textContent=p&&s?'Total: AED '+Math.round(p*s).toLocaleString('en-US'):'';
 }
 
-// ─── CURRENCY CONVERTER ───────────────────────────────────────────
 let _rates={AED:1,USD:0.2723,GBP:0.2145,EUR:0.2517,INR:22.87,PKR:75.8,SAR:1.0206,QAR:0.991,KWD:0.0834,BHD:0.1026,OMR:0.1049};
-let _ratesLoaded=false;
-
 async function loadCurrencyRates(){
   const el=document.getElementById('curr_rate_label');
   if(el) el.textContent='Loading live rates...';
-  try {
+  try{
     const res=await fetch('https://open.er-api.com/v6/latest/AED',{signal:AbortSignal.timeout(6000)});
     const data=await res.json();
-    if(data.rates){ _rates={AED:1,...data.rates}; _ratesLoaded=true; if(el) el.textContent='Live rates • Updated just now'; }
-  } catch(e){ if(el) el.textContent='Using cached rates (live fetch failed)'; }
-  renderAllRates();
+    if(data.rates){_rates={AED:1,...data.rates};if(el) el.textContent='Live rates • just now';}
+  }catch(e){if(el) el.textContent='Cached rates (live fetch failed)';}
+  const pairs={INR:'🇮🇳 INR',USD:'🇺🇸 USD',GBP:'🇬🇧 GBP',EUR:'🇪🇺 EUR',PKR:'🇵🇰 PKR',SAR:'🇸🇦 SAR',QAR:'🇶🇦 QAR',KWD:'🇰🇼 KWD'};
+  const el2=document.getElementById('curr_all_rates');
+  if(el2) el2.innerHTML=Object.entries(pairs).map(([c,l])=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;"><div style="font-size:10px;color:var(--text3);">${l}</div><div style="font-size:13px;font-weight:600;color:var(--blue);">1 AED = ${(_rates[c]||0).toFixed(4)}</div></div>`).join('');
   convertCurrency();
 }
-
 function convertCurrency(){
   const amt=parseFloat(document.getElementById('curr_amt').value)||1;
   const from=document.getElementById('curr_from').value;
   const to=document.getElementById('curr_to').value;
-  const fromRate=_rates[from]||1;
-  const toRate=_rates[to]||1;
-  const inAED=amt/fromRate;
-  const result=inAED*toRate;
-  const disp=result>=1?result.toLocaleString('en-US',{maximumFractionDigits:4}):result.toFixed(6);
-  document.getElementById('curr_val').textContent=disp+' '+to;
-  const rateLabel=document.getElementById('curr_rate_label');
-  if(rateLabel&&!rateLabel.textContent.includes('Live')) rateLabel.textContent=`1 ${from} = ${(toRate/fromRate).toFixed(6)} ${to}`;
-}
-
-function renderAllRates(){
-  const pairs={INR:'🇮🇳 INR',USD:'🇺🇸 USD',GBP:'🇬🇧 GBP',EUR:'🇪🇺 EUR',PKR:'🇵🇰 PKR',SAR:'🇸🇦 SAR',QAR:'🇶🇦 QAR',KWD:'🇰🇼 KWD'};
-  const el=document.getElementById('curr_all_rates');
-  if(el) el.innerHTML=Object.entries(pairs).map(([code,label])=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;"><div style="font-size:10px;color:var(--text3);">${label}</div><div style="font-size:13px;font-weight:600;color:var(--blue);">1 AED = ${(_rates[code]||0).toFixed(4)}</div></div>`).join('');
-}
-
-// Open calculators from sidebar
-function openCalcModal(tab){
-  document.getElementById('calcModal').classList.add('open');
-  switchCalcTab(tab||'mortgage');
+  const result=amt/_rates[from]*_rates[to];
+  const d=result>=1?result.toLocaleString('en-US',{maximumFractionDigits:4}):result.toFixed(6);
+  document.getElementById('curr_val').textContent=d+' '+to;
 }
 </script>
 </body>
