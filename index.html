@@ -1,3 +1,4 @@
+@ -0,0 +1,3333 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,56 +19,24 @@ const SUPABASE_URL = 'https://eyckdvdxtnachqzellog.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_VcxbcS_k1WQVuNWIDpKU1w_mi8midI_';
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-window.setSyncStatus = function(status, message){
-  const bar = document.getElementById('syncStatusBar');
-  const txt = document.getElementById('syncStatusText');
-  if(!bar || !txt) return;
-  bar.className = 'sync-status-bar sync-' + status;
-  txt.textContent = message || status;
-};
-
 window.saveToFirebase = async function(data) {
-  window.setSyncStatus && window.setSyncStatus('saving','Saving...');
   try {
-    const payload = {
+    const { error } = await _sb.from('crm_data').upsert({
       id: 'main',
       contacts: data.contacts || [],
       projects: data.projects || [],
-      settings: data.settings || {},
-      updated_at: new Date().toISOString()
-    };
-    const { error } = await _sb.from('crm_data').upsert(payload, {onConflict: 'id'});
-    if(error) throw error;
-
-    // lightweight backup snapshot in local browser; use Export backup before risky edits/imports
-    try{
-      const backupKey = 'sccrm_backup_' + new Date().toISOString();
-      localStorage.setItem(backupKey, JSON.stringify(payload));
-      const keys = Object.keys(localStorage).filter(k=>k.startsWith('sccrm_backup_')).sort();
-      while(keys.length > 15){ localStorage.removeItem(keys.shift()); }
-    }catch(e){}
-
-    window.setSyncStatus && window.setSyncStatus('synced','Synced');
-    return true;
-  } catch(e) {
-    console.error("Supabase save error:", e);
-    window.setSyncStatus && window.setSyncStatus('error','Sync Error');
-    toast && toast('Sync error — data not saved to cloud', 'error');
-    return false;
-  }
+      settings: data.settings || {}
+    }, {onConflict: 'id'});
+    if(error) console.error("Supabase save error:", error);
+  } catch(e) { console.error("Supabase save exception:", e); }
 };
 
 window.loadFromFirebase = async function() {
-  window.setSyncStatus && window.setSyncStatus('saving','Loading cloud...');
   try {
     const { data, error } = await _sb.from('crm_data').select('*').eq('id','main').maybeSingle();
-    if(error) throw error;
-    window.setSyncStatus && window.setSyncStatus('synced','Cloud loaded');
+    if(error) { console.error("Supabase load error:", error); return null; }
     if(data) return { contacts: data.contacts||[], projects: data.projects||[], settings: data.settings||{} };
-  } catch(e) {
-    console.error("Supabase load error:", e);
-    window.setSyncStatus && window.setSyncStatus('error','Cloud Load Error');
-  }
+  } catch(e) { console.error("Supabase load exception:", e); }
   return null;
 };
 </script>
@@ -257,26 +226,14 @@ tr:hover td{background:#161616;}
 .divider{height:1px;background:var(--border);margin:12px 0;}
 .bulk-bar{display:flex;gap:8px;align-items:center;background:var(--bg2);border-radius:8px;padding:8px 12px;border:1px solid var(--border);margin-bottom:10px;}
 .bulk-bar span{font-size:12px;color:var(--text3);white-space:nowrap;}
-
-/* Sync status bar */
-.sync-status-bar{position:fixed;right:16px;top:12px;z-index:9999;background:rgba(20,20,20,.96);border:1px solid var(--border2);border-radius:999px;padding:7px 12px;font-size:12px;color:var(--text2);box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px);}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;}
-.sync-saving .sync-dot{background:var(--orange);animation:syncPulse 1s infinite;}
-.sync-synced .sync-dot{background:var(--green);}
-.sync-error .sync-dot{background:var(--red);}
-.sync-offline .sync-dot{background:var(--text3);}
-@keyframes syncPulse{0%,100%{opacity:.45}50%{opacity:1}}
-@media(max-width:768px){.sync-status-bar{top:8px;right:8px;font-size:10px;padding:6px 9px}}
-
 </style>
 </head>
 <body>
-<div id="syncStatusBar" class="sync-status-bar sync-offline"><span class="sync-dot"></span><span id="syncStatusText">Starting...</span></div>
 
 <!-- Sidebar -->
 <div class="sidebar">
   <div class="logo">Solanki Capital</div>
-  <div class="logo-sub">Property CRM • v4 Sync Pro</div>
+  <div class="logo-sub">Property CRM • FINAL v8</div>
   <button class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</button>
   <button class="nav-item" onclick="nav('contacts',this)"><span class="nav-icon">👥</span> Contacts</button>
   <button class="nav-item" onclick="nav('outreach',this)"><span class="nav-icon">💬</span> Outreach</button>
@@ -325,7 +282,7 @@ tr:hover td{background:#161616;}
       </div>
     </div>
   </div>
-  <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Dashboard <span style="font-size:11px;color:var(--green);font-weight:500;">v4 Sync Pro</span></h2>
+  <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Dashboard <span style="font-size:11px;color:var(--green);font-weight:500;">FINAL v8</span></h2>
   <p style="font-size:13px;color:var(--text3);margin-bottom:1.25rem;" id="dash-date"></p>
   <div class="stats-grid" id="statsGrid"></div>
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem;">
@@ -624,9 +581,6 @@ tr:hover td{background:#161616;}
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-ghost" onclick="exportExcel()">⬇ Export Excel</button>
       <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
-      <button class="btn btn-blue" onclick="exportBackup()">💾 Export Backup</button>
-      <button class="btn btn-purple" onclick="document.getElementById('backupInput').click()">↩ Restore Backup</button>
-      <input type="file" id="backupInput" accept=".json" style="display:none" onchange="importBackupFile(event)"/>
       <button class="btn btn-red" onclick="clearAllData()">🗑 Clear All Data</button>
     </div>
   </div>
@@ -962,53 +916,23 @@ function toast(msg, type='success'){
 // ─── STORAGE ─────────────────────────────────────────────────────────
 let _saveTimer = null;
 function save(){
-  // Local cache remains only as emergency fallback. Cloud is the real sync source.
   try{
-    localStorage.setItem('sccrm_contacts_cache', JSON.stringify(contacts));
-    localStorage.setItem('sccrm_settings_cache', JSON.stringify(settings));
-    localStorage.setItem('sccrm_projects_cache', JSON.stringify(projects));
+    localStorage.setItem('sccrm_contacts', JSON.stringify(contacts));
+    localStorage.setItem('sccrm_settings', JSON.stringify(settings));
+    localStorage.setItem('sccrm_projects', JSON.stringify(projects));
   }catch(e){}
+  // Debounce cloud save — only sync after 2 seconds of no changes
   clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(async ()=>{
-    try{ await window.saveToFirebase({contacts, settings, projects}); }catch(e){ console.error(e); }
-  }, 600);
-}
-
-function exportBackup(){
-  const payload = { exportedAt:new Date().toISOString(), contacts, projects, settings };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='solanki-crm-backup-'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function importBackupFile(event){
-  const file = event.target.files && event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async () => {
-    try{
-      const data = JSON.parse(reader.result);
-      if(!confirm('Restore this backup? Current CRM data will be replaced.')) return;
-      contacts = data.contacts || [];
-      projects = data.projects || [];
-      settings = data.settings || settings;
-      await window.saveToFirebase({contacts, projects, settings});
-      renderDashboard(); renderContacts(); renderProjects();
-      toast('Backup restored and synced');
-    }catch(e){ alert('Invalid backup file'); }
-  };
-  reader.readAsText(file);
+  _saveTimer = setTimeout(()=>{
+    try{ window.saveToFirebase({contacts, settings, projects}); }catch(e){}
+  }, 2000);
 }
 
 function load(){
-  // emergency offline cache only; cloud will replace this during startup
   try{
-    const c=localStorage.getItem('sccrm_contacts_cache'); if(c) contacts=JSON.parse(c);
-    const s=localStorage.getItem('sccrm_settings_cache'); if(s){ settings=JSON.parse(s); }
-    const p=localStorage.getItem('sccrm_projects_cache'); if(p) projects=JSON.parse(p);
+    const c=localStorage.getItem('sccrm_contacts'); if(c) contacts=JSON.parse(c);
+    const s=localStorage.getItem('sccrm_settings'); if(s){ settings=JSON.parse(s); document.getElementById('agentName').value=settings.name; document.getElementById('agentCompany').value=settings.company; document.getElementById('agentTagline').value=settings.tagline; }
+    const p=localStorage.getItem('sccrm_projects'); if(p) projects=JSON.parse(p);
   }catch(e){}
 }
 
@@ -1179,14 +1103,9 @@ function renderDashboard(){
     </div>
   `;
   renderSourceDashboard();
-  if(typeof loadNewsTicker === 'function'){
-    loadNewsTicker();
-  }
+  loadNewsTicker();
   // Lazy load market data once
-  if(!_marketLoaded && typeof loadMarketData === 'function'){
-    _marketLoaded=true;
-    setTimeout(()=>loadMarketData(), 800);
-  }
+  if(!_marketLoaded){ _marketLoaded=true; setTimeout(()=>loadMarketData(), 800); }
 
   // Pipeline chart
   const stages=[{k:'pending',l:'Pending',c:'#555'},{k:'contacted',l:'Contacted',c:'var(--blue)'},{k:'interested',l:'Interested',c:'var(--green)'},{k:'callback',l:'Callback',c:'var(--orange)'},{k:'closed',l:'Closed',c:'var(--purple)'}];
@@ -2742,9 +2661,7 @@ function saveSettings(){
 function clearAllData(){ if(!confirm('Delete all data? This cannot be undone!')) return; contacts=[]; save(); renderDashboard(); alert('Data cleared.'); }
 
 // ─── INIT MOVED TO END ───────────────────────────────────────────────
-// Do not run startup here. Later script blocks still define features like
-// loadNewsTicker() and loadMarketData(). Startup runs at the very end after
-// every function exists, so the dashboard does not crash on launch.
+// Startup is intentionally executed after all feature scripts load.
 </script>
 
 <!-- Deal Close Modal -->
@@ -3409,26 +3326,27 @@ function closeQRScan(){
 }
 </script>
 
+
 <script>
-// ─── SAFE FINAL STARTUP ──────────────────────────────────────────────
-// Runs after all CRM functions are defined. This keeps the DXB/news ticker
-// feature intact and prevents "loadNewsTicker is not defined" crashes.
-(async function initCRMSafely(){
-  try{
-    if(typeof load === 'function') load();
-    if(typeof loadFromCloud === 'function') await loadFromCloud();
-    if(typeof renderDashboard === 'function') renderDashboard();
-    const dashDate = document.getElementById('dash-date');
-    if(dashDate){
-      dashDate.textContent = new Date().toLocaleDateString('en-GB',{
-        weekday:'long', day:'numeric', month:'long', year:'numeric'
-      });
+// ─── SAFE STARTUP AFTER ALL FEATURES ARE DEFINED ─────────────────────
+(function startSolankiCRM(){
+  function boot(){
+    try{
+      load();
+      renderDashboard();
+      const dateEl = document.getElementById('dash-date');
+      if(dateEl){
+        dateEl.textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      }
+      syncBottomNav('dashboard');
+      setTimeout(()=>{ loadFromCloud(); }, 500);
+    }catch(e){
+      console.error('CRM startup error:', e);
+      alert('CRM startup error: ' + (e && e.message ? e.message : e));
     }
-    if(typeof syncBottomNav === 'function') syncBottomNav('dashboard');
-  }catch(err){
-    console.error('CRM startup error:', err);
-    alert('CRM startup error. Open Console and share the red error screenshot.');
   }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
 </script>
 
