@@ -133,6 +133,8 @@ a{color:var(--blue);text-decoration:none;}
 /* Mobile */
 @media(max-width:768px){
   .sidebar{display:none;}
+  .contact-desktop-btn{display:none!important;}
+  .contact-mobile-btn{display:block!important;}
   .main{margin-left:0;padding:1rem;padding-bottom:80px;}
   .bottom-nav{
     display:flex;position:fixed;bottom:0;left:0;right:0;
@@ -444,15 +446,22 @@ tr:hover td{background:#161616;}
 
 <!-- CONTACTS -->
 <div id="page-contacts" class="page">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:8px;flex-wrap:wrap;">
     <h2 style="font-size:18px;font-weight:600;">Contacts</h2>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-green" onclick="openAddContact()">+ Add Contact</button>
-      <button class="btn btn-ghost" onclick="openImport()">⬆ Import Excel</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('csvDirectInput').click()">⬆ Import CSV</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-green" onclick="openAddContact()" style="white-space:nowrap;">+ Add</button>
       <input type="file" id="csvDirectInput" accept=".csv,.txt" style="display:none;" onchange="handleDirectCSV(event)"/>
-      <button class="btn btn-ghost" onclick="exportExcel()">⬇ Export Excel</button>
-      <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-ghost btn-sm contact-desktop-btn" onclick="openImport()">⬆ Excel</button>
+      <button class="btn btn-ghost btn-sm contact-desktop-btn" onclick="document.getElementById('csvDirectInput').click()">⬆ CSV</button>
+      <button class="btn btn-ghost btn-sm contact-desktop-btn" onclick="exportExcel()">⬇ Excel</button>
+      <button class="btn btn-ghost btn-sm contact-desktop-btn" onclick="exportCSV()">⬇ CSV</button>
+      <select class="contact-mobile-btn" onchange="handleContactAction(this.value);this.value='';" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;padding:6px 10px;">
+        <option value="">More...</option>
+        <option value="importExcel">⬆ Import Excel</option>
+        <option value="importCSV">⬆ Import CSV</option>
+        <option value="exportExcel">⬇ Export Excel</option>
+        <option value="exportCSV">⬇ Export CSV</option>
+      </select>
     </div>
   </div>
   <div class="toolbar">
@@ -1380,6 +1389,7 @@ function renderDashboard(){
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   const total=contacts.length, contacted=contacts.filter(c=>c.status!=='pending').length;
   const interested=contacts.filter(c=>c.status==='interested').length;
+  const notInterested=contacts.filter(c=>c.status==='notinterested').length;
   const closed=contacts.filter(c=>c.status==='closed'||c.status==='repeat').length;
   const totalDeals=contacts.reduce((a,c)=>a+(c.deals||[]).length,0);
   const totalCommission=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(parseFloat((d.commission||'0').replace(/[^0-9.]/g,''))||0),a),0);
@@ -1405,6 +1415,9 @@ function renderDashboard(){
     </div>
     <div class="stat-card" onclick="navToContacts('closed')" style="cursor:pointer;" title="View closed deals">
       <div class="stat-val" style="color:var(--green);">${totalDeals}</div><div class="stat-lbl">Deals Closed</div>
+    </div>
+    <div class="stat-card" onclick="navToContacts('notinterested')" style="cursor:pointer;" title="View not interested">
+      <div class="stat-val" style="color:var(--red);">${notInterested}</div><div class="stat-lbl">Not Interested</div>
     </div>
     <div class="stat-card" style="cursor:default;">
       <div class="stat-val" style="color:#fbbf24;font-size:18px;">AED ${totalCommission>0?totalCommission.toLocaleString('en-US',{maximumFractionDigits:0}):'0'}</div><div class="stat-lbl">Total Commission</div>
@@ -1555,6 +1568,8 @@ function renderContacts(){
     // Shorten source filename
     const srcShort=c.source?c.source.replace(/\.xlsx?$/i,'').slice(0,20)+(c.source.length>24?'…':''):'—';
     const tr=document.createElement('tr');
+    tr.style.cursor='pointer';
+    tr.onclick=function(e){ if(e.target.tagName==='SELECT'||e.target.tagName==='INPUT'||e.target.tagName==='BUTTON'||e.target.tagName==='A') return; openContact(c.id); };
     tr.innerHTML=`
       <td style="color:var(--text3);">${i+1}</td>
       <td><div style="font-weight:500;cursor:pointer;color:var(--blue);" onclick="openContact(${c.id})">${c.name}</div><div style="font-size:10px;color:var(--text3);">${c.community||'—'}</div></td>
@@ -2961,6 +2976,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 // ─── EXPORT ──────────────────────────────────────────────────────────
+function handleContactAction(val){
+  if(val==='importExcel') openImport();
+  else if(val==='importCSV') document.getElementById('csvDirectInput').click();
+  else if(val==='exportExcel') exportExcel();
+  else if(val==='exportCSV') exportCSV();
+}
 function exportCSV(){
   if(!contacts.length){alert('No contacts to export');return;}
   const hdrs=['Name','Phone','Nationality','Community','Source File','Status','Priority','Last Contact','Callback Date','FU Count','Notes'];
@@ -3238,59 +3259,47 @@ async function loadNewsTicker(){
 }
 
 // ─── MARKET DATA ─────────────────────────────────────────────────────
-// Auto refresh market data every 5 minutes
-let _marketRefreshTimer = null;
-function startMarketAutoRefresh(){
-  clearInterval(_marketRefreshTimer);
-  _marketRefreshTimer = setInterval(()=>loadMarketData(), 5*60*1000);
-}
-
 async function loadMarketData(){
-  // 1. Currency rates — INR, USD, GBP highlighted first
+  // 1. Currency rates
   try {
-    const res = await fetch('https://open.er-api.com/v6/latest/AED', {signal:AbortSignal.timeout(6000)});
+    const res = await fetch('https://open.er-api.com/v6/latest/AED');
     const data = await res.json();
     const pairs = {INR:'🇮🇳 INR', USD:'🇺🇸 USD', GBP:'🇬🇧 GBP', EUR:'🇪🇺 EUR', PKR:'🇵🇰 PKR', SAR:'🇸🇦 SAR', QAR:'🇶🇦 QAR', KWD:'🇰🇼 KWD', BHD:'🇧🇭 BHD', OMR:'🇴🇲 OMR'};
-    const highlight = ['INR','USD','GBP'];
     const ratesEl = document.getElementById('currencyRates');
     if(ratesEl && data.rates) ratesEl.innerHTML = Object.entries(pairs).map(([code, label])=>{
       const rate = data.rates[code];
-      const isHL = highlight.includes(code);
-      return rate ? `<div style="background:var(--bg2);border:1px solid ${isHL?'#2a4a6a':' var(--border)'};border-radius:8px;padding:8px 12px;min-width:110px;flex-shrink:0;">
-        <div style="font-size:11px;color:var(--text3);">${label}</div>
-        <div style="font-size:${isHL?'15':'14'}px;font-weight:${isHL?'700':'600'};color:${isHL?'#60a5fa':'var(--blue)'};">1 AED = ${rate.toFixed(4)}</div>
-        ${isHL?`<div style="font-size:10px;color:var(--text3);">${(1/rate).toFixed(4)} ${code} = 1 AED</div>`:''}
-      </div>` : '';
+      return rate ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:110px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">${label}</div><div style="font-size:14px;font-weight:600;color:var(--blue);">1 AED = ${rate.toFixed(2)}</div></div>` : '';
     }).join('');
   } catch(e) {
     const el = document.getElementById('currencyRates');
-    if(el) el.innerHTML = '<div style="color:var(--text3);font-size:12px;">Unable to load rates</div>';
+    if(el) el.innerHTML = '<div style="color:var(--text3);font-size:12px;">Unable to load</div>';
   }
 
-  // 2. Gold (per gram) + Petrol UAE
+  // 2. Gold 24k/22k/18k per gram + Petrol UAE
   const petrolPrices = {'Special 95':'2.89','Super 98':'3.02','Diesel':'2.77','E-Plus 91':'2.77'};
   const comEl = document.getElementById('commodityPrices');
   const petrolCards = Object.entries(petrolPrices).map(([grade,price])=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">⛽ ${grade}</div><div style="font-size:14px;font-weight:600;color:var(--orange);">AED ${price}</div><div style="font-size:10px;color:var(--text3);">May 2026</div></div>`).join('');
-  if(comEl) comEl.innerHTML = `<div id="goldCard" style="background:var(--bg2);border:1px solid #3a2a0a;border-radius:8px;padding:8px 12px;flex-shrink:0;min-width:130px;"><div style="font-size:11px;color:var(--text3);">🥇 Gold (per gram)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">Loading...</div></div>${petrolCards}`;
+  if(comEl) comEl.innerHTML = `<div id="goldCard" style="background:var(--bg2);border:1px solid #3a2a0a;border-radius:8px;padding:8px 12px;flex-shrink:0;min-width:160px;"><div style="font-size:11px;color:var(--text3);">🥇 Gold rates</div><div style="font-size:13px;font-weight:600;color:#fbbf24;">Loading...</div></div>${petrolCards}`;
 
-  // Gold price — convert oz to gram (1 oz = 31.1035 grams)
   try {
     const r = await fetch('https://api.frankfurter.app/latest?from=XAU&to=USD,AED', {signal: AbortSignal.timeout(6000)});
     const d = await r.json();
-    if(d.rates?.USD) {
-      const goldUSDoz = d.rates.USD;
-      const goldAEDoz = d.rates.AED || (goldUSDoz * 3.6725);
-      const goldAEDgm = goldAEDoz / 31.1035;
-      const goldUSDgm = goldUSDoz / 31.1035;
+    if(d.rates?.AED || d.rates?.USD) {
+      const goldAEDoz = d.rates.AED || (d.rates.USD * 3.6725);
+      const g24 = goldAEDoz / 31.1035;
+      const g22 = g24 * (22/24);
+      const g18 = g24 * (18/24);
+      const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
       const goldCard = document.getElementById('goldCard');
       if(goldCard) goldCard.innerHTML = `
-        <div style="font-size:11px;color:var(--text3);">🥇 Gold (per gram)</div>
-        <div style="font-size:15px;font-weight:700;color:#fbbf24;">AED ${goldAEDgm.toFixed(2)}</div>
-        <div style="font-size:10px;color:var(--text3);">USD ${goldUSDgm.toFixed(2)} | oz: AED ${Math.round(goldAEDoz).toLocaleString()}</div>`;
+        <div style="font-size:10px;color:#fbbf24;font-weight:600;margin-bottom:4px;">🥇 GOLD / gram • ${now}</div>
+        <div style="font-size:12px;color:var(--text);margin-bottom:2px;">24K: <b style="color:#fbbf24;">AED ${g24.toFixed(2)}</b></div>
+        <div style="font-size:12px;color:var(--text);margin-bottom:2px;">22K: <b style="color:#f59e0b;">AED ${g22.toFixed(2)}</b></div>
+        <div style="font-size:12px;color:var(--text);">18K: <b style="color:var(--orange);">AED ${g18.toFixed(2)}</b></div>`;
     }
   } catch(e) {
     const goldCard = document.getElementById('goldCard');
-    if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per gram)</div><div style="font-size:15px;font-weight:700;color:#fbbf24;">AED ~389</div><div style="font-size:10px;color:var(--text3);">USD ~106 | oz: ~AED 12,100</div>`;
+    if(goldCard) goldCard.innerHTML = `<div style="font-size:10px;color:#fbbf24;font-weight:600;margin-bottom:4px;">🥇 GOLD / gram</div><div style="font-size:12px;color:var(--text);">24K: <b style="color:#fbbf24;">AED ~389</b></div><div style="font-size:12px;color:var(--text);">22K: <b style="color:#f59e0b;">AED ~357</b></div><div style="font-size:12px;color:var(--text);">18K: <b style="color:var(--orange);">AED ~292</b></div>`;
   }
 
   // 3. News from multiple sources horizontally
