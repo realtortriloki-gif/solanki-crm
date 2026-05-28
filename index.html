@@ -1482,13 +1482,25 @@ function extractPhone(raw){
 function timeAgo(dateStr){
   if(!dateStr) return '—';
   try {
-    // Parse "28 May at 06:59" format
     const now = new Date();
-    const parts = dateStr.match(/(\d+)\s+(\w+)(?:\s+(\d{4}))?\s+at\s+(\d+):(\d+)/);
-    if(!parts) return dateStr;
     const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    const year = parts[3] ? parseInt(parts[3]) : now.getFullYear();
-    const d = new Date(year, months[parts[2]], parseInt(parts[1]), parseInt(parts[4]), parseInt(parts[5]));
+    let d = null;
+    // Format 1: "28 May at 06:59" or "28 May 2026 at 06:59"
+    let parts = dateStr.match(/(\d+)\s+(\w+)(?:\s+(\d{4}))?\s+at\s+(\d+):(\d+)/);
+    if(parts){
+      const year = parts[3] ? parseInt(parts[3]) : now.getFullYear();
+      d = new Date(year, months[parts[2]], parseInt(parts[1]), parseInt(parts[4]), parseInt(parts[5]));
+    }
+    // Format 2: "27 May, 20:28" or "27 May, 08:45"
+    if(!d){
+      parts = dateStr.match(/(\d+)\s+(\w+),?\s+(\d+):(\d+)/);
+      if(parts){
+        d = new Date(now.getFullYear(), months[parts[2]], parseInt(parts[1]), parseInt(parts[3]), parseInt(parts[4]));
+        // If date is in future, it's last year
+        if(d > now) d.setFullYear(d.getFullYear()-1);
+      }
+    }
+    if(!d || isNaN(d)) return dateStr;
     const diff = Math.floor((now - d) / 1000);
     if(diff < 60) return 'Just now';
     if(diff < 3600) return Math.floor(diff/60)+' min ago';
