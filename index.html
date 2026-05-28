@@ -13,6 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script>
+
 window.saveToFirebase = async function(data) {
   try {
     if(!window._db) return;
@@ -22,6 +23,7 @@ window.saveToFirebase = async function(data) {
     });
   } catch(e) { console.error('Firebase save:', e); }
 };
+
 window.loadFromFirebase = async function() {
   try {
     if(!window._db) return null;
@@ -244,7 +246,7 @@ tr:hover td{background:#161616;}
 <!-- Sidebar -->
 <div class="sidebar">
   <div class="logo">Solanki Capital</div>
-  <div class="logo-sub">Property CRM • FINAL v8</div>
+  <div class="logo-sub">Property CRM • ADVANCED v9</div>
   <button class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</button>
   <button class="nav-item" onclick="nav('contacts',this)"><span class="nav-icon">👥</span> Contacts</button>
   <button class="nav-item" onclick="nav('outreach',this)"><span class="nav-icon">💬</span> Outreach</button>
@@ -293,7 +295,7 @@ tr:hover td{background:#161616;}
       </div>
     </div>
   </div>
-  <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Dashboard <span style="font-size:11px;color:var(--green);font-weight:500;">FINAL v8</span></h2>
+  <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Dashboard <span style="font-size:11px;color:var(--green);font-weight:500;">ADVANCED v9</span></h2>
   <p style="font-size:13px;color:var(--text3);margin-bottom:1.25rem;" id="dash-date"></p>
   <div class="stats-grid" id="statsGrid"></div>
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem;">
@@ -598,6 +600,83 @@ tr:hover td{background:#161616;}
   <div class="card">
     <div class="card-title">Import Excel</div>
     <button class="btn btn-ghost" onclick="openImport()">⬆ Import New Excel File</button>
+  </div>
+</div>
+
+
+<!-- ADVANCED COMMAND CENTER -->
+<div id="page-advanced" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;gap:10px;flex-wrap:wrap;">
+    <div>
+      <h2 style="font-size:18px;font-weight:700;">⚡ Advanced Command Center</h2>
+      <p style="font-size:12px;color:var(--text3);margin-top:4px;">Lead health, duplicate cleaner, DLD calculator, daily action plan and WhatsApp scripts.</p>
+    </div>
+    <button class="btn btn-green" onclick="ADV_refreshAdvanced()">↻ Refresh Advanced</button>
+  </div>
+
+  <div class="stats-grid" id="advStatsGrid"></div>
+
+  <div class="row2">
+    <div class="card">
+      <div class="card-title">🧠 Daily Action Plan</div>
+      <div id="advActionPlan"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🧹 Data Quality Warnings</div>
+      <div id="advDataWarnings"></div>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="card">
+      <div class="card-title">🏛 Dubai Transfer / Fee Calculator</div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Selling Price AED</label><input type="text" id="adv_salePrice" placeholder="e.g. 4250000" oninput="ADV_calcFees()"/></div>
+        <div><label class="lbl">Original Price AED (optional)</label><input type="text" id="adv_originalPrice" placeholder="For off-plan resale" oninput="ADV_calcFees()"/></div>
+      </div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Agency Fee %</label><input type="text" id="adv_agencyPct" value="2" oninput="ADV_calcFees()"/></div>
+        <div><label class="lbl">Trustee/Admin AED</label><input type="text" id="adv_trusteeFee" value="5250" oninput="ADV_calcFees()"/></div>
+      </div>
+      <div id="advFeeResult" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.8;color:var(--text2);">Enter price to calculate.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💬 Quick WhatsApp Script Builder</div>
+      <label class="lbl">Script Type</label>
+      <select id="advScriptType" onchange="ADV_buildScript()" style="margin-bottom:10px;">
+        <option value="owner">Owner approach</option>
+        <option value="investor">Investor follow-up</option>
+        <option value="noc">NOC / transfer update</option>
+        <option value="noanswer">Call not answered</option>
+        <option value="yesno">Simple yes/no CTA</option>
+      </select>
+      <label class="lbl">Client Name</label>
+      <input type="text" id="advClientName" placeholder="Client name" oninput="ADV_buildScript()" style="margin-bottom:10px;"/>
+      <label class="lbl">Area / Project</label>
+      <input type="text" id="advAreaName" placeholder="District One, Dubai Islands, DAMAC Riverside..." oninput="ADV_buildScript()" style="margin-bottom:10px;"/>
+      <div id="advScriptOutput" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.8;white-space:pre-wrap;min-height:120px;"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-ghost" onclick="ADV_copyScript()">📋 Copy</button>
+        <button class="btn btn-green" onclick="ADV_openScriptWA()">↗ WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <div class="card-title" style="margin-bottom:0;">📌 Priority Lead Queue</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="ADV_markStaleCold()">Move stale pending to cold</button>
+        <button class="btn btn-red btn-sm" onclick="ADV_removeExactDuplicates()">Remove exact phone duplicates</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Status</th><th>Priority</th><th>Community</th><th>Problem</th><th>Action</th></tr></thead>
+        <tbody id="advPriorityBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -2911,33 +2990,31 @@ async function loadNewsTicker(){
   // Show static immediately
   setTicker(staticNews);
 
-  // Load from Google News RSS (free, reliable)
-  try {
-    const feeds = [
-      'https://news.google.com/rss/search?q=Dubai+real+estate+property&hl=en-US&gl=US&ceid=US:en',
-      'https://news.google.com/rss/search?q=UAE+property+market+2026&hl=en-US&gl=US&ceid=US:en'
-    ];
-    for(const feed of feeds){
-      try {
-        const proxy = 'https://api.allorigins.win/get?url='+encodeURIComponent(feed);
-        const res = await fetch(proxy, {signal: AbortSignal.timeout(8000)});
-        const data = await res.json();
-        if(data.contents){
-          const parser = new DOMParser();
-          const xml = parser.parseFromString(data.contents, 'text/xml');
-          const items = [...xml.querySelectorAll('item')].slice(0,10);
-          if(items.length > 0){
-            const live = items.map(i=>({
-              title: i.querySelector('title')?.textContent||'',
-              link: i.querySelector('link')?.textContent||'#'
-            })).filter(i=>i.title);
-            if(live.length > 0){ setTicker(live); break; }
-          }
-        }
-      } catch(err){}
-    }
-  } catch(e){
-    // Keep static headlines
+  // Load live news via multiple proxies
+  const gFeed = 'https://news.google.com/rss/search?q=Dubai+real+estate+property&hl=en&gl=AE&ceid=AE:en';
+  const proxies = [
+    'https://corsproxy.io/?'+encodeURIComponent(gFeed),
+    'https://api.allorigins.win/get?url='+encodeURIComponent(gFeed),
+    'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(gFeed)
+  ];
+  let loaded = false;
+  for(const proxyUrl of proxies){
+    if(loaded) break;
+    try {
+      const res = await fetch(proxyUrl, {signal: AbortSignal.timeout(7000)});
+      const raw = await res.json();
+      const xmlStr = raw.contents || (typeof raw === 'string' ? raw : '');
+      if(xmlStr && xmlStr.includes('<item>')){
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(xmlStr, 'text/xml');
+        const items = [...xml.querySelectorAll('item')].slice(0,12);
+        const live = items.map(i=>({
+          title:(i.querySelector('title')?.textContent||'').replace(/ - Google News$/,'').replace(/ - .*$/,''),
+          link:i.querySelector('link')?.textContent||'#'
+        })).filter(i=>i.title.length>10);
+        if(live.length>0){ setTicker(live); loaded=true; break; }
+      }
+    } catch(e){ continue; }
   }
 }
 
@@ -3002,26 +3079,17 @@ async function loadMarketData(){
   // 3. News from multiple sources horizontally
   try {
     const feeds = [
-      'https://news.google.com/rss/search?q=Dubai+property+real+estate&hl=en-US&gl=US&ceid=US:en',
-      'https://news.google.com/rss/search?q=UAE+real+estate+2026&hl=en-US&gl=US&ceid=US:en'
+      'https://www.khaleejtimes.com/rss',
+      'https://www.arabianbusiness.com/rss/property',
+      'https://gulfnews.com/rss/business'
     ];
     let allNews = [];
     for(const feed of feeds){
       try {
-        const proxy = 'https://api.allorigins.win/get?url='+encodeURIComponent(feed);
-        const res = await fetch(proxy, {signal: AbortSignal.timeout(8000)});
+        const proxy = 'https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feed)+'&count=4';
+        const res = await fetch(proxy);
         const data = await res.json();
-        if(data.contents){
-          const parser = new DOMParser();
-          const xml = parser.parseFromString(data.contents, 'text/xml');
-          const items = [...xml.querySelectorAll('item')].slice(0,5);
-          items.forEach(i=>{
-            const title = i.querySelector('title')?.textContent||'';
-            const link = i.querySelector('link')?.textContent||'#';
-            const pubDate = i.querySelector('pubDate')?.textContent||'';
-            if(title) allNews.push({title, link, pubDate});
-          });
-        }
+        if(data.items && data.items.length) allNews = allNews.concat(data.items.slice(0,4));
         if(allNews.length >= 8) break;
       } catch(err){}
     }
@@ -3366,6 +3434,157 @@ function closeQRScan(){
   }
   document.getElementById('qrScanModal').classList.remove('open');
   document.getElementById('qrVideo').srcObject = null;
+}
+</script>
+
+
+
+<style>
+.adv-pill{display:inline-block;padding:3px 8px;border-radius:999px;background:var(--bg4);border:1px solid var(--border2);font-size:10px;color:var(--text2);}
+.adv-warning{background:#2a1f0a;border:1px solid #3a2a0a;color:var(--orange);border-radius:9px;padding:10px;margin-bottom:8px;font-size:12px;line-height:1.6;}
+.adv-danger{background:#3a1515;border:1px solid #5a2020;color:var(--red);border-radius:9px;padding:10px;margin-bottom:8px;font-size:12px;line-height:1.6;}
+.adv-ok{background:#1e3a2f;border:1px solid #2d5c45;color:var(--green);border-radius:9px;padding:10px;margin-bottom:8px;font-size:12px;line-height:1.6;}
+</style>
+<script>
+(function(){
+  function addAdvancedNav(){
+    if(document.getElementById('navAdvancedBtn')) return;
+    const settingsBtn = Array.from(document.querySelectorAll('.sidebar .nav-item')).find(b => b.textContent.includes('Settings'));
+    const btn = document.createElement('button');
+    btn.id = 'navAdvancedBtn';
+    btn.className = 'nav-item';
+    btn.innerHTML = '<span class="nav-icon">⚡</span> Advanced';
+    btn.onclick = function(){ nav('advanced', this); ADV_refreshAdvanced(); };
+    if(settingsBtn && settingsBtn.parentNode) settingsBtn.parentNode.insertBefore(btn, settingsBtn);
+  }
+  document.addEventListener('DOMContentLoaded', addAdvancedNav);
+  setTimeout(addAdvancedNav, 500);
+})();
+
+function ADV_num(v){ return Number(String(v||'').replace(/[^0-9.]/g,'')) || 0; }
+function ADV_money(n){ return 'AED ' + Math.round(n||0).toLocaleString('en-US'); }
+function ADV_cleanPhone(p){ return String(p||'').replace(/[^0-9]/g,''); }
+function ADV_daysSinceLast(c){
+  if(!c || !c.lastContact) return 9999;
+  const d = new Date(c.lastContact);
+  if(isNaN(d.getTime())) return 9999;
+  return Math.floor((Date.now()-d.getTime())/86400000);
+}
+function ADV_scoreContact(c){
+  let s = 0;
+  if(c.priority==='hot') s += 45; else if(c.priority==='warm') s += 25; else s += 5;
+  if(c.status==='interested') s += 30;
+  if(c.status==='callback') s += 25;
+  if(c.status==='pending') s += 10;
+  if(c.callbackDate) s += 15;
+  if(c.community) s += 5;
+  if((c.notes||[]).length) s += 5;
+  if(ADV_daysSinceLast(c)>14) s -= 10;
+  return Math.max(0, Math.min(100, s));
+}
+function ADV_findDuplicates(){
+  const map = {};
+  (contacts||[]).forEach(c=>{ const p=ADV_cleanPhone(c.phone); if(!p) return; (map[p]||(map[p]=[])).push(c); });
+  return Object.entries(map).filter(([p,arr])=>arr.length>1);
+}
+function ADV_refreshAdvanced(){
+  const list = contacts || [];
+  const hot = list.filter(c=>c.priority==='hot').length;
+  const noPhone = list.filter(c=>!ADV_cleanPhone(c.phone)).length;
+  const noCallback = list.filter(c=>['interested','callback'].includes(c.status) && !c.callbackDate).length;
+  const dups = ADV_findDuplicates().length;
+  const stale = list.filter(c=>c.status==='pending' && ADV_daysSinceLast(c)>30).length;
+  const scoreAvg = list.length ? Math.round(list.reduce((a,c)=>a+ADV_scoreContact(c),0)/list.length) : 0;
+  const stats = [
+    ['🔥 Hot Leads', hot, 'Immediate money zone', 'stat-orange'],
+    ['🧹 Duplicate Phones', dups, 'Clean before outreach', 'stat-red'],
+    ['📞 No Callback Date', noCallback, 'Interested but no next step', 'stat-purple'],
+    ['🧠 Avg Lead Health', scoreAvg+'%', 'Data discipline score', 'stat-green'],
+  ];
+  const sg=document.getElementById('advStatsGrid');
+  if(sg) sg.innerHTML = stats.map(x=>`<div class="stat-card ${x[3]}"><div class="stat-val">${x[1]}</div><div class="stat-lbl">${x[0]}</div><div style="font-size:10px;color:var(--text3);margin-top:4px;">${x[2]}</div></div>`).join('');
+
+  const actions = [];
+  if(hot) actions.push(`<div class="adv-ok">Call ${hot} hot lead(s) before touching cold data. WhatsApp is secondary; call first.</div>`);
+  if(noCallback) actions.push(`<div class="adv-warning">${noCallback} interested/callback contact(s) have no callback date. That is leakage, not CRM.</div>`);
+  if(dups) actions.push(`<div class="adv-danger">${dups} duplicate phone group(s) found. Bulk WhatsApp without cleaning this can make you look unprofessional.</div>`);
+  if(!actions.length) actions.push(`<div class="adv-ok">No major issue detected. Keep adding clean follow-up dates and notes.</div>`);
+  const ap=document.getElementById('advActionPlan'); if(ap) ap.innerHTML=actions.join('');
+
+  const warnings=[];
+  if(noPhone) warnings.push(`<div class="adv-danger">${noPhone} contact(s) have missing/invalid phone numbers.</div>`);
+  if(stale) warnings.push(`<div class="adv-warning">${stale} pending contact(s) look stale. Either revive them or mark cold.</div>`);
+  if(dups) warnings.push(`<div class="adv-danger">Exact duplicate phone groups: ${dups}. Use cleaner carefully.</div>`);
+  if(!warnings.length) warnings.push(`<div class="adv-ok">Data looks usable. Do not ruin it by importing messy sheets blindly.</div>`);
+  const dw=document.getElementById('advDataWarnings'); if(dw) dw.innerHTML=warnings.join('');
+
+  const priority = [...list].sort((a,b)=>ADV_scoreContact(b)-ADV_scoreContact(a)).slice(0,40);
+  const body=document.getElementById('advPriorityBody');
+  if(body) body.innerHTML = priority.length ? priority.map((c,i)=>{
+    const problems=[];
+    if(!ADV_cleanPhone(c.phone)) problems.push('No phone');
+    if(['interested','callback'].includes(c.status)&&!c.callbackDate) problems.push('No callback date');
+    if(ADV_daysSinceLast(c)>30) problems.push('Stale');
+    if(!c.community) problems.push('No community');
+    const p = problems.length ? problems.join(', ') : 'Clean';
+    const wa = ADV_cleanPhone(c.phone) ? `https://wa.me/${ADV_cleanPhone(c.phone)}?text=${encodeURIComponent('Hi '+(c.name||'')+', hope you are doing well. Just checking if you are still open to discuss Dubai real estate options. Simple yes/no is fine.')}` : '#';
+    return `<tr><td>${i+1}</td><td>${c.name||'-'}</td><td>${c.phone||'-'}</td><td><span class="tag tag-${c.status||'pending'}">${c.status||'pending'}</span></td><td><span class="tag tag-${c.priority||'cold'}">${c.priority||'cold'}</span></td><td>${c.community||'-'}</td><td>${p}</td><td><a class="btn btn-green btn-sm" target="_blank" href="${wa}">WhatsApp</a></td></tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty">No contacts yet.</td></tr>`;
+  ADV_calcFees(); ADV_buildScript();
+}
+function ADV_calcFees(){
+  const sp=ADV_num(document.getElementById('adv_salePrice')?.value);
+  const op=ADV_num(document.getElementById('adv_originalPrice')?.value);
+  const agencyPct=ADV_num(document.getElementById('adv_agencyPct')?.value) || 2;
+  const trustee=ADV_num(document.getElementById('adv_trusteeFee')?.value) || 0;
+  const base = Math.max(sp, op || 0);
+  const out=document.getElementById('advFeeResult'); if(!out) return;
+  if(!base){ out.textContent='Enter price to calculate.'; return; }
+  const dld=base*0.04;
+  const agency=sp*(agencyPct/100);
+  const vat=agency*0.05;
+  const total=dld+agency+vat+trustee;
+  out.innerHTML = `Calculation base: <b style="color:var(--text)">${ADV_money(base)}</b>${op&&op>sp?' <span class="adv-pill">Using original price because it is higher</span>':''}<br>`+
+    `DLD 4%: <b style="color:var(--green)">${ADV_money(dld)}</b><br>`+
+    `Agency ${agencyPct}%: <b>${ADV_money(agency)}</b> + VAT 5%: <b>${ADV_money(vat)}</b><br>`+
+    `Trustee/Admin: <b>${ADV_money(trustee)}</b><br>`+
+    `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">Estimated buyer-side cash need: <b style="color:var(--orange)">${ADV_money(total)}</b></div>`+
+    `<div style="font-size:11px;color:var(--text3);margin-top:8px;">Verify with DLD/trustee for final amount. This is a planning calculator, not legal confirmation.</div>`;
+}
+function ADV_buildScript(){
+  const type=document.getElementById('advScriptType')?.value || 'owner';
+  const name=(document.getElementById('advClientName')?.value || 'Sir').trim();
+  const area=(document.getElementById('advAreaName')?.value || 'Dubai').trim();
+  const first=name.split(/\s+/)[0] || 'Sir';
+  const scripts={
+    owner:`Hi ${first}, hope you are doing well. I came across your property in ${area}. Are you currently open to selling, or would you like a realistic market update first?\n\nSimple yes/no is also fine.\n\nRegards,\nTriloki Chaudhary\nSolanki Capital Properties LLC`,
+    investor:`Hi ${first}, quick update on ${area}. I have a few options that make sense from an investment point of view, but I do not want to overload you.\n\nAre you looking mainly for rental income, capital appreciation, or Golden Visa eligibility?`,
+    noc:`Hi ${first}, sharing a quick update regarding the NOC/transfer process. The key point is that the developer/trustee process depends on cleared payments, documents, and final confirmation from the concerned authority.\n\nI am keeping the follow-up active and will keep everything in writing for clarity.`,
+    noanswer:`Hi ${first}, I tried calling you regarding ${area}, but the call did not connect.\n\nPlease let me know a convenient time, or simply reply yes/no if you are still considering Dubai property options.`,
+    yesno:`Hi ${first}, simple question: are you still open to discussing ${area} property options?\n\n1. Yes, send details\n2. Maybe later\n3. No, not interested`
+  };
+  const out=document.getElementById('advScriptOutput'); if(out) out.textContent=scripts[type];
+}
+function ADV_copyScript(){
+  const t=document.getElementById('advScriptOutput')?.textContent||'';
+  navigator.clipboard.writeText(t).then(()=>toast('Script copied'));
+}
+function ADV_openScriptWA(){
+  const t=document.getElementById('advScriptOutput')?.textContent||'';
+  window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+}
+function ADV_removeExactDuplicates(){
+  const dups=ADV_findDuplicates();
+  if(!dups.length){ toast('No exact phone duplicates found'); return; }
+  if(!confirm('Remove exact phone duplicates? First record stays, later duplicates removed.')) return;
+  const seen=new Set();
+  contacts = contacts.filter(c=>{ const p=ADV_cleanPhone(c.phone); if(!p) return true; if(seen.has(p)) return false; seen.add(p); return true; });
+  save(); renderDashboard(); if(typeof renderContacts==='function') renderContacts(); ADV_refreshAdvanced(); toast('Duplicates removed');
+}
+function ADV_markStaleCold(){
+  let count=0;
+  (contacts||[]).forEach(c=>{ if(c.status==='pending' && ADV_daysSinceLast(c)>30){ c.priority='cold'; count++; } });
+  save(); ADV_refreshAdvanced(); toast(count+' stale contacts moved to cold');
 }
 </script>
 
