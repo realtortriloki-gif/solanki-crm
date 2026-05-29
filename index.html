@@ -548,6 +548,18 @@ tr:hover td{background:#161616;}
   .stat-val{font-size:32px!important;}
 }
 
+
+/* Dashboard Daily Action Plan */
+.dash-daily-ops{border-color:#2d5c45;background:linear-gradient(135deg,#111,#101827 55%,#061a11);}
+.dash-daily-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:12px;}
+.dash-daily-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:120px;}
+.dash-action-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;background:#111;border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;line-height:1.45;}
+.dash-action-rank{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#1e3a2f;color:var(--green);font-weight:800;font-size:12px;flex:0 0 24px;}
+.dash-action-btn{font-size:11px;padding:5px 9px;border-radius:999px;white-space:nowrap;}
+.dash-quote{font-size:14px;line-height:1.7;color:var(--text);padding:12px;border-radius:10px;background:linear-gradient(135deg,#1e3a2f,#101010);border:1px solid #2d5c45;}
+.dash-mini-muted{font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;}
+@media(max-width:768px){.dash-daily-grid{grid-template-columns:1fr}.dash-action-item{flex-direction:column}.dash-action-btn{width:100%;justify-content:center}.dash-daily-ops{padding:12px!important}}
+
 </style>
 </head>
 <body>
@@ -634,6 +646,22 @@ tr:hover td{background:#161616;}
     <button class="sync-mini-pill" onclick="manualCRMSync()" title="Offline changes are saved locally and synced to Supabase when online">☁️ Sync Now</button>
   </div>
   <div class="stats-grid" id="statsGrid"></div>
+  <div class="card dash-daily-ops" id="dashDailyOpsCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <div>
+        <div class="card-title" style="margin-bottom:3px;">🧠 Daily Action Plan</div>
+        <div style="font-size:11px;color:var(--text3);">Auto-updates from today's leads, follow-ups, duplicates and deals.</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="DASH_renderDailyOps(true)">↻ Refresh Plan</button>
+    </div>
+    <div class="dash-daily-grid">
+      <div id="dashDailyActionPlan" class="dash-daily-panel">Loading daily action plan...</div>
+      <div class="dash-daily-panel">
+        <div class="card-title" style="margin-bottom:8px;">🔥 Motivation for Today</div>
+        <div id="dashDailyQuote" class="dash-quote">Loading quote...</div>
+      </div>
+    </div>
+  </div>
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;">
       <div style="font-size:15px;font-weight:700;">Leads From Source <span id="sourceTotal" style="color:var(--text2);font-weight:600;"></span></div>
@@ -2342,6 +2370,7 @@ function renderDashboard(){
       <div class="stat-val" style="color:#fbbf24;font-size:18px;">AED ${totalCommission>0?totalCommission.toLocaleString('en-US',{maximumFractionDigits:0}):'0'}</div><div class="stat-lbl">Total Commission</div>
     </div>
   `;
+  if(typeof DASH_renderDailyOps === 'function') DASH_renderDailyOps(false);
   renderSourceDashboard();
   if(typeof loadNewsTicker === 'function'){
     loadNewsTicker();
@@ -4822,6 +4851,84 @@ function closeQRScan(){
 })();
 
 
+
+<script>
+// ─── DASHBOARD DAILY ACTION PLAN + MOTIVATION ────────────────────────
+function DASH_money(n){ return 'AED ' + Math.round(Number(n)||0).toLocaleString('en-US'); }
+function DASH_todayKey(){ return new Date().toISOString().slice(0,10); }
+function DASH_cleanPhone(p){ return String(p||'').replace(/[^0-9]/g,''); }
+function DASH_daysSince(c){
+  const d=c&& (c.lastContact || c.updatedAt || c.createdAt);
+  if(!d) return 999;
+  const t=new Date(d).getTime();
+  if(!Number.isFinite(t)) return 999;
+  return Math.floor((Date.now()-t)/86400000);
+}
+function DASH_deals(){
+  if(Array.isArray(window.dealEngines)) return window.dealEngines;
+  try{ if(typeof dealEngines!=='undefined' && Array.isArray(dealEngines)) return dealEngines; }catch(e){}
+  return [];
+}
+function DASH_metrics(){
+  if(typeof ADV_metrics === 'function') return ADV_metrics();
+  const list=Array.isArray(window.contacts)?window.contacts:(typeof contacts!=='undefined'?contacts:[]);
+  const today=new Date().toISOString().slice(0,10);
+  const hot=list.filter(c=>c.priority==='hot').length;
+  const overdue=list.filter(c=>c.callbackDate && c.callbackDate<=today && c.status!=='closed').length;
+  const noPhone=list.filter(c=>!DASH_cleanPhone(c.phone)).length;
+  const stale=list.filter(c=>(c.status||'pending')==='pending' && DASH_daysSince(c)>30).length;
+  const noCallback=list.filter(c=>['interested','callback','contacted'].includes(c.status||'') && !c.callbackDate).length;
+  const deals=DASH_deals();
+  const expected=deals.reduce((a,d)=>a+(Number(String(d.sellingPrice||d.selling||d.dealValue||0).replace(/[^0-9.]/g,''))||0)*((Number(d.revPct||d.revenuePct||2)||2)/100),0);
+  return {hot,overdue,noPhone,stale,noCallback,dups:0,deals,expected,likely:expected*.55,avg:list.length?55:0};
+}
+function DASH_quote(){
+  if(typeof ADV_quote === 'function') return ADV_quote();
+  const quotes=[
+    'Discipline beats motivation when the market gets noisy.',
+    'Calls create pipeline. Pipeline creates closings.',
+    'A clean CRM is a sales weapon, not admin work.',
+    'Follow-ups are where average agents lose deals and sharp agents win them.',
+    'Do the boring work daily; the commission looks exciting later.'
+  ];
+  let sum=0; for(const ch of DASH_todayKey()) sum+=ch.charCodeAt(0);
+  return quotes[sum%quotes.length];
+}
+function DASH_openAction(kind){
+  const navBtn=document.querySelector(`.nav-item[onclick*="${kind}"]`) || null;
+  if(kind==='followup'){ if(typeof setFUFilter==='function') fuFilter='all'; }
+  if(kind==='advanced'){ if(typeof ADV_showTab==='function'){ const btn=document.querySelector('.adv-tab-btn'); } }
+  if(typeof nav==='function'){ nav(kind, navBtn); }
+  if(kind==='followup' && typeof renderFollowup==='function') renderFollowup();
+  if(kind==='advanced' && typeof ADV_refreshAdvanced==='function') ADV_refreshAdvanced(false);
+  if(kind==='commission' && typeof renderCommissionCenter==='function') renderCommissionCenter();
+  setTimeout(()=>{ const el=document.getElementById('page-'+kind); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },50);
+}
+function DASH_actionButton(label, kind){
+  return `<button class="btn btn-blue btn-sm dash-action-btn" onclick="DASH_openAction('${kind}')">${label}</button>`;
+}
+function DASH_renderDailyOps(showToast){
+  const planEl=document.getElementById('dashDailyActionPlan');
+  const quoteEl=document.getElementById('dashDailyQuote');
+  if(!planEl && !quoteEl) return;
+  const m=DASH_metrics();
+  const actions=[];
+  if(m.hot) actions.push(['Call hot leads',`Call ${m.hot} hot lead(s) before touching cold data. WhatsApp is secondary; call first.`, 'Open Leads','contacts']);
+  if(m.overdue) actions.push(['Clear follow-ups',`${m.overdue} follow-up(s) due/overdue today. This is revenue leakage.`, 'Open Follow-up','followup']);
+  if(m.noCallback) actions.push(['Set next callback dates',`${m.noCallback} contacted/interested lead(s) have no next step. Fix the dates.`, 'Open Follow-up','followup']);
+  if(m.dups) actions.push(['Clean duplicates',`${m.dups} duplicate phone group(s). Do not run outreach before cleanup.`, 'Open Cleanup','advanced']);
+  if(m.noPhone) actions.push(['Fix invalid numbers',`${m.noPhone} lead(s) have missing/invalid numbers. Delete or correct them.`, 'Open Cleanup','advanced']);
+  if(m.stale) actions.push(['Revive stale leads',`${m.stale} pending lead(s) are stale. Mark cold or revive with one clean attempt.`, 'Open Cleanup','advanced']);
+  if(m.likely || m.expected) actions.push(['Push revenue pipeline',`Expected gross pipeline: ${DASH_money(m.expected||0)}. Focus on deals closest to closing.`, 'Open Commission','commission']);
+  if(!actions.length) actions.push(['Build pipeline today','No urgent CRM issue. Add calls, meetings, and deal movement instead of staring at dashboard.', 'Open Contacts','contacts']);
+  if(planEl){
+    planEl.innerHTML=actions.slice(0,5).map((a,i)=>`<div class="dash-action-item"><div style="display:flex;gap:10px;"><span class="dash-action-rank">${i+1}</span><div><b>${a[0]}</b><div style="color:var(--text2);font-size:12px;">${a[1]}</div></div></div>${DASH_actionButton(a[2],a[3])}</div>`).join('') + `<div class="dash-mini-muted">Updated: ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}. This plan changes as leads, follow-ups and deals change.</div>`;
+  }
+  if(quoteEl){ quoteEl.innerHTML=`“${DASH_quote()}”<div class="dash-mini-muted">Refreshes daily by date. Not random noise.</div>`; }
+  if(showToast && typeof toast==='function') toast('Daily plan refreshed');
+}
+</script>
+
 function ADV_num(v){ return Number(String(v||'').replace(/[^0-9.]/g,'')) || 0; }
 function ADV_money(n){ return 'AED ' + Math.round(n||0).toLocaleString('en-US'); }
 function ADV_cleanPhone(p){ return String(p||'').replace(/[^0-9]/g,''); }
@@ -4908,6 +5015,7 @@ function ADV_refreshAdvanced(showToast){
   const q=document.getElementById('advDailyQuote'); if(q) q.innerHTML=`“${ADV_quote()}”<div class="adv-small-muted" style="margin-top:8px;">Daily quote refreshes automatically by date.</div>`;
   ADV_renderActionPlan(m); ADV_renderAlerts(m); ADV_renderRevenue(m); ADV_renderCleanup(m); ADV_renderQueue(m); ADV_renderOutreachRules(m); ADV_renderAnalytics(m);
   ADV_calcFees(); ADV_calcQuickCommission(); ADV_buildScript();
+  if(typeof DASH_renderDailyOps==='function') DASH_renderDailyOps(false);
   if(showToast) toast('Advanced refreshed');
 }
 function ADV_renderActionPlan(m){
