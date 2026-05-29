@@ -1100,6 +1100,7 @@ tr:hover td{background:#161616;}
         <div><label class="lbl">Agent Bonus</label><input type="text" id="cc_bonus" value="0" oninput="calculateCommissionCenterPreview()"/></div>
       </div>
       <div id="cc_preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;line-height:1.75;color:var(--text2);">Enter deal value to calculate.</div>
+      <button class="btn btn-green" style="margin-top:10px;width:100%;" onclick="saveQuickCommissionAsDeal()">💾 Save This as New Deal</button>
       <div class="comm-note" style="margin-top:8px;">This calculator is for quick checking only. To save commission against a particular deal, create/edit the deal in Deal Engine.</div>
     </div>
     <div class="card">
@@ -1607,6 +1608,7 @@ let sourceBucketFilter = '';
 let previewContactId = null;
 let settings = { name:'Triloki Chaudhary', company:'Solanki Capital Properties LLC', tagline:'Your Trusted Property Advisor' };
 let dealEngines = [];
+window.dealEngines = dealEngines;
 let currentDealFilter = 'all';
 let editingDealId = null;
 let offplanBookings = [];
@@ -1874,7 +1876,7 @@ function load(){
     const c=localStorage.getItem('sccrm_contacts'); if(c) contacts=JSON.parse(c);
     const s=localStorage.getItem('sccrm_settings'); if(s){ settings=JSON.parse(s); applySettingsToInputs(); }
     const p=localStorage.getItem('sccrm_projects'); if(p) projects=JSON.parse(p);
-    const de=localStorage.getItem('crm_deal_engines'); if(de && typeof dealEngines !== 'undefined') dealEngines=JSON.parse(de);
+    const de=localStorage.getItem('crm_deal_engines'); if(de && typeof dealEngines !== 'undefined') { dealEngines=JSON.parse(de); window.dealEngines = dealEngines; }
     const ob=localStorage.getItem('crm_offplan_bookings'); if(ob && typeof offplanBookings !== 'undefined') offplanBookings=JSON.parse(ob);
     const oi=localStorage.getItem('crm_offplan_inventory'); if(oi && typeof offplanInventory !== 'undefined') offplanInventory=JSON.parse(oi);
     const ap=localStorage.getItem('crm_area_price_rows'); if(ap && typeof areaPriceRows !== 'undefined') areaPriceRows=JSON.parse(ap);
@@ -1897,7 +1899,7 @@ async function loadFromCloud(){
       contacts = merged.contacts;
       projects = merged.projects;
       settings = merged.settings;
-      if(typeof dealEngines !== 'undefined') dealEngines = merged.dealEngines || [];
+      if(typeof dealEngines !== 'undefined') { dealEngines = merged.dealEngines || []; window.dealEngines = dealEngines; }
       if(settings && settings.__offplanBackup){
         if(Array.isArray(settings.__offplanBackup.bookings)) offplanBookings = settings.__offplanBackup.bookings;
         if(Array.isArray(settings.__offplanBackup.inventory)) offplanInventory = settings.__offplanBackup.inventory;
@@ -1938,7 +1940,7 @@ window.handleRemoteCRMUpdate = function(row){
     contacts = merged.contacts;
     projects = merged.projects;
     settings = merged.settings;
-    if(typeof dealEngines !== 'undefined') dealEngines = merged.dealEngines || [];
+    if(typeof dealEngines !== 'undefined') { dealEngines = merged.dealEngines || []; window.dealEngines = dealEngines; }
     if(settings && settings.__offplanBackup){
       if(Array.isArray(settings.__offplanBackup.bookings)) offplanBookings = settings.__offplanBackup.bookings;
       if(Array.isArray(settings.__offplanBackup.inventory)) offplanInventory = settings.__offplanBackup.inventory;
@@ -3688,7 +3690,7 @@ function clearAllData(){ if(!confirm('Delete all data? This cannot be undone!'))
   <div class="modal" style="max-width:540px;">
     <div class="modal-header">
       <div class="modal-title">🏆 Deal Closed — Enter Details</div>
-      <button class="modal-close" onclick="closeDealModal()">✕</button>
+      <button class="modal-close" onclick="closeContactDealModal()">✕</button>
     </div>
     <div class="row2" style="margin-bottom:10px;">
       <div><label class="lbl">Developer</label><input type="text" id="deal_developer" placeholder="e.g. Emaar, Aldar"/></div>
@@ -3776,7 +3778,7 @@ function clearAllData(){ if(!confirm('Delete all data? This cannot be undone!'))
       <label class="lbl">Notes</label>
       <textarea id="deal_notes" placeholder="Any additional notes..." style="min-height:50px;"></textarea>
     </div>
-    <button class="btn btn-green" style="width:100%;" onclick="saveDeal()">💾 Save Deal</button>
+    <button class="btn btn-green" style="width:100%;" onclick="saveContactDeal()">💾 Save Contact Deal</button>
   </div>
 </div>
 
@@ -3820,7 +3822,7 @@ function openDealModal(id){
   document.getElementById('dealCloseModal').classList.add('open');
 }
 
-function closeDealModal(){ document.getElementById('dealCloseModal').classList.remove('open'); }
+function closeContactDealModal(){ document.getElementById('dealCloseModal').classList.remove('open'); }
 
 function pn(id){ return parseFloat((document.getElementById(id)?.value||'').replace(/[^0-9.]/g,''))||0; }
 
@@ -3879,7 +3881,7 @@ function calcDeal(){
   window._dealCalc = {X, B, Y, Z, netRef, agentPct, C, netCoRev, A, totalAgent};
 }
 
-function saveDeal(){
+function saveContactDeal(){
   const c = contacts.find(x=>parseInt(x.id)===parseInt(_dealContactId));
   if(!c) return;
   calcDeal();
@@ -5042,11 +5044,11 @@ function saveDeal(){
     buyer:document.getElementById('d_buyer').value.trim(), seller:document.getElementById('d_seller').value.trim(), developer:document.getElementById('d_developer').value.trim(), project:document.getElementById('d_project').value.trim(), unit:document.getElementById('d_unit').value.trim(), property:document.getElementById('d_property').value.trim(), stage:document.getElementById('d_stage').value, sellingPrice:c.dealValue, originalPrice:numAED(document.getElementById('d_original').value), revenuePct:c.revenuePct, referralBonus:c.referral, splitPct:c.splitPct, agentBonus:c.bonus, paymentBreakdown:document.getElementById('d_payment').value.trim(), notes:document.getElementById('d_notes').value.trim(), trusteeStatus:document.getElementById('d_trustee').value.trim(), commission:c, docs:{passport:doc_passport.checked,eid:doc_eid.checked,oqood:doc_oqood.checked,formf:doc_formf.checked,noc:doc_noc.checked,cheques:doc_cheques.checked}, createdAt: old?.createdAt || now, updatedAt: now
   };
   if(!deal.project && !deal.buyer){ alert('Add at least project or buyer name.'); return; }
-  dealEngines = editingDealId ? dealEngines.map(d=>d.id===editingDealId?deal:d) : [deal,...(dealEngines||[])];
+  dealEngines = editingDealId ? dealEngines.map(d=>d.id===editingDealId?deal:d) : [deal,...(dealEngines||[])]; window.dealEngines = dealEngines;
   localStorage.setItem('crm_deal_engines', JSON.stringify(dealEngines));
   save(); renderDeals(); if(typeof renderCommissionCenter==='function') renderCommissionCenter(); closeDealModal(); if(typeof toast==='function') toast('Deal saved','success');
 }
-function deleteDeal(){ if(!editingDealId) return; if(!confirm('Delete this deal?')) return; dealEngines=(dealEngines||[]).filter(d=>d.id!==editingDealId); localStorage.setItem('crm_deal_engines',JSON.stringify(dealEngines)); save(); renderDeals(); if(typeof renderCommissionCenter==='function') renderCommissionCenter(); closeDealModal(); if(typeof toast==='function') toast('Deal deleted','success'); }
+function deleteDeal(){ if(!editingDealId) return; if(!confirm('Delete this deal?')) return; dealEngines=(dealEngines||[]).filter(d=>d.id!==editingDealId); window.dealEngines = dealEngines; localStorage.setItem('crm_deal_engines',JSON.stringify(dealEngines)); save(); renderDeals(); if(typeof renderCommissionCenter==='function') renderCommissionCenter(); closeDealModal(); if(typeof toast==='function') toast('Deal deleted','success'); }
 function advanceDealStage(id){ const order=['interested','offer','formf','noc','trustee','transfer','commission','closed']; const d=(dealEngines||[]).find(x=>x.id===id); if(!d) return; const i=order.indexOf(d.stage); d.stage=order[Math.min(order.length-1,Math.max(0,i)+1)]; d.updatedAt=Date.now(); localStorage.setItem('crm_deal_engines',JSON.stringify(dealEngines)); save(); renderDeals(); if(typeof renderCommissionCenter==='function') renderCommissionCenter(); }
 function copyDealSummary(id){ const d=(dealEngines||[]).find(x=>x.id===id); if(!d) return; const docs=dealDocsProgress(d); const c=d.commission||{}; const text=`Deal Summary
 Project: ${d.project||'-'}
@@ -5163,20 +5165,32 @@ Net Company Revenue: ${ccMoney(c.companyNet||0)}`;
 }
 function copyCommissionRegister(){
   const rows=getCommissionDealRows();
-  const txt='Commission Register
+  const txt=`Commission Register
 
-'+rows.map((d,i)=>{
+${rows.map((d,i)=>{
     const c=d._commission||{};
-    return (i+1)+'. '+(d.project||d.property||'Deal')+' '+(d.unit||'')+'
-'+
-      'Buyer: '+(d.buyer||'-')+' | Stage: '+dealStageLabel(d.stage)+'
-'+
-      'Deal Value: '+ccMoney(d.sellingPrice||0)+' | Gross: '+ccMoney(c.gross||0)+' | Referral: '+ccMoney(d.referralBonus||0)+' | My Comm: '+ccMoney(c.myCommission||0)+' | Agent Bonus: '+ccMoney(d.agentBonus||0)+' | Company Net: '+ccMoney(c.companyNet||0);
-  }).join('
-
-');
+    return `${i+1}. ${d.project||d.property||'Deal'} ${d.unit||''}
+Buyer: ${d.buyer||'-'} | Stage: ${dealStageLabel(d.stage)}
+Deal Value: ${ccMoney(d.sellingPrice||0)} | Gross: ${ccMoney(c.gross||0)} | Referral: ${ccMoney(d.referralBonus||0)} | My Comm: ${ccMoney(c.myCommission||0)} | Agent Bonus: ${ccMoney(d.agentBonus||0)} | Company Net: ${ccMoney(c.companyNet||0)}`;
+  }).join('\n\n')}`;
   navigator.clipboard?.writeText(txt).then(()=>toast&&toast('Commission register copied','success')).catch(()=>alert(txt));
 }
+function saveQuickCommissionAsDeal(){
+  const value=ccNum(document.getElementById('cc_value')?.value);
+  if(!value){ alert('Enter deal value first.'); return; }
+  openNewDeal();
+  setTimeout(()=>{
+    const set=(id,val)=>{ const e=document.getElementById(id); if(e) e.value=val; };
+    set('d_selling', value);
+    set('d_revPct', document.getElementById('cc_pct')?.value || '2');
+    set('d_referral', document.getElementById('cc_referral')?.value || '0');
+    set('d_split', document.getElementById('cc_split')?.value || '60');
+    set('d_bonus', document.getElementById('cc_bonus')?.value || '0');
+    set('d_stage','commission');
+    calculateDealCommission();
+  },50);
+}
+
 
 
 // ─── SMART OFF-PLAN HUB ─────────────────────────────────────────────
@@ -5839,6 +5853,19 @@ function convertCurrency(){
     <div id="dashboardDataContent"></div>
   </div>
 </div>
+
+
+<script>
+// Final stability patch: safer modal closes and global dealEngines sync.
+(function(){
+  const safeClose = (id)=>{ const el=document.getElementById(id); if(el) el.classList.remove('open'); };
+  if(typeof window.closeContactDealModal !== 'function') window.closeContactDealModal = function(){ safeClose('dealCloseModal'); };
+  // Ensure legacy contact deal modal close is not confused with Deal Engine modal.
+  window.closeDealEngineModal = function(){ safeClose('dealModal'); };
+  // Keep dealEngines globally accessible for Advanced/Commission modules.
+  try{ if(typeof dealEngines !== 'undefined') window.dealEngines = dealEngines; }catch(e){}
+})();
+</script>
 
 </body>
 </html>
