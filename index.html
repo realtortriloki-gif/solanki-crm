@@ -403,6 +403,80 @@ tr:hover td{background:#161616;}
 .dashboard-modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
 @media(max-width:768px){.compact-sync-row{justify-content:flex-start;margin:0 0 12px 0}.sync-mini-pill{width:100%;justify-content:center}.stat-card:hover{transform:none}}
 
+
+/* Area price confidence / source transparency */
+.area-confidence{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 7px;font-size:10px;font-weight:800;border:1px solid var(--border);white-space:nowrap;}
+.area-confidence.high{background:#0a2a1a;color:#34d399;border-color:#0a4a2a;}
+.area-confidence.medium{background:#2a220a;color:#fbbf24;border-color:#4a3a0a;}
+.area-confidence.low{background:#3a1515;color:#f87171;border-color:#5a2020;}
+.area-confidence.reference{background:#1a1a1a;color:#aaa;border-color:#333;}
+.area-meta-line{font-size:10px;color:var(--text3);margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.area-source-banner{background:linear-gradient(135deg,#141414,#0b0b0b);border:1px solid #333;border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;}
+.area-source-banner b{color:var(--text);}
+.area-data-mini{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px;}
+.area-data-mini small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.area-data-mini b{font-size:13px;color:var(--text);}
+
+
+/* Smart Off-Plan Advisor */
+.smart-offplan-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;}
+.smart-score{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;border:1px solid var(--border2);}
+.smart-score.hot{background:#3a1f0a;color:#fb923c;border-color:#5a2f0a;}
+.smart-score.good{background:#0a2a1a;color:#34d399;border-color:#0a4a2a;}
+.smart-score.mid{background:#2a2a0a;color:#fbbf24;border-color:#4a3a0a;}
+.smart-score.low{background:#0a1a2a;color:#93c5fd;border-color:#0a2a4a;}
+.smart-chip{display:inline-block;margin:3px 4px 0 0;padding:3px 8px;border-radius:999px;background:#111;border:1px solid var(--border);font-size:10px;color:var(--text2);}
+.smart-chip.warn{border-color:#5a2f0a;color:#fbbf24;background:#2a1f0a;}
+.smart-chip.good{border-color:#0a4a2a;color:#34d399;background:#0a2a1a;}
+.smart-chip.bad{border-color:#5a2020;color:#f87171;background:#3a1515;}
+.smart-match-card{background:linear-gradient(145deg,#151515,#101010);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all .15s;}
+.smart-match-card:hover{border-color:#3a3a3a;transform:translateY(-1px);}
+.smart-reason-list{font-size:11px;color:var(--text2);line-height:1.7;margin-top:8px;}
+.smart-mini{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;}
+.smart-mini small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.smart-mini b{font-size:14px;color:var(--text);}
+.offplan-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px;}
+.offplan-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:768px){.offplan-compare-grid{grid-template-columns:1fr}.smart-offplan-toolbar .btn{flex:1;justify-content:center}.offplan-kpi-grid{grid-template-columns:1fr 1fr}.smart-match-card{padding:10px}}
+
+
+
+/* Commission Center */
+.comm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1rem;}
+.comm-card{background:linear-gradient(145deg,#171717,#101010);border:1px solid var(--border2);border-radius:12px;padding:12px;}
+.comm-card small{display:block;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.45px;margin-bottom:5px;}
+.comm-card b{display:block;font-size:18px;color:var(--text);}
+.comm-card.green b{color:var(--green)} .comm-card.blue b{color:var(--blue)} .comm-card.orange b{color:var(--orange)} .comm-card.purple b{color:var(--purple)}
+.comm-table-head,.comm-row{display:grid;grid-template-columns:1.25fr .75fr .8fr .8fr .8fr .9fr .9fr .9fr .9fr .8fr;gap:8px;align-items:center;min-width:980px;}
+.comm-table-head{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.45px;padding:8px 10px;border-bottom:1px solid var(--border);}
+.comm-row{font-size:12px;padding:9px 10px;border-bottom:1px solid #171717;cursor:pointer;}
+.comm-row:hover{background:#151515;}
+.comm-row b{font-size:12px;}
+.comm-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.comm-note{font-size:11px;color:var(--text3);line-height:1.55;}
+@media(max-width:768px){.comm-grid{grid-template-columns:1fr 1fr}.comm-table-head,.comm-row{min-width:940px}.comm-card b{font-size:15px}}
+
+
+/* Smart Advanced Operations Center */
+.adv-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;-webkit-overflow-scrolling:touch;}
+.adv-tab-btn{padding:7px 12px;border-radius:999px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;font-size:12px;white-space:nowrap;font-family:inherit;}
+.adv-tab-btn.active{background:#1e3a2f;color:var(--green);border-color:#2d5c45;font-weight:700;}
+.adv-panel{display:none;}
+.adv-panel.active{display:block;}
+.adv-mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px;}
+.adv-action-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;line-height:1.5;}
+.adv-action-item b{color:var(--text);}
+.adv-action-rank{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#1e3a2f;color:var(--green);font-weight:800;font-size:12px;flex:0 0 24px;}
+.adv-health-bar{height:8px;border-radius:999px;background:var(--bg2);border:1px solid var(--border);overflow:hidden;margin-top:7px;}
+.adv-health-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--orange),var(--green));}
+.adv-quote{font-size:14px;line-height:1.7;color:var(--text);padding:14px;border-radius:12px;background:linear-gradient(135deg,#1e3a2f,#101010);border:1px solid #2d5c45;}
+.adv-tool-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.adv-tool-card h4{font-size:13px;margin-bottom:8px;}
+.adv-small-muted{font-size:11px;color:var(--text3);line-height:1.5;}
+.adv-click-row{cursor:pointer;}
+.adv-click-row:hover td{background:#1b1b1b!important;}
+@media(max-width:768px){.adv-mini-grid{grid-template-columns:1fr 1fr}.adv-action-item{flex-direction:column}.adv-tabs{gap:5px}.adv-tab-btn{font-size:11px;padding:7px 10px}}
+
 </style>
 </head>
 <body>
@@ -420,6 +494,7 @@ tr:hover td{background:#161616;}
   <button class="nav-item" onclick="nav('offplan',this)"><span class="nav-icon">🚀</span> Off-Plan Hub</button>
   <button class="nav-item" onclick="nav('areaprices',this)"><span class="nav-icon">📍</span> Area Prices</button>
   <button class="nav-item" onclick="nav('deals',this)"><span class="nav-icon">🏠</span> Deal Engine</button>
+  <button class="nav-item" onclick="nav('commission',this)"><span class="nav-icon">💰</span> Commission</button>
   <button class="nav-item" onclick="nav('settings',this)"><span class="nav-icon">⚙️</span> Settings</button>
   <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
   <button class="nav-item" onclick="openCalcModal('mortgage')" style="background:#0a2a1a;color:#25D366;border:1px solid #1a4a2a;"><span class="nav-icon">🏦</span> Mortgage</button>
@@ -459,6 +534,9 @@ tr:hover td{background:#161616;}
   </button>
   <button onclick="nav('deals',this);syncBottomNav('deals')" id="bnav-deals">
     <span class="bnav-icon">🏠</span><span>Deals</span>
+  </button>
+  <button onclick="nav('commission',this);syncBottomNav('commission')" id="bnav-commission">
+    <span class="bnav-icon">💰</span><span>Comm</span>
   </button>
   <button onclick="openCalcModal('mortgage')" id="bnav-calc">
     <span class="bnav-icon">🧮</span><span>Calc</span>
@@ -777,56 +855,87 @@ tr:hover td{background:#161616;}
 
 
 
+
 <!-- OFF-PLAN HUB -->
 <div id="page-offplan" class="page">
   <div class="offplan-hero">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
       <div>
-        <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">🚀 Off-Plan Hub</h2>
-        <p style="font-size:12px;color:var(--text2);line-height:1.6;">Requirement matcher, booking tracker, inventory shortlist and installment reminders for off-plan sales.</p>
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">🚀 Smart Off-Plan Hub</h2>
+        <p style="font-size:12px;color:var(--text2);line-height:1.6;">Buyer profile → smart matching → project score → booking risk alerts → comparison → WhatsApp shortlist.</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-green" onclick="addOffplanBooking()">+ Booking</button>
         <button class="btn btn-blue" onclick="addInventoryUnit()">+ Unit</button>
+        <button class="btn btn-ghost" onclick="copySmartShortlist()">📋 Copy Shortlist</button>
       </div>
     </div>
   </div>
 
+  <div class="offplan-kpi-grid" id="opSmartKpis"></div>
+
   <div class="offplan-grid">
     <div class="offplan-card">
-      <div class="card-title">🎯 Client Requirement Matcher</div>
+      <div class="card-title">🧠 Smart Buyer Profile</div>
       <div class="row2" style="margin-bottom:10px;">
         <div><label class="lbl">Budget AED</label><input type="text" id="op_budget" placeholder="e.g. 1600000" oninput="renderRequirementMatches()"/></div>
-        <div><label class="lbl">Bedrooms</label><select id="op_beds" onchange="renderRequirementMatches()"><option value="">Any</option><option>Studio</option><option>1BR</option><option>2BR</option><option>3BR</option><option>4BR</option><option>Villa</option></select></div>
+        <div><label class="lbl">Bedrooms</label><select id="op_beds" onchange="renderRequirementMatches()"><option value="">Any</option><option>Studio</option><option>1BR</option><option>2BR</option><option>3BR</option><option>4BR</option><option>Villa</option><option>Townhouse</option></select></div>
       </div>
       <div class="row2" style="margin-bottom:10px;">
         <div><label class="lbl">Area / Developer</label><input type="text" id="op_area" placeholder="Emaar, JVC, Dubai Islands..." oninput="renderRequirementMatches()"/></div>
         <div><label class="lbl">Handover</label><input type="text" id="op_handover" placeholder="2027 / Q2 2028" oninput="renderRequirementMatches()"/></div>
       </div>
-      <div id="opMatches"></div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Client Intent</label><select id="op_intent" onchange="renderRequirementMatches()"><option value="investment">Investment / ROI</option><option value="enduser">End User</option><option value="goldenvisa">Golden Visa</option><option value="flip">Short-term Flip</option></select></div>
+        <div><label class="lbl">Payment Preference</label><select id="op_payment_pref" onchange="renderRequirementMatches()"><option value="">Any</option><option value="posthandover">Post-handover</option><option value="monthly">1% monthly / flexible</option><option value="lowdown">Low down payment</option><option value="cash">Cash / strong buyer</option></select></div>
+      </div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Target Yield %</label><input type="text" id="op_yield" placeholder="e.g. 7" oninput="renderRequirementMatches()"/></div>
+        <div><label class="lbl">Budget Flex</label><select id="op_budget_flex" onchange="renderRequirementMatches()"><option value="10">±10%</option><option value="5">±5%</option><option value="15">±15%</option><option value="20">±20%</option></select></div>
+      </div>
+      <div class="smart-offplan-toolbar">
+        <button class="btn btn-green btn-sm" onclick="renderRequirementMatches()">⚡ Match Now</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetSmartBuyerProfile()">Reset</button>
+        <button class="btn btn-ghost btn-sm" onclick="copySmartBuyerQuestionnaire()">Copy Questions</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:10px;">Scoring uses budget fit, location/developer match, unit type, handover, payment plan, price/sqft vs area benchmark, yield/intent and risk flags.</div>
     </div>
 
     <div class="offplan-card">
-      <div class="card-title">📅 Booking Pipeline</div>
+      <div class="card-title">🏆 Smart Matches</div>
+      <div id="opMatches"></div>
+    </div>
+  </div>
+
+  <div class="offplan-grid">
+    <div class="offplan-card">
+      <div class="card-title">📅 Booking Pipeline + Risk Alerts</div>
       <div id="opBookingStats" class="market-pulse-grid"></div>
       <div id="opBookingsList"></div>
+    </div>
+    <div class="offplan-card">
+      <div class="card-title">⚖️ Compare Two Projects</div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Option A</label><select id="op_compare_a" onchange="renderOffplanComparison()"></select></div>
+        <div><label class="lbl">Option B</label><select id="op_compare_b" onchange="renderOffplanComparison()"></select></div>
+      </div>
+      <div id="opCompareResult"></div>
     </div>
   </div>
 
   <div class="offplan-card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-      <div class="card-title" style="margin-bottom:0;">🏢 Unit Inventory Shortlist</div>
+      <div class="card-title" style="margin-bottom:0;">🏢 Smart Unit Inventory</div>
       <input type="search" id="opInvSearch" placeholder="Search project, area, developer..." oninput="renderOffplanInventory()" style="max-width:280px;"/>
     </div>
     <div id="opInventoryList"></div>
   </div>
 
   <div class="offplan-card">
-    <div class="card-title">⏰ Installment / SPA / Oqood Reminders</div>
+    <div class="card-title">⏰ Installment / SPA / Oqood / Commission Reminders</div>
     <div id="opReminderList"></div>
   </div>
 </div>
-
 
 <!-- AREA PRICE INTELLIGENCE -->
 <div id="page-areaprices" class="page">
@@ -835,6 +944,7 @@ tr:hover td{background:#161616;}
       <div>
         <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">📍 Area Price / Sqft Intelligence</h2>
         <p style="font-size:12px;color:var(--text2);line-height:1.6;">Area-wise AED/sqft tracker, instant unit valuation and over/underpriced deal detector.</p>
+        <div style="font-size:11px;color:var(--orange);margin-top:6px;">High confidence requires transaction count + source + period. Cached rows are marked REFERENCE.</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-green" onclick="addAreaPriceRow()">+ Add / Update Area</button>
@@ -960,6 +1070,63 @@ tr:hover td{background:#161616;}
   </div>
 </div>
 
+
+
+<!-- COMMISSION CENTER -->
+<div id="page-commission" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+    <div>
+      <h2 style="font-size:18px;font-weight:700;">💰 Commission Center</h2>
+      <p style="font-size:12px;color:var(--text3);margin-top:4px;">Deal-wise gross revenue, referral, split, agent bonus, company net and agent earning. Click any row to edit the original deal.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="openNewDeal()">+ New Deal</button>
+      <button class="btn btn-ghost" onclick="renderCommissionCenter()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="comm-grid" id="commissionKpis"></div>
+
+  <div class="row2">
+    <div class="card">
+      <div class="card-title">🧮 Quick Commission Calculator</div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Deal Value</label><input type="text" id="cc_value" placeholder="e.g. 4250000" oninput="calculateCommissionCenterPreview()"/></div>
+        <div><label class="lbl">Gross Company Revenue %</label><input type="text" id="cc_pct" value="2" oninput="calculateCommissionCenterPreview()"/></div>
+      </div>
+      <div class="row3" style="margin-bottom:10px;">
+        <div><label class="lbl">Referral Bonus</label><input type="text" id="cc_referral" value="0" oninput="calculateCommissionCenterPreview()"/></div>
+        <div><label class="lbl">My Split %</label><input type="text" id="cc_split" value="60" oninput="calculateCommissionCenterPreview()"/></div>
+        <div><label class="lbl">Agent Bonus</label><input type="text" id="cc_bonus" value="0" oninput="calculateCommissionCenterPreview()"/></div>
+      </div>
+      <div id="cc_preview" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;line-height:1.75;color:var(--text2);">Enter deal value to calculate.</div>
+      <div class="comm-note" style="margin-top:8px;">This calculator is for quick checking only. To save commission against a particular deal, create/edit the deal in Deal Engine.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔎 Filter Deal Commissions</div>
+      <input type="search" id="commissionSearch" placeholder="Search buyer, seller, project, unit..." oninput="renderCommissionCenter()" style="margin-bottom:10px;"/>
+      <div class="row2" style="margin-bottom:10px;">
+        <select id="commissionStageFilter" onchange="renderCommissionCenter()">
+          <option value="">All Stages</option><option value="interested">Interested</option><option value="offer">Offer</option><option value="formf">Form F</option><option value="noc">NOC</option><option value="trustee">Trustee</option><option value="transfer">Transfer</option><option value="commission">Commission</option><option value="closed">Closed</option>
+        </select>
+        <select id="commissionSort" onchange="renderCommissionCenter()"><option value="updatedDesc">Recently Updated</option><option value="myDesc">Highest My Commission</option><option value="companyDesc">Highest Company Net</option><option value="valueDesc">Highest Deal Value</option></select>
+      </div>
+      <div class="comm-note">Best practice: don’t keep commission as a separate random entry. Keep it attached to its deal, otherwise later reconciliation becomes messy.</div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap;">
+      <div style="font-size:14px;font-weight:800;">Deal-wise Commission Register</div>
+      <button class="btn btn-ghost btn-sm" onclick="copyCommissionRegister()">📋 Copy Register</button>
+    </div>
+    <div class="tbl-wrap">
+      <div class="comm-table-head"><div>Deal</div><div>Stage</div><div>Deal Value</div><div>Gross Rev</div><div>Referral</div><div>Net After Ref</div><div>My Comm</div><div>Agent Bonus</div><div>Company Net</div><div>Actions</div></div>
+      <div id="commissionRows"></div>
+    </div>
+  </div>
+</div>
+
 <!-- SETTINGS -->
 <div id="page-settings" class="page">
   <h2 style="font-size:18px;font-weight:600;margin-bottom:1.25rem;">Settings</h2>
@@ -999,78 +1166,159 @@ tr:hover td{background:#161616;}
 </div>
 
 
+
 <!-- ADVANCED COMMAND CENTER -->
 <div id="page-advanced" class="page">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;gap:10px;flex-wrap:wrap;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;gap:10px;flex-wrap:wrap;">
     <div>
-      <h2 style="font-size:18px;font-weight:700;">⚡ Advanced Command Center</h2>
-      <p style="font-size:12px;color:var(--text3);margin-top:4px;">Lead health, duplicate cleaner, DLD calculator, daily action plan and WhatsApp scripts.</p>
+      <h2 style="font-size:18px;font-weight:800;">⚡ Smart Operations Center</h2>
+      <p style="font-size:12px;color:var(--text3);margin-top:4px;">Daily action plan, data cleanup, tools, outreach and performance control.</p>
     </div>
-    <button class="btn btn-green" onclick="ADV_refreshAdvanced()">↻ Refresh Advanced</button>
+    <button class="btn btn-green" onclick="ADV_refreshAdvanced()">↻ Refresh</button>
   </div>
 
-  <div class="stats-grid" id="advStatsGrid"></div>
-
-  <div class="row2">
-    <div class="card">
-      <div class="card-title">🧠 Daily Action Plan</div>
-      <div id="advActionPlan"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">🧹 Data Quality Warnings</div>
-      <div id="advDataWarnings"></div>
-    </div>
+  <div class="adv-tabs">
+    <button class="adv-tab-btn active" onclick="ADV_showTab('command',this)">📍 Command</button>
+    <button class="adv-tab-btn" onclick="ADV_showTab('cleanup',this)">🧹 Data Cleanup</button>
+    <button class="adv-tab-btn" onclick="ADV_showTab('tools',this)">🧮 Tools</button>
+    <button class="adv-tab-btn" onclick="ADV_showTab('outreach',this)">💬 Outreach</button>
+    <button class="adv-tab-btn" onclick="ADV_showTab('analytics',this)">📊 Analytics</button>
   </div>
 
-  <div class="row2">
-    <div class="card">
-      <div class="card-title">🏛 Dubai Transfer / Fee Calculator</div>
-      <div class="row2" style="margin-bottom:10px;">
-        <div><label class="lbl">Selling Price AED</label><input type="text" id="adv_salePrice" placeholder="e.g. 4250000" oninput="ADV_calcFees()"/></div>
-        <div><label class="lbl">Original Price AED (optional)</label><input type="text" id="adv_originalPrice" placeholder="For off-plan resale" oninput="ADV_calcFees()"/></div>
+  <div id="advPanel-command" class="adv-panel active">
+    <div class="stats-grid" id="advStatsGrid"></div>
+    <div class="row2">
+      <div class="card">
+        <div class="card-title">🧠 Daily Action Plan <span id="advPlanDate" style="float:right;color:var(--text3);font-weight:500;"></span></div>
+        <div id="advActionPlan"></div>
       </div>
-      <div class="row2" style="margin-bottom:10px;">
-        <div><label class="lbl">Agency Fee %</label><input type="text" id="adv_agencyPct" value="2" oninput="ADV_calcFees()"/></div>
-        <div><label class="lbl">Trustee/Admin AED</label><input type="text" id="adv_trusteeFee" value="5250" oninput="ADV_calcFees()"/></div>
+      <div class="card">
+        <div class="card-title">🔥 Motivation for Today</div>
+        <div id="advDailyQuote" class="adv-quote"></div>
       </div>
-      <div id="advFeeResult" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.8;color:var(--text2);">Enter price to calculate.</div>
     </div>
-
-    <div class="card">
-      <div class="card-title">💬 Quick WhatsApp Script Builder</div>
-      <label class="lbl">Script Type</label>
-      <select id="advScriptType" onchange="ADV_buildScript()" style="margin-bottom:10px;">
-        <option value="owner">Owner approach</option>
-        <option value="investor">Investor follow-up</option>
-        <option value="noc">NOC / transfer update</option>
-        <option value="noanswer">Call not answered</option>
-        <option value="yesno">Simple yes/no CTA</option>
-      </select>
-      <label class="lbl">Client Name</label>
-      <input type="text" id="advClientName" placeholder="Client name" oninput="ADV_buildScript()" style="margin-bottom:10px;"/>
-      <label class="lbl">Area / Project</label>
-      <input type="text" id="advAreaName" placeholder="District One, Dubai Islands, DAMAC Riverside..." oninput="ADV_buildScript()" style="margin-bottom:10px;"/>
-      <div id="advScriptOutput" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.8;white-space:pre-wrap;min-height:120px;"></div>
-      <div style="display:flex;gap:8px;margin-top:10px;">
-        <button class="btn btn-ghost" onclick="ADV_copyScript()">📋 Copy</button>
-        <button class="btn btn-green" onclick="ADV_openScriptWA()">↗ WhatsApp</button>
+    <div class="row2">
+      <div class="card">
+        <div class="card-title">🚨 Urgent Alerts</div>
+        <div id="advUrgentAlerts"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">💰 Revenue Pipeline</div>
+        <div id="advRevenuePipeline"></div>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-      <div class="card-title" style="margin-bottom:0;">📌 Priority Lead Queue</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost btn-sm" onclick="ADV_markStaleCold()">Move stale pending to cold</button>
-        <button class="btn btn-red btn-sm" onclick="ADV_removeExactDuplicates()">Remove exact phone duplicates</button>
+  <div id="advPanel-cleanup" class="adv-panel">
+    <div class="row2">
+      <div class="card">
+        <div class="card-title">🧹 Data Quality Warnings</div>
+        <div id="advDataWarnings"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ Cleaner Actions</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button class="btn btn-red" onclick="ADV_removeExactDuplicates()">Remove Exact Phone Duplicates</button>
+          <button class="btn btn-orange" onclick="ADV_markStaleCold()">Move Stale Pending to Cold</button>
+          <button class="btn btn-ghost" onclick="ADV_exportDuplicateReport()">Copy Duplicate Report</button>
+        </div>
+        <div class="adv-small-muted">Danger zone: cleanup changes live contacts. Export before cleaning if data is important.</div>
       </div>
     </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Status</th><th>Priority</th><th>Community</th><th>Problem</th><th>Action</th></tr></thead>
-        <tbody id="advPriorityBody"></tbody>
-      </table>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">📌 Priority / Problem Lead Queue</div>
+        <select id="advQueueFilter" onchange="ADV_refreshAdvanced()" style="width:auto;">
+          <option value="all">All priority leads</option>
+          <option value="badphone">Missing/invalid phone</option>
+          <option value="nocallback">No callback date</option>
+          <option value="stale">Stale pending</option>
+          <option value="hot">Hot only</option>
+        </select>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Status</th><th>Priority</th><th>Community</th><th>Problem</th><th>Action</th></tr></thead>
+          <tbody id="advPriorityBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="advPanel-tools" class="adv-panel">
+    <div class="row2">
+      <div class="card">
+        <div class="card-title">🏛 Dubai Transfer / Fee Calculator</div>
+        <div class="row2" style="margin-bottom:10px;">
+          <div><label class="lbl">Selling Price AED</label><input type="text" id="adv_salePrice" placeholder="e.g. 4250000" oninput="ADV_calcFees()"/></div>
+          <div><label class="lbl">Original Price AED (optional)</label><input type="text" id="adv_originalPrice" placeholder="For off-plan resale" oninput="ADV_calcFees()"/></div>
+        </div>
+        <div class="row2" style="margin-bottom:10px;">
+          <div><label class="lbl">Agency Fee %</label><input type="text" id="adv_agencyPct" value="2" oninput="ADV_calcFees()"/></div>
+          <div><label class="lbl">Trustee/Admin AED</label><input type="text" id="adv_trusteeFee" value="5250" oninput="ADV_calcFees()"/></div>
+        </div>
+        <div id="advFeeResult" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.8;color:var(--text2);">Enter price to calculate.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💵 Quick Commission Calculator</div>
+        <div class="row2" style="margin-bottom:10px;">
+          <div><label class="lbl">Deal Value</label><input type="text" id="adv_commValue" placeholder="4250000" oninput="ADV_calcQuickCommission()"></div>
+          <div><label class="lbl">Gross Revenue %</label><input type="text" id="adv_commPct" value="2" oninput="ADV_calcQuickCommission()"></div>
+        </div>
+        <div class="row3" style="margin-bottom:10px;">
+          <div><label class="lbl">Referral Bonus</label><input type="text" id="adv_commReferral" value="0" oninput="ADV_calcQuickCommission()"></div>
+          <div><label class="lbl">My Split %</label><input type="text" id="adv_commSplit" value="60" oninput="ADV_calcQuickCommission()"></div>
+          <div><label class="lbl">Agent Bonus</label><input type="text" id="adv_commBonus" value="0" oninput="ADV_calcQuickCommission()"></div>
+        </div>
+        <div id="advQuickCommissionResult" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.8;color:var(--text2);">Enter deal value.</div>
+      </div>
+    </div>
+    <div class="adv-mini-grid">
+      <div class="adv-tool-card"><h4>📐 Area Price Checker</h4><div class="adv-small-muted">Open Area Prices tab for price/sqft confidence, source and unit comparison.</div><button class="btn btn-blue btn-sm" style="margin-top:8px" onclick="nav('areaPrices',document.getElementById('navAreaPricesBtn')||this)">Open Area Prices</button></div>
+      <div class="adv-tool-card"><h4>🏠 Deal Engine</h4><div class="adv-small-muted">Open deal room, update stages, documents and commission.</div><button class="btn btn-blue btn-sm" style="margin-top:8px" onclick="nav('deals',this)">Open Deals</button></div>
+      <div class="adv-tool-card"><h4>🏗 Off-Plan Hub</h4><div class="adv-small-muted">Smart buyer matching, booking pipeline and off-plan scoring.</div><button class="btn btn-blue btn-sm" style="margin-top:8px" onclick="nav('offplan',this)">Open Off-Plan</button></div>
+    </div>
+  </div>
+
+  <div id="advPanel-outreach" class="adv-panel">
+    <div class="row2">
+      <div class="card">
+        <div class="card-title">💬 Smart WhatsApp Script Builder</div>
+        <label class="lbl">Script Type</label>
+        <select id="advScriptType" onchange="ADV_buildScript()" style="margin-bottom:10px;">
+          <option value="owner">Owner approach</option>
+          <option value="investor">Investor follow-up</option>
+          <option value="noc">NOC / transfer update</option>
+          <option value="offplan">Off-plan project suggestion</option>
+          <option value="market">Market update</option>
+          <option value="noanswer">Call not answered</option>
+          <option value="yesno">Simple yes/no CTA</option>
+        </select>
+        <label class="lbl">Client Name</label>
+        <input type="text" id="advClientName" placeholder="Client name" oninput="ADV_buildScript()" style="margin-bottom:10px;"/>
+        <label class="lbl">Area / Project</label>
+        <input type="text" id="advAreaName" placeholder="District One, Dubai Islands, DAMAC Riverside..." oninput="ADV_buildScript()" style="margin-bottom:10px;"/>
+        <div id="advScriptOutput" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.8;white-space:pre-wrap;min-height:160px;"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button class="btn btn-ghost" onclick="ADV_copyScript()">📋 Copy</button>
+          <button class="btn btn-green" onclick="ADV_openScriptWA()">↗ WhatsApp</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Outreach Rules</div>
+        <div id="advOutreachRules"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="advPanel-analytics" class="adv-panel">
+    <div class="row2">
+      <div class="card"><div class="card-title">📊 Source Performance</div><div id="advSourceAnalytics"></div></div>
+      <div class="card"><div class="card-title">🏆 Status Breakdown</div><div id="advStatusAnalytics"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">💰 Commission Register Snapshot</div>
+      <div id="advCommissionSnapshot"></div>
     </div>
   </div>
 </div>
@@ -1393,6 +1641,7 @@ function nav(p, btn){
   if(p==='pipeline') renderPipeline();
   if(p==='projects') renderProjects();
   if(p==='deals' && typeof renderDeals === 'function') renderDeals();
+  if(p==='commission' && typeof renderCommissionCenter === 'function') renderCommissionCenter();
   if(p==='offplan' && typeof renderOffplanHub === 'function') renderOffplanHub();
   if(p==='areaprices' && typeof renderAreaPricesPage === 'function') renderAreaPricesPage();
 }
@@ -4258,6 +4507,42 @@ function closeQRScan(){
 .adv-warning{background:#2a1f0a;border:1px solid #3a2a0a;color:var(--orange);border-radius:9px;padding:10px;margin-bottom:8px;font-size:12px;line-height:1.6;}
 .adv-danger{background:#3a1515;border:1px solid #5a2020;color:var(--red);border-radius:9px;padding:10px;margin-bottom:8px;font-size:12px;line-height:1.6;}
 .adv-ok{background:#1e3a2f;border:1px solid #2d5c45;color:var(--green);border-radius:9px;padding:10px;margin-bottom:8px;font-size:12px;line-height:1.6;}
+
+/* Area price confidence / source transparency */
+.area-confidence{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 7px;font-size:10px;font-weight:800;border:1px solid var(--border);white-space:nowrap;}
+.area-confidence.high{background:#0a2a1a;color:#34d399;border-color:#0a4a2a;}
+.area-confidence.medium{background:#2a220a;color:#fbbf24;border-color:#4a3a0a;}
+.area-confidence.low{background:#3a1515;color:#f87171;border-color:#5a2020;}
+.area-confidence.reference{background:#1a1a1a;color:#aaa;border-color:#333;}
+.area-meta-line{font-size:10px;color:var(--text3);margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.area-source-banner{background:linear-gradient(135deg,#141414,#0b0b0b);border:1px solid #333;border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;}
+.area-source-banner b{color:var(--text);}
+.area-data-mini{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px;}
+.area-data-mini small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.area-data-mini b{font-size:13px;color:var(--text);}
+
+
+/* Smart Off-Plan Advisor */
+.smart-offplan-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;}
+.smart-score{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;border:1px solid var(--border2);}
+.smart-score.hot{background:#3a1f0a;color:#fb923c;border-color:#5a2f0a;}
+.smart-score.good{background:#0a2a1a;color:#34d399;border-color:#0a4a2a;}
+.smart-score.mid{background:#2a2a0a;color:#fbbf24;border-color:#4a3a0a;}
+.smart-score.low{background:#0a1a2a;color:#93c5fd;border-color:#0a2a4a;}
+.smart-chip{display:inline-block;margin:3px 4px 0 0;padding:3px 8px;border-radius:999px;background:#111;border:1px solid var(--border);font-size:10px;color:var(--text2);}
+.smart-chip.warn{border-color:#5a2f0a;color:#fbbf24;background:#2a1f0a;}
+.smart-chip.good{border-color:#0a4a2a;color:#34d399;background:#0a2a1a;}
+.smart-chip.bad{border-color:#5a2020;color:#f87171;background:#3a1515;}
+.smart-match-card{background:linear-gradient(145deg,#151515,#101010);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all .15s;}
+.smart-match-card:hover{border-color:#3a3a3a;transform:translateY(-1px);}
+.smart-reason-list{font-size:11px;color:var(--text2);line-height:1.7;margin-top:8px;}
+.smart-mini{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;}
+.smart-mini small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.smart-mini b{font-size:14px;color:var(--text);}
+.offplan-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px;}
+.offplan-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:768px){.offplan-compare-grid{grid-template-columns:1fr}.smart-offplan-toolbar .btn{flex:1;justify-content:center}.offplan-kpi-grid{grid-template-columns:1fr 1fr}.smart-match-card{padding:10px}}
+
 </style>
 <script>
 (function(){
@@ -4275,25 +4560,31 @@ function closeQRScan(){
   setTimeout(addAdvancedNav, 500);
 })();
 
+
 function ADV_num(v){ return Number(String(v||'').replace(/[^0-9.]/g,'')) || 0; }
 function ADV_money(n){ return 'AED ' + Math.round(n||0).toLocaleString('en-US'); }
 function ADV_cleanPhone(p){ return String(p||'').replace(/[^0-9]/g,''); }
+function ADV_todayKey(){ return new Date().toISOString().slice(0,10); }
 function ADV_daysSinceLast(c){
   if(!c || !c.lastContact) return 9999;
   const d = new Date(c.lastContact);
   if(isNaN(d.getTime())) return 9999;
   return Math.floor((Date.now()-d.getTime())/86400000);
 }
+function ADV_deals(){ return Array.isArray(window.dealEngines) ? window.dealEngines : (typeof dealEngines!=='undefined' && Array.isArray(dealEngines) ? dealEngines : []); }
 function ADV_scoreContact(c){
   let s = 0;
   if(c.priority==='hot') s += 45; else if(c.priority==='warm') s += 25; else s += 5;
   if(c.status==='interested') s += 30;
   if(c.status==='callback') s += 25;
-  if(c.status==='pending') s += 10;
+  if(c.status==='contacted') s += 12;
+  if(c.status==='pending') s += 5;
   if(c.callbackDate) s += 15;
   if(c.community) s += 5;
   if((c.notes||[]).length) s += 5;
+  if(!ADV_cleanPhone(c.phone)) s -= 25;
   if(ADV_daysSinceLast(c)>14) s -= 10;
+  if(ADV_daysSinceLast(c)>30) s -= 15;
   return Math.max(0, Math.min(100, s));
 }
 function ADV_findDuplicates(){
@@ -4301,103 +4592,186 @@ function ADV_findDuplicates(){
   (contacts||[]).forEach(c=>{ const p=ADV_cleanPhone(c.phone); if(!p) return; (map[p]||(map[p]=[])).push(c); });
   return Object.entries(map).filter(([p,arr])=>arr.length>1);
 }
-function ADV_refreshAdvanced(){
-  const list = contacts || [];
-  const hot = list.filter(c=>c.priority==='hot').length;
-  const noPhone = list.filter(c=>!ADV_cleanPhone(c.phone)).length;
-  const noCallback = list.filter(c=>['interested','callback'].includes(c.status) && !c.callbackDate).length;
-  const dups = ADV_findDuplicates().length;
-  const stale = list.filter(c=>c.status==='pending' && ADV_daysSinceLast(c)>30).length;
-  const scoreAvg = list.length ? Math.round(list.reduce((a,c)=>a+ADV_scoreContact(c),0)/list.length) : 0;
-  const stats = [
-    ['🔥 Hot Leads', hot, 'Immediate money zone', 'stat-orange'],
-    ['🧹 Duplicate Phones', dups, 'Clean before outreach', 'stat-red'],
-    ['📞 No Callback Date', noCallback, 'Interested but no next step', 'stat-purple'],
-    ['🧠 Avg Lead Health', scoreAvg+'%', 'Data discipline score', 'stat-green'],
+function ADV_showTab(tab, btn){
+  document.querySelectorAll('.adv-panel').forEach(p=>p.classList.remove('active'));
+  const panel=document.getElementById('advPanel-'+tab); if(panel) panel.classList.add('active');
+  document.querySelectorAll('.adv-tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  ADV_refreshAdvanced(false);
+}
+function ADV_quote(){
+  const quotes = [
+    'Pipeline does not pay you. Follow-up does.',
+    'The broker who controls the next step controls the deal.',
+    'Clean data beats more data. Call the right people first.',
+    'Speed matters, but accuracy protects your reputation.',
+    'Every serious client deserves a clear next action.',
+    'Do not chase noise. Chase qualified demand.',
+    'Your CRM is only useful if it tells you what to do next.'
+  ];
+  let sum=0; for(const ch of ADV_todayKey()) sum += ch.charCodeAt(0);
+  return quotes[sum % quotes.length];
+}
+function ADV_metrics(){
+  const list=contacts||[];
+  const deals=ADV_deals();
+  const hot=list.filter(c=>c.priority==='hot').length;
+  const noPhone=list.filter(c=>!ADV_cleanPhone(c.phone)).length;
+  const noCallback=list.filter(c=>['interested','callback'].includes(c.status) && !c.callbackDate).length;
+  const overdue=list.filter(c=>c.callbackDate && new Date(c.callbackDate) < new Date(new Date().toDateString())).length;
+  const dups=ADV_findDuplicates().length;
+  const stale=list.filter(c=>(c.status||'pending')==='pending' && ADV_daysSinceLast(c)>30).length;
+  const interested=list.filter(c=>c.status==='interested').length;
+  const contacted=list.filter(c=>c.status==='contacted').length;
+  const closedDeals=deals.filter(d=>['closed','commission'].includes(d.stage)).length;
+  const expected=deals.reduce((a,d)=>a+ADV_num(d.sellingPrice||d.selling||d.dealValue)*(ADV_num(d.revPct||d.revenuePct||2)/100),0);
+  const likely=deals.reduce((a,d)=>{
+    const val=ADV_num(d.sellingPrice||d.selling||d.dealValue)*(ADV_num(d.revPct||d.revenuePct||2)/100);
+    const stage=d.stage||''; const pct={interested:.15,offer:.25,formf:.45,noc:.6,trustee:.75,transfer:.9,commission:1,closed:1}[stage]||.1;
+    return a+val*pct;
+  },0);
+  const avg=list.length ? Math.round(list.reduce((a,c)=>a+ADV_scoreContact(c),0)/list.length) : 0;
+  return {list,deals,hot,noPhone,noCallback,overdue,dups,stale,interested,contacted,closedDeals,expected,likely,avg};
+}
+function ADV_refreshAdvanced(showToast){
+  const m=ADV_metrics();
+  const stats=[
+    ['🔥 Hot Leads',m.hot,'Call first, WhatsApp second','stat-orange'],
+    ['⏰ Overdue Follow-ups',m.overdue,'Leakage risk today','stat-red'],
+    ['💰 Likely Revenue',ADV_money(m.likely),'Probability weighted','stat-green'],
+    ['🧠 Data Health',m.avg+'%','Clean data score','stat-blue'],
   ];
   const sg=document.getElementById('advStatsGrid');
-  if(sg) sg.innerHTML = stats.map(x=>`<div class="stat-card ${x[3]}"><div class="stat-val">${x[1]}</div><div class="stat-lbl">${x[0]}</div><div style="font-size:10px;color:var(--text3);margin-top:4px;">${x[2]}</div></div>`).join('');
-
-  const actions = [];
-  if(hot) actions.push(`<div class="adv-ok">Call ${hot} hot lead(s) before touching cold data. WhatsApp is secondary; call first.</div>`);
-  if(noCallback) actions.push(`<div class="adv-warning">${noCallback} interested/callback contact(s) have no callback date. That is leakage, not CRM.</div>`);
-  if(dups) actions.push(`<div class="adv-danger">${dups} duplicate phone group(s) found. Bulk WhatsApp without cleaning this can make you look unprofessional.</div>`);
-  if(!actions.length) actions.push(`<div class="adv-ok">No major issue detected. Keep adding clean follow-up dates and notes.</div>`);
-  const ap=document.getElementById('advActionPlan'); if(ap) ap.innerHTML=actions.join('');
-
+  if(sg) sg.innerHTML=stats.map(x=>`<div class="stat-card ${x[3]}"><div class="stat-val" style="font-size:${String(x[1]).length>9?'22px':'28px'}">${x[1]}</div><div class="stat-lbl">${x[0]}</div><div style="font-size:10px;color:var(--text3);margin-top:4px;">${x[2]}</div></div>`).join('');
+  const pd=document.getElementById('advPlanDate'); if(pd) pd.textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const q=document.getElementById('advDailyQuote'); if(q) q.innerHTML=`“${ADV_quote()}”<div class="adv-small-muted" style="margin-top:8px;">Daily quote refreshes automatically by date.</div>`;
+  ADV_renderActionPlan(m); ADV_renderAlerts(m); ADV_renderRevenue(m); ADV_renderCleanup(m); ADV_renderQueue(m); ADV_renderOutreachRules(m); ADV_renderAnalytics(m);
+  ADV_calcFees(); ADV_calcQuickCommission(); ADV_buildScript();
+  if(showToast) toast('Advanced refreshed');
+}
+function ADV_renderActionPlan(m){
+  const arr=[];
+  if(m.hot) arr.push(['Call hot leads',`Call ${m.hot} hot lead(s). Do not waste prime time on cold numbers.`,'Call now']);
+  if(m.overdue) arr.push(['Clear overdue callbacks',`${m.overdue} follow-up(s) are overdue. This is where deals die.`,'Open Follow-up']);
+  if(m.noCallback) arr.push(['Set callback dates',`${m.noCallback} interested/callback contacts have no next date.`,'Fix dates']);
+  if(m.dups) arr.push(['Clean duplicate phones',`${m.dups} exact duplicate phone group(s) found. Clean before campaign.`,'Review']);
+  if(!arr.length) arr.push(['Push pipeline',`No urgent data issue. Focus on calls, meetings and deal movement.`,'Execute']);
+  const el=document.getElementById('advActionPlan'); if(!el) return;
+  el.innerHTML=arr.slice(0,6).map((a,i)=>`<div class="adv-action-item"><div style="display:flex;gap:10px;"><span class="adv-action-rank">${i+1}</span><div><b>${a[0]}</b><div style="color:var(--text2);font-size:12px;">${a[1]}</div></div></div><span class="tag tag-hot">${a[2]}</span></div>`).join('');
+}
+function ADV_renderAlerts(m){
+  const alerts=[];
+  if(m.noPhone) alerts.push(`<div class="adv-danger">${m.noPhone} contact(s) have missing/invalid phone numbers.</div>`);
+  if(m.stale) alerts.push(`<div class="adv-warning">${m.stale} pending contact(s) are stale. Revive them or mark cold.</div>`);
+  if(m.dups) alerts.push(`<div class="adv-danger">${m.dups} duplicate phone group(s). Bulk outreach before cleaning will look cheap.</div>`);
+  if(!alerts.length) alerts.push(`<div class="adv-ok">No critical alerts. Keep the CRM clean and follow-ups dated.</div>`);
+  const el=document.getElementById('advUrgentAlerts'); if(el) el.innerHTML=alerts.join('');
+}
+function ADV_renderRevenue(m){
+  const el=document.getElementById('advRevenuePipeline'); if(!el) return;
+  const closed=m.deals.filter(d=>d.stage==='closed').reduce((a,d)=>a+ADV_num(d.sellingPrice||d.selling||d.dealValue)*(ADV_num(d.revPct||d.revenuePct||2)/100),0);
+  el.innerHTML=`<div class="adv-mini-grid">
+    <div class="deal-mini"><small>Expected Gross</small><b>${ADV_money(m.expected)}</b></div>
+    <div class="deal-mini"><small>Likely Gross</small><b>${ADV_money(m.likely)}</b></div>
+    <div class="deal-mini"><small>Closed Gross</small><b>${ADV_money(closed)}</b></div>
+    <div class="deal-mini"><small>Active Deals</small><b>${m.deals.length}</b></div>
+  </div><div class="adv-small-muted">Likely revenue is estimated from deal stage. Update deal stages for better accuracy.</div>`;
+}
+function ADV_renderCleanup(m){
   const warnings=[];
-  if(noPhone) warnings.push(`<div class="adv-danger">${noPhone} contact(s) have missing/invalid phone numbers.</div>`);
-  if(stale) warnings.push(`<div class="adv-warning">${stale} pending contact(s) look stale. Either revive them or mark cold.</div>`);
-  if(dups) warnings.push(`<div class="adv-danger">Exact duplicate phone groups: ${dups}. Use cleaner carefully.</div>`);
-  if(!warnings.length) warnings.push(`<div class="adv-ok">Data looks usable. Do not ruin it by importing messy sheets blindly.</div>`);
-  const dw=document.getElementById('advDataWarnings'); if(dw) dw.innerHTML=warnings.join('');
-
-  const priority = [...list].sort((a,b)=>ADV_scoreContact(b)-ADV_scoreContact(a)).slice(0,40);
-  const body=document.getElementById('advPriorityBody');
-  if(body) body.innerHTML = priority.length ? priority.map((c,i)=>{
-    const problems=[];
-    if(!ADV_cleanPhone(c.phone)) problems.push('No phone');
-    if(['interested','callback'].includes(c.status)&&!c.callbackDate) problems.push('No callback date');
-    if(ADV_daysSinceLast(c)>30) problems.push('Stale');
-    if(!c.community) problems.push('No community');
-    const p = problems.length ? problems.join(', ') : 'Clean';
-    const wa = ADV_cleanPhone(c.phone) ? `https://wa.me/${ADV_cleanPhone(c.phone)}?text=${encodeURIComponent('Hi '+(c.name||'')+', hope you are doing well. Just checking if you are still open to discuss Dubai real estate options. Simple yes/no is fine.')}` : '#';
-    return `<tr><td>${i+1}</td><td>${c.name||'-'}</td><td>${c.phone||'-'}</td><td><span class="tag tag-${c.status||'pending'}">${c.status||'pending'}</span></td><td><span class="tag tag-${c.priority||'cold'}">${c.priority||'cold'}</span></td><td>${c.community||'-'}</td><td>${p}</td><td><a class="btn btn-green btn-sm" target="_blank" href="${wa}">WhatsApp</a></td></tr>`;
-  }).join('') : `<tr><td colspan="8" class="empty">No contacts yet.</td></tr>`;
-  ADV_calcFees(); ADV_buildScript();
+  warnings.push(`<div class="adv-${m.avg<40?'danger':m.avg<70?'warning':'ok'}">Data Health: <b>${m.avg}%</b><div class="adv-health-bar"><div class="adv-health-fill" style="width:${m.avg}%"></div></div></div>`);
+  if(m.noPhone) warnings.push(`<div class="adv-danger">${m.noPhone} contact(s) have missing/invalid phone numbers.</div>`);
+  if(m.stale) warnings.push(`<div class="adv-warning">${m.stale} pending contact(s) look stale.</div>`);
+  if(m.dups) warnings.push(`<div class="adv-danger">Exact duplicate phone groups: ${m.dups}.</div>`);
+  if(!m.noPhone&&!m.stale&&!m.dups) warnings.push(`<div class="adv-ok">Data is usable. Do not import messy sheets without cleanup.</div>`);
+  const el=document.getElementById('advDataWarnings'); if(el) el.innerHTML=warnings.join('');
+}
+function ADV_contactProblems(c){
+  const problems=[];
+  if(!ADV_cleanPhone(c.phone)) problems.push('No phone');
+  if(['interested','callback'].includes(c.status)&&!c.callbackDate) problems.push('No callback date');
+  if(ADV_daysSinceLast(c)>30) problems.push('Stale');
+  if(!c.community) problems.push('No community');
+  return problems;
+}
+function ADV_renderQueue(m){
+  const body=document.getElementById('advPriorityBody'); if(!body) return;
+  const filter=document.getElementById('advQueueFilter')?.value || 'all';
+  let rows=[...m.list];
+  if(filter==='badphone') rows=rows.filter(c=>!ADV_cleanPhone(c.phone));
+  if(filter==='nocallback') rows=rows.filter(c=>['interested','callback'].includes(c.status)&&!c.callbackDate);
+  if(filter==='stale') rows=rows.filter(c=>(c.status||'pending')==='pending' && ADV_daysSinceLast(c)>30);
+  if(filter==='hot') rows=rows.filter(c=>c.priority==='hot');
+  rows=rows.sort((a,b)=>ADV_scoreContact(b)-ADV_scoreContact(a)).slice(0,60);
+  body.innerHTML=rows.length ? rows.map((c,i)=>{
+    const problems=ADV_contactProblems(c); const p=problems.length?problems.join(', '):'Clean';
+    const wa=ADV_cleanPhone(c.phone)?`https://wa.me/${ADV_cleanPhone(c.phone)}?text=${encodeURIComponent('Hi '+(c.name||'')+', hope you are doing well. Just checking if you are still open to discuss Dubai real estate options. Simple yes/no is fine.')}`:'#';
+    return `<tr class="adv-click-row"><td>${i+1}</td><td>${c.name||'-'}</td><td>${c.phone||'-'}</td><td><span class="tag tag-${c.status||'pending'}">${c.status||'pending'}</span></td><td><span class="tag tag-${c.priority||'cold'}">${c.priority||'cold'}</span></td><td>${c.community||'-'}</td><td>${p}</td><td><a class="btn btn-green btn-sm" target="_blank" href="${wa}">WhatsApp</a></td></tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty">No matching contacts.</td></tr>`;
+}
+function ADV_renderOutreachRules(m){
+  const el=document.getElementById('advOutreachRules'); if(!el) return;
+  el.innerHTML=`<div class="adv-ok">1. Call hot leads first. Do not hide behind WhatsApp.</div>
+  <div class="adv-warning">2. Do not bulk-message duplicate numbers. Clean duplicates first.</div>
+  <div class="adv-warning">3. Interested leads without callback date must be fixed same day.</div>
+  <div class="adv-ok">4. Use yes/no CTA for cold and stale leads. Keep it simple.</div>`;
+}
+function ADV_countBy(arr, keyFn){ const m={}; (arr||[]).forEach(x=>{ const k=keyFn(x)||'Unknown'; m[k]=(m[k]||0)+1; }); return m; }
+function ADV_renderAnalytics(m){
+  const src=ADV_countBy(m.list,c=>c.source||c.sourceFile||c.leadSource||'Unknown');
+  const status=ADV_countBy(m.list,c=>c.status||'pending');
+  const fmt=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([k,v])=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:7px 0;font-size:13px;"><span>${k}</span><b>${v}</b></div>`).join('') || '<div class="empty">No data</div>';
+  const se=document.getElementById('advSourceAnalytics'); if(se) se.innerHTML=fmt(src);
+  const st=document.getElementById('advStatusAnalytics'); if(st) st.innerHTML=fmt(status);
+  const ce=document.getElementById('advCommissionSnapshot'); if(ce){
+    const deals=m.deals.slice(0,10);
+    ce.innerHTML=deals.length?`<div class="tbl-wrap"><table><thead><tr><th>Deal</th><th>Stage</th><th>Value</th><th>Gross</th></tr></thead><tbody>${deals.map(d=>{const val=ADV_num(d.sellingPrice||d.selling||d.dealValue); const gross=val*(ADV_num(d.revPct||d.revenuePct||2)/100); return `<tr><td>${d.project||d.property||d.buyer||'Deal'}</td><td>${d.stage||'-'}</td><td>${ADV_money(val)}</td><td>${ADV_money(gross)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">No deals yet.</div>';
+  }
 }
 function ADV_calcFees(){
   const sp=ADV_num(document.getElementById('adv_salePrice')?.value);
   const op=ADV_num(document.getElementById('adv_originalPrice')?.value);
   const agencyPct=ADV_num(document.getElementById('adv_agencyPct')?.value) || 2;
   const trustee=ADV_num(document.getElementById('adv_trusteeFee')?.value) || 0;
-  const base = Math.max(sp, op || 0);
-  const out=document.getElementById('advFeeResult'); if(!out) return;
+  const base=Math.max(sp,op||0); const out=document.getElementById('advFeeResult'); if(!out) return;
   if(!base){ out.textContent='Enter price to calculate.'; return; }
-  const dld=base*0.04;
-  const agency=sp*(agencyPct/100);
-  const vat=agency*0.05;
-  const total=dld+agency+vat+trustee;
-  out.innerHTML = `Calculation base: <b style="color:var(--text)">${ADV_money(base)}</b>${op&&op>sp?' <span class="adv-pill">Using original price because it is higher</span>':''}<br>`+
-    `DLD 4%: <b style="color:var(--green)">${ADV_money(dld)}</b><br>`+
-    `Agency ${agencyPct}%: <b>${ADV_money(agency)}</b> + VAT 5%: <b>${ADV_money(vat)}</b><br>`+
-    `Trustee/Admin: <b>${ADV_money(trustee)}</b><br>`+
-    `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">Estimated buyer-side cash need: <b style="color:var(--orange)">${ADV_money(total)}</b></div>`+
-    `<div style="font-size:11px;color:var(--text3);margin-top:8px;">Verify with DLD/trustee for final amount. This is a planning calculator, not legal confirmation.</div>`;
+  const dld=base*0.04, agency=sp*(agencyPct/100), vat=agency*.05, total=dld+agency+vat+trustee;
+  out.innerHTML=`Calculation base: <b style="color:var(--text)">${ADV_money(base)}</b>${op&&op>sp?' <span class="adv-pill">Using original price because it is higher</span>':''}<br>DLD 4%: <b style="color:var(--green)">${ADV_money(dld)}</b><br>Agency ${agencyPct}%: <b>${ADV_money(agency)}</b> + VAT 5%: <b>${ADV_money(vat)}</b><br>Trustee/Admin: <b>${ADV_money(trustee)}</b><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">Estimated buyer-side cash need: <b style="color:var(--orange)">${ADV_money(total)}</b></div><div class="adv-small-muted" style="margin-top:8px;">Planning estimate only. Verify final amount with DLD/trustee.</div>`;
+}
+function ADV_calcQuickCommission(){
+  const val=ADV_num(document.getElementById('adv_commValue')?.value), pct=ADV_num(document.getElementById('adv_commPct')?.value)||2, ref=ADV_num(document.getElementById('adv_commReferral')?.value), split=ADV_num(document.getElementById('adv_commSplit')?.value)||60, bonus=ADV_num(document.getElementById('adv_commBonus')?.value);
+  const out=document.getElementById('advQuickCommissionResult'); if(!out) return; if(!val){ out.textContent='Enter deal value.'; return; }
+  const gross=val*pct/100, after=Math.max(0,gross-ref), mine=after*split/100, company=after-mine, total=mine+bonus;
+  out.innerHTML=`Gross Company Revenue: <b>${ADV_money(gross)}</b><br>Referral Bonus: <b>${ADV_money(ref)}</b><br>Net After Referral: <b>${ADV_money(after)}</b><br>My Commission: <b style="color:var(--green)">${ADV_money(mine)}</b><br>Net Company Revenue: <b>${ADV_money(company)}</b><br>Total Agent Earning: <b style="color:var(--orange)">${ADV_money(total)}</b>`;
 }
 function ADV_buildScript(){
-  const type=document.getElementById('advScriptType')?.value || 'owner';
-  const name=(document.getElementById('advClientName')?.value || 'Sir').trim();
-  const area=(document.getElementById('advAreaName')?.value || 'Dubai').trim();
-  const first=name.split(/\s+/)[0] || 'Sir';
+  const type=document.getElementById('advScriptType')?.value||'owner'; const name=(document.getElementById('advClientName')?.value||'Sir').trim(); const area=(document.getElementById('advAreaName')?.value||'Dubai').trim(); const first=name.split(/\s+/)[0]||'Sir';
   const scripts={
     owner:`Hi ${first}, hope you are doing well. I came across your property in ${area}. Are you currently open to selling, or would you like a realistic market update first?\n\nSimple yes/no is also fine.\n\nRegards,\nTriloki Chaudhary\nSolanki Capital Properties LLC`,
     investor:`Hi ${first}, quick update on ${area}. I have a few options that make sense from an investment point of view, but I do not want to overload you.\n\nAre you looking mainly for rental income, capital appreciation, or Golden Visa eligibility?`,
-    noc:`Hi ${first}, sharing a quick update regarding the NOC/transfer process. The key point is that the developer/trustee process depends on cleared payments, documents, and final confirmation from the concerned authority.\n\nI am keeping the follow-up active and will keep everything in writing for clarity.`,
+    noc:`Hi ${first}, sharing a quick update regarding the NOC/transfer process. The key point is that developer/trustee timelines depend on cleared payments, documents and authority confirmation.\n\nI am keeping the follow-up active and will keep everything in writing for clarity.`,
+    offplan:`Hi ${first}, based on your interest in ${area}, I can shortlist off-plan options by budget, payment plan, handover and expected ROI instead of sending random projects.\n\nWould you prefer strong rental yield, capital growth, or Golden Visa eligibility?`,
+    market:`Hi ${first}, quick ${area} market update: before making any buying/selling decision, it is better to check recent price/sqft, transactions and demand trend.\n\nWould you like me to share a short market snapshot?`,
     noanswer:`Hi ${first}, I tried calling you regarding ${area}, but the call did not connect.\n\nPlease let me know a convenient time, or simply reply yes/no if you are still considering Dubai property options.`,
     yesno:`Hi ${first}, simple question: are you still open to discussing ${area} property options?\n\n1. Yes, send details\n2. Maybe later\n3. No, not interested`
   };
-  const out=document.getElementById('advScriptOutput'); if(out) out.textContent=scripts[type];
+  const out=document.getElementById('advScriptOutput'); if(out) out.textContent=scripts[type]||scripts.owner;
 }
-function ADV_copyScript(){
-  const t=document.getElementById('advScriptOutput')?.textContent||'';
-  navigator.clipboard.writeText(t).then(()=>toast('Script copied'));
-}
-function ADV_openScriptWA(){
-  const t=document.getElementById('advScriptOutput')?.textContent||'';
-  window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
+function ADV_copyScript(){ const t=document.getElementById('advScriptOutput')?.textContent||''; navigator.clipboard.writeText(t).then(()=>toast('Script copied')); }
+function ADV_openScriptWA(){ const t=document.getElementById('advScriptOutput')?.textContent||''; window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank'); }
+function ADV_exportDuplicateReport(){
+  const dups=ADV_findDuplicates();
+  const text=dups.map(([p,arr])=>`${p}: ${arr.map(c=>c.name||'Unnamed').join(', ')}`).join('\n') || 'No duplicates found';
+  navigator.clipboard.writeText(text).then(()=>toast('Duplicate report copied'));
 }
 function ADV_removeExactDuplicates(){
-  const dups=ADV_findDuplicates();
-  if(!dups.length){ toast('No exact phone duplicates found'); return; }
+  const dups=ADV_findDuplicates(); if(!dups.length){ toast('No exact phone duplicates found'); return; }
   if(!confirm('Remove exact phone duplicates? First record stays, later duplicates removed.')) return;
-  const seen=new Set();
-  contacts = contacts.filter(c=>{ const p=ADV_cleanPhone(c.phone); if(!p) return true; if(seen.has(p)) return false; seen.add(p); return true; });
+  const seen=new Set(); contacts=contacts.filter(c=>{ const p=ADV_cleanPhone(c.phone); if(!p) return true; if(seen.has(p)) return false; seen.add(p); return true; });
   save(); renderDashboard(); if(typeof renderContacts==='function') renderContacts(); ADV_refreshAdvanced(); toast('Duplicates removed');
 }
 function ADV_markStaleCold(){
-  let count=0;
-  (contacts||[]).forEach(c=>{ if(c.status==='pending' && ADV_daysSinceLast(c)>30){ c.priority='cold'; count++; } });
+  let count=0; (contacts||[]).forEach(c=>{ if((c.status||'pending')==='pending' && ADV_daysSinceLast(c)>30){ c.priority='cold'; count++; } });
   save(); ADV_refreshAdvanced(); toast(count+' stale contacts moved to cold');
 }
 </script>
@@ -4446,6 +4820,42 @@ function ADV_markStaleCold(){
 .mort-result-lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;}
 .calc-tab{flex:1;padding:8px 4px;font-size:12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;transition:all 0.15s;text-align:center;}
 .calc-tab.active{background:#1a2a3a;border-color:#2a4a6a;color:var(--blue);}
+
+/* Area price confidence / source transparency */
+.area-confidence{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 7px;font-size:10px;font-weight:800;border:1px solid var(--border);white-space:nowrap;}
+.area-confidence.high{background:#0a2a1a;color:#34d399;border-color:#0a4a2a;}
+.area-confidence.medium{background:#2a220a;color:#fbbf24;border-color:#4a3a0a;}
+.area-confidence.low{background:#3a1515;color:#f87171;border-color:#5a2020;}
+.area-confidence.reference{background:#1a1a1a;color:#aaa;border-color:#333;}
+.area-meta-line{font-size:10px;color:var(--text3);margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.area-source-banner{background:linear-gradient(135deg,#141414,#0b0b0b);border:1px solid #333;border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px;}
+.area-source-banner b{color:var(--text);}
+.area-data-mini{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px;}
+.area-data-mini small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.area-data-mini b{font-size:13px;color:var(--text);}
+
+
+/* Smart Off-Plan Advisor */
+.smart-offplan-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;}
+.smart-score{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;border:1px solid var(--border2);}
+.smart-score.hot{background:#3a1f0a;color:#fb923c;border-color:#5a2f0a;}
+.smart-score.good{background:#0a2a1a;color:#34d399;border-color:#0a4a2a;}
+.smart-score.mid{background:#2a2a0a;color:#fbbf24;border-color:#4a3a0a;}
+.smart-score.low{background:#0a1a2a;color:#93c5fd;border-color:#0a2a4a;}
+.smart-chip{display:inline-block;margin:3px 4px 0 0;padding:3px 8px;border-radius:999px;background:#111;border:1px solid var(--border);font-size:10px;color:var(--text2);}
+.smart-chip.warn{border-color:#5a2f0a;color:#fbbf24;background:#2a1f0a;}
+.smart-chip.good{border-color:#0a4a2a;color:#34d399;background:#0a2a1a;}
+.smart-chip.bad{border-color:#5a2020;color:#f87171;background:#3a1515;}
+.smart-match-card{background:linear-gradient(145deg,#151515,#101010);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all .15s;}
+.smart-match-card:hover{border-color:#3a3a3a;transform:translateY(-1px);}
+.smart-reason-list{font-size:11px;color:var(--text2);line-height:1.7;margin-top:8px;}
+.smart-mini{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;}
+.smart-mini small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.smart-mini b{font-size:14px;color:var(--text);}
+.offplan-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px;}
+.offplan-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:768px){.offplan-compare-grid{grid-template-columns:1fr}.smart-offplan-toolbar .btn{flex:1;justify-content:center}.offplan-kpi-grid{grid-template-columns:1fr 1fr}.smart-match-card{padding:10px}}
+
 </style>
 
 <div class="area-popup" id="areaPricePopup" style="display:none;" onclick="nextAreaPopup()">
@@ -4634,10 +5044,10 @@ function saveDeal(){
   if(!deal.project && !deal.buyer){ alert('Add at least project or buyer name.'); return; }
   dealEngines = editingDealId ? dealEngines.map(d=>d.id===editingDealId?deal:d) : [deal,...(dealEngines||[])];
   localStorage.setItem('crm_deal_engines', JSON.stringify(dealEngines));
-  save(); renderDeals(); closeDealModal(); if(typeof toast==='function') toast('Deal saved','success');
+  save(); renderDeals(); if(typeof renderCommissionCenter==='function') renderCommissionCenter(); closeDealModal(); if(typeof toast==='function') toast('Deal saved','success');
 }
-function deleteDeal(){ if(!editingDealId) return; if(!confirm('Delete this deal?')) return; dealEngines=(dealEngines||[]).filter(d=>d.id!==editingDealId); localStorage.setItem('crm_deal_engines',JSON.stringify(dealEngines)); save(); renderDeals(); closeDealModal(); if(typeof toast==='function') toast('Deal deleted','success'); }
-function advanceDealStage(id){ const order=['interested','offer','formf','noc','trustee','transfer','commission','closed']; const d=(dealEngines||[]).find(x=>x.id===id); if(!d) return; const i=order.indexOf(d.stage); d.stage=order[Math.min(order.length-1,Math.max(0,i)+1)]; d.updatedAt=Date.now(); localStorage.setItem('crm_deal_engines',JSON.stringify(dealEngines)); save(); renderDeals(); }
+function deleteDeal(){ if(!editingDealId) return; if(!confirm('Delete this deal?')) return; dealEngines=(dealEngines||[]).filter(d=>d.id!==editingDealId); localStorage.setItem('crm_deal_engines',JSON.stringify(dealEngines)); save(); renderDeals(); if(typeof renderCommissionCenter==='function') renderCommissionCenter(); closeDealModal(); if(typeof toast==='function') toast('Deal deleted','success'); }
+function advanceDealStage(id){ const order=['interested','offer','formf','noc','trustee','transfer','commission','closed']; const d=(dealEngines||[]).find(x=>x.id===id); if(!d) return; const i=order.indexOf(d.stage); d.stage=order[Math.min(order.length-1,Math.max(0,i)+1)]; d.updatedAt=Date.now(); localStorage.setItem('crm_deal_engines',JSON.stringify(dealEngines)); save(); renderDeals(); if(typeof renderCommissionCenter==='function') renderCommissionCenter(); }
 function copyDealSummary(id){ const d=(dealEngines||[]).find(x=>x.id===id); if(!d) return; const docs=dealDocsProgress(d); const c=d.commission||{}; const text=`Deal Summary
 Project: ${d.project||'-'}
 Unit: ${d.unit||'-'}
@@ -4651,77 +5061,343 @@ Documents: ${docs.done}/${docs.total}
 Notes: ${d.notes||'-'}`; navigator.clipboard?.writeText(text).then(()=>toast&&toast('Deal summary copied','success')).catch(()=>alert(text)); }
 
 
-// ─── OFF-PLAN HUB ───────────────────────────────────────────────────
+
+
+
+// ─── COMMISSION CENTER FUNCTIONS ─────────────────────────────────────
+function ccNum(v){ return Number(String(v||'').replace(/[^0-9.]/g,''))||0; }
+function ccMoney(v){ return 'AED '+Math.round(Number(v)||0).toLocaleString('en-US'); }
+function ccCalc(value,pct,referral,split,bonus){
+  const gross=(Number(value)||0)*(Number(pct)||0)/100;
+  const netAfterReferral=Math.max(0,gross-(Number(referral)||0));
+  const myCommission=netAfterReferral*(Number(split)||0)/100;
+  const companyNet=netAfterReferral-myCommission;
+  const totalAgentEarning=myCommission+(Number(bonus)||0);
+  return {gross,netAfterReferral,myCommission,companyNet,totalAgentEarning};
+}
+function calculateCommissionCenterPreview(){
+  const value=ccNum(document.getElementById('cc_value')?.value);
+  const pct=Number(document.getElementById('cc_pct')?.value||0);
+  const referral=ccNum(document.getElementById('cc_referral')?.value);
+  const split=Number(document.getElementById('cc_split')?.value||0);
+  const bonus=ccNum(document.getElementById('cc_bonus')?.value);
+  const c=ccCalc(value,pct,referral,split,bonus);
+  const el=document.getElementById('cc_preview'); if(!el) return;
+  if(!value){ el.innerHTML='Enter deal value to calculate.'; return; }
+  el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+    <div>Gross Company Revenue</div><b style="color:#fbbf24;">${ccMoney(c.gross)}</b>
+    <div>Referral Bonus</div><b style="color:var(--orange);">-${ccMoney(referral)}</b>
+    <div>Net After Referral</div><b>${ccMoney(c.netAfterReferral)}</b>
+    <div>My Commission (${split}%)</div><b style="color:var(--green);">${ccMoney(c.myCommission)}</b>
+    <div>Agent Bonus</div><b style="color:var(--purple);">${ccMoney(bonus)}</b>
+    <div>Total Agent Earning</div><b style="color:var(--purple);">${ccMoney(c.totalAgentEarning)}</b>
+    <div>Net Company Revenue</div><b style="color:var(--blue);">${ccMoney(c.companyNet)}</b>
+  </div>`;
+}
+function getCommissionDealRows(){
+  const q=String(document.getElementById('commissionSearch')?.value||'').toLowerCase().trim();
+  const stage=document.getElementById('commissionStageFilter')?.value||'';
+  const sort=document.getElementById('commissionSort')?.value||'updatedDesc';
+  let rows=(Array.isArray(dealEngines)?dealEngines:[]).map(d=>{
+    const c=d.commission||ccCalc(d.sellingPrice||0,d.revenuePct||0,d.referralBonus||0,d.splitPct||0,d.agentBonus||0);
+    return {...d, _commission:c};
+  });
+  if(stage) rows=rows.filter(d=>String(d.stage||'')===stage);
+  if(q) rows=rows.filter(d=>[d.buyer,d.seller,d.developer,d.project,d.unit,d.property,dealStageLabel(d.stage)].join(' ').toLowerCase().includes(q));
+  rows.sort((a,b)=>{
+    if(sort==='myDesc') return (b._commission.myCommission||0)-(a._commission.myCommission||0);
+    if(sort==='companyDesc') return (b._commission.companyNet||0)-(a._commission.companyNet||0);
+    if(sort==='valueDesc') return (b.sellingPrice||0)-(a.sellingPrice||0);
+    return (b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0);
+  });
+  return rows;
+}
+function renderCommissionCenter(){
+  const rows=getCommissionDealRows();
+  const all=(Array.isArray(dealEngines)?dealEngines:[]).map(d=>d.commission||ccCalc(d.sellingPrice||0,d.revenuePct||0,d.referralBonus||0,d.splitPct||0,d.agentBonus||0));
+  const sum=k=>all.reduce((t,c)=>t+(Number(c[k])||0),0);
+  const totalDeal=(Array.isArray(dealEngines)?dealEngines:[]).reduce((t,d)=>t+(Number(d.sellingPrice)||0),0);
+  const kpis=document.getElementById('commissionKpis');
+  if(kpis) kpis.innerHTML=`
+    <div class="comm-card"><small>Total Deals Value</small><b>${ccMoney(totalDeal)}</b></div>
+    <div class="comm-card orange"><small>Gross Company Revenue</small><b>${ccMoney(sum('gross'))}</b></div>
+    <div class="comm-card green"><small>My Commission</small><b>${ccMoney(sum('myCommission'))}</b></div>
+    <div class="comm-card purple"><small>Total Agent Earning</small><b>${ccMoney(sum('totalAgentEarning'))}</b></div>
+    <div class="comm-card blue"><small>Net Company Revenue</small><b>${ccMoney(sum('companyNet'))}</b></div>`;
+  const el=document.getElementById('commissionRows'); if(!el) return;
+  if(!rows.length){ el.innerHTML='<div class="empty">No commission rows found. Create deals inside Deal Engine first.</div>'; return; }
+  el.innerHTML=rows.map(d=>{
+    const c=d._commission||{};
+    const title=(d.project||d.property||'Untitled Deal')+(d.unit?' • '+d.unit:'');
+    return `<div class="comm-row" onclick="editDeal('${d.id}')" title="Click to edit this deal">
+      <div><b>${escapeHtml(title)}</b><div style="font-size:10px;color:var(--text3);">Buyer: ${escapeHtml(d.buyer||'-')} • Seller: ${escapeHtml(d.seller||'-')}</div></div>
+      <div><span class="deal-stage ${dealStageClass(d.stage)}">${dealStageLabel(d.stage)}</span></div>
+      <div>${ccMoney(d.sellingPrice||0)}</div>
+      <div style="color:#fbbf24;font-weight:700;">${ccMoney(c.gross||0)}</div>
+      <div style="color:var(--orange);">${ccMoney(d.referralBonus||0)}</div>
+      <div>${ccMoney(c.netAfterReferral||0)}</div>
+      <div style="color:var(--green);font-weight:800;">${ccMoney(c.myCommission||0)}</div>
+      <div style="color:var(--purple);">${ccMoney(d.agentBonus||0)}</div>
+      <div style="color:var(--blue);font-weight:800;">${ccMoney(c.companyNet||0)}</div>
+      <div class="comm-actions"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editDeal('${d.id}')">Edit</button><button class="btn btn-blue btn-sm" onclick="event.stopPropagation();copyCommissionDeal('${d.id}')">Copy</button></div>
+    </div>`;
+  }).join('');
+}
+function copyCommissionDeal(id){
+  const d=(Array.isArray(dealEngines)?dealEngines:[]).find(x=>x.id===id); if(!d) return;
+  const c=d.commission||ccCalc(d.sellingPrice||0,d.revenuePct||0,d.referralBonus||0,d.splitPct||0,d.agentBonus||0);
+  const txt=`Commission Breakdown
+Deal: ${d.project||d.property||'-'} ${d.unit||''}
+Buyer: ${d.buyer||'-'}
+Seller: ${d.seller||'-'}
+Stage: ${dealStageLabel(d.stage)}
+Deal Value: ${ccMoney(d.sellingPrice||0)}
+Gross Company Revenue: ${ccMoney(c.gross||0)}
+Referral Bonus: ${ccMoney(d.referralBonus||0)}
+Net After Referral: ${ccMoney(c.netAfterReferral||0)}
+My Commission: ${ccMoney(c.myCommission||0)}
+Agent Bonus: ${ccMoney(d.agentBonus||0)}
+Total Agent Earning: ${ccMoney(c.totalAgentEarning||0)}
+Net Company Revenue: ${ccMoney(c.companyNet||0)}`;
+  navigator.clipboard?.writeText(txt).then(()=>toast&&toast('Commission copied','success')).catch(()=>alert(txt));
+}
+function copyCommissionRegister(){
+  const rows=getCommissionDealRows();
+  const txt='Commission Register
+
+'+rows.map((d,i)=>{
+    const c=d._commission||{};
+    return (i+1)+'. '+(d.project||d.property||'Deal')+' '+(d.unit||'')+'
+'+
+      'Buyer: '+(d.buyer||'-')+' | Stage: '+dealStageLabel(d.stage)+'
+'+
+      'Deal Value: '+ccMoney(d.sellingPrice||0)+' | Gross: '+ccMoney(c.gross||0)+' | Referral: '+ccMoney(d.referralBonus||0)+' | My Comm: '+ccMoney(c.myCommission||0)+' | Agent Bonus: '+ccMoney(d.agentBonus||0)+' | Company Net: '+ccMoney(c.companyNet||0);
+  }).join('
+
+');
+  navigator.clipboard?.writeText(txt).then(()=>toast&&toast('Commission register copied','success')).catch(()=>alert(txt));
+}
+
+
+// ─── SMART OFF-PLAN HUB ─────────────────────────────────────────────
+function opNum(v){ return Number(String(v||'').replace(/[^0-9.]/g,''))||0; }
+function opMoney(v){ return 'AED '+Math.round(Number(v)||0).toLocaleString('en-US'); }
+function opPct(v){ return (Number(v)||0).toFixed(1)+'%'; }
+function opClean(s){ return String(s||'').toLowerCase().trim(); }
+function opBudgetBand(budget){
+  const flex=Number(document.getElementById('op_budget_flex')?.value||10)/100;
+  if(!budget) return {min:0,max:Infinity};
+  return {min:Math.max(0,budget*(1-flex)), max:budget*(1+flex)};
+}
+function getAreaBenchmark(area,type){
+  try{
+    const rows = (typeof areaPriceRows!=='undefined' && Array.isArray(areaPriceRows)) ? areaPriceRows : [];
+    const q=opClean(area);
+    let found = rows.find(r=>opClean(r.area)===q) || rows.find(r=>q && (opClean(r.area).includes(q)||q.includes(opClean(r.area))));
+    if(found) return {price: Number(found.priceSqft||found.price||0), confidence: found.confidence||'REFERENCE', source: found.source||'Cached', transactions: found.transactions||0, period: found.period||'Reference'};
+  }catch(e){}
+  return {price:0, confidence:'REFERENCE', source:'Manual/cached', transactions:0, period:'Reference'};
+}
 function seedOffplanIfEmpty(){
   if(!Array.isArray(offplanInventory)) offplanInventory=[];
   if(!offplanInventory.length){
     offplanInventory=[
-      {id:'inv_'+Date.now()+'_1',developer:'Emaar',project:'Emaar South / Valley',area:'Emaar South',unitType:'3BR Townhouse',beds:'3BR',price:2300000,size:2100,handover:'2028',paymentPlan:'80/20',status:'Available',updatedAt:Date.now()},
-      {id:'inv_'+Date.now()+'_2',developer:'Sobha',project:'Sobha Hartland 2',area:'MBR City',unitType:'1BR Apartment',beds:'1BR',price:1600000,size:750,handover:'2028',paymentPlan:'60/40',status:'Available',updatedAt:Date.now()},
-      {id:'inv_'+Date.now()+'_3',developer:'Danube',project:'JVC / Arjan',area:'JVC',unitType:'Studio / 1BR',beds:'1BR',price:850000,size:430,handover:'2029',paymentPlan:'1% Monthly',status:'Shortlist',updatedAt:Date.now()}
+      {id:'inv_'+Date.now()+'_1',developer:'Emaar',project:'Emaar South / The Valley',area:'Emaar South',unitType:'3BR Townhouse',beds:'3BR',price:2300000,size:2100,handover:'2028',paymentPlan:'80/20',downPayment:'10%',yieldPct:6.5,roi:'Capital growth',status:'Available',launchPriority:'Hot',updatedAt:Date.now()},
+      {id:'inv_'+Date.now()+'_2',developer:'Sobha',project:'Sobha Hartland 2',area:'MBR City',unitType:'1BR Apartment',beds:'1BR',price:1600000,size:750,handover:'2028',paymentPlan:'60/40',downPayment:'20%',yieldPct:7.0,roi:'Premium end-user + rental',status:'Available',launchPriority:'Hot',updatedAt:Date.now()},
+      {id:'inv_'+Date.now()+'_3',developer:'Danube',project:'JVC / Arjan',area:'JVC',unitType:'Studio / 1BR',beds:'1BR',price:850000,size:430,handover:'2029',paymentPlan:'1% Monthly',downPayment:'10%',yieldPct:7.5,roi:'Flexible payment plan',status:'Shortlist',launchPriority:'Medium',updatedAt:Date.now()},
+      {id:'inv_'+Date.now()+'_4',developer:'DAMAC',project:'Riverside / Lagoons',area:'Dubai Investment Park',unitType:'4BR Townhouse',beds:'4BR',price:3000000,size:2400,handover:'2028',paymentPlan:'75/25',downPayment:'20%',yieldPct:6.2,roi:'Villa community growth',status:'Available',launchPriority:'Medium',updatedAt:Date.now()}
     ];
     localStorage.setItem('crm_offplan_inventory', JSON.stringify(offplanInventory));
   }
 }
-function renderOffplanHub(){ seedOffplanIfEmpty(); renderRequirementMatches(); renderOffplanBookings(); renderOffplanInventory(); renderOffplanReminders(); }
-function opMoney(v){ return 'AED '+Math.round(Number(v)||0).toLocaleString('en-US'); }
+function renderOffplanHub(){
+  seedOffplanIfEmpty();
+  renderOffplanKpis();
+  renderRequirementMatches();
+  renderOffplanBookings();
+  renderOffplanInventory();
+  renderOffplanReminders();
+  renderOffplanComparisonSelectors();
+  renderOffplanComparison();
+}
+function scoreOffplanUnit(u){
+  const budget = opNum(document.getElementById('op_budget')?.value);
+  const beds = opClean(document.getElementById('op_beds')?.value);
+  const area = opClean(document.getElementById('op_area')?.value);
+  const handover = opClean(document.getElementById('op_handover')?.value);
+  const intent = opClean(document.getElementById('op_intent')?.value||'investment');
+  const payPref = opClean(document.getElementById('op_payment_pref')?.value);
+  const targetYield = opNum(document.getElementById('op_yield')?.value);
+  const band = opBudgetBand(budget);
+  let score=45, reasons=[], risks=[];
+  const price=Number(u.price)||0;
+  const size=Number(u.size)||0;
+  const ppsf = size? price/size : 0;
+  const bench=getAreaBenchmark(u.area,u.unitType);
+  if(budget){
+    if(price>=band.min && price<=band.max){score+=24; reasons.push('Budget fit');}
+    else if(price<band.min){score+=12; reasons.push('Below budget');}
+    else {score-=18; risks.push('Above budget');}
+  }
+  if(beds && opClean(u.beds+' '+u.unitType).includes(beds)){score+=16; reasons.push('Bedroom match');}
+  else if(beds){score-=8; risks.push('Unit type mismatch');}
+  const text=opClean([u.area,u.developer,u.project].join(' '));
+  if(area && text.includes(area)){score+=18; reasons.push('Area/developer match');}
+  else if(area){score-=7; risks.push('Location not exact');}
+  if(handover && opClean(u.handover).includes(handover)){score+=8; reasons.push('Handover match');}
+  if(payPref){
+    const plan=opClean([u.paymentPlan,u.downPayment].join(' '));
+    if(payPref==='posthandover' && /(post|handover|30\/70|40\/60|50\/50)/.test(plan)){score+=12; reasons.push('Post-handover/friendly plan');}
+    else if(payPref==='monthly' && /(1%|monthly|month)/.test(plan)){score+=14; reasons.push('Monthly plan fit');}
+    else if(payPref==='lowdown' && /(5%|10%|low)/.test(plan)){score+=10; reasons.push('Low down payment');}
+    else if(payPref==='cash'){score+=4; reasons.push('Cash buyer flexibility');}
+    else {score-=4; risks.push('Payment plan not exact');}
+  }
+  const yieldPct=Number(u.yieldPct)||0;
+  if(intent==='investment'){
+    if(yieldPct>=7){score+=12; reasons.push('Strong yield profile');}
+    else if(yieldPct>=6){score+=6; reasons.push('Moderate yield');}
+    else risks.push('Yield needs verification');
+  }
+  if(intent==='enduser'){
+    if(/emaar|sobha|ellington|omniyat/i.test(u.developer||'')){score+=10; reasons.push('End-user brand strength');}
+    if(/townhouse|villa/i.test(u.unitType||'')){score+=6; reasons.push('Family-friendly unit');}
+  }
+  if(intent==='goldenvisa'){
+    if(price>=2000000){score+=18; reasons.push('Golden Visa threshold fit');}
+    else {score-=15; risks.push('Below AED 2M Golden Visa threshold');}
+  }
+  if(intent==='flip'){
+    if(/hot/i.test(u.launchPriority||'')){score+=12; reasons.push('Launch priority');}
+    if(/2029|2030/.test(String(u.handover||''))) risks.push('Longer hold period');
+  }
+  if(targetYield){
+    if(yieldPct>=targetYield){score+=10; reasons.push('Meets target yield');}
+    else {score-=8; risks.push('Below target yield');}
+  }
+  if(ppsf && bench.price){
+    const diff=((ppsf-bench.price)/bench.price)*100;
+    if(diff<=-8){score+=14; reasons.push(`${Math.abs(diff).toFixed(0)}% below area avg`);}
+    else if(diff<=5){score+=8; reasons.push('Near area benchmark');}
+    else if(diff>15){score-=14; risks.push(`${diff.toFixed(0)}% above area avg`);}
+    else risks.push('Premium vs area avg');
+  }
+  if(/sold|booked/i.test(u.status||'')){score-=40; risks.push('Not available');}
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  let label=score>=85?'Excellent':score>=70?'Strong':score>=55?'Possible':'Weak';
+  return {...u,score,label,reasons,risks,ppsf,benchmark:bench};
+}
+function scoreClass(score){ return score>=85?'hot':score>=70?'good':score>=55?'mid':'low'; }
+function renderOffplanKpis(){
+  const el=document.getElementById('opSmartKpis'); if(!el) return;
+  const inv=offplanInventory||[], bookings=offplanBookings||[];
+  const available=inv.filter(x=>!/sold|booked/i.test(x.status||'')).length;
+  const hot=inv.filter(x=>/hot/i.test(x.launchPriority||'')).length;
+  const avgYield=inv.length?inv.reduce((s,x)=>s+(Number(x.yieldPct)||0),0)/inv.length:0;
+  const due=bookings.filter(b=>b.dueDate && (new Date(b.dueDate)-new Date())/86400000 <= 7).length;
+  el.innerHTML=`
+    <div class="smart-mini"><small>Available Units</small><b>${available}</b><span style="font-size:10px;color:var(--text3);">Inventory shortlist</span></div>
+    <div class="smart-mini"><small>Hot Launches</small><b>${hot}</b><span style="font-size:10px;color:var(--text3);">Priority tagged</span></div>
+    <div class="smart-mini"><small>Avg Yield</small><b>${opPct(avgYield)}</b><span style="font-size:10px;color:var(--text3);">Manual estimate</span></div>
+    <div class="smart-mini"><small>Due Alerts</small><b>${due}</b><span style="font-size:10px;color:var(--text3);">Next 7 days</span></div>`;
+}
 function renderRequirementMatches(){
   seedOffplanIfEmpty();
-  const budget = Number(String(document.getElementById('op_budget')?.value||'').replace(/[^0-9.]/g,'')) || 0;
-  const beds = (document.getElementById('op_beds')?.value||'').toLowerCase();
-  const area = (document.getElementById('op_area')?.value||'').toLowerCase();
-  const handover = (document.getElementById('op_handover')?.value||'').toLowerCase();
-  const matches = (offplanInventory||[]).map(u=>{
-    let score=50;
-    if(budget && Number(u.price)<=budget) score+=25; else if(budget) score-=20;
-    if(beds && String(u.beds||u.unitType||'').toLowerCase().includes(beds)) score+=20;
-    if(area && (String(u.area+' '+u.developer+' '+u.project).toLowerCase().includes(area))) score+=20;
-    if(handover && String(u.handover||'').toLowerCase().includes(handover)) score+=10;
-    return {...u,score:Math.max(0,Math.min(100,score))};
-  }).sort((a,b)=>b.score-a.score).slice(0,5);
+  const matches = (offplanInventory||[]).map(scoreOffplanUnit).sort((a,b)=>b.score-a.score).slice(0,8);
+  window.__lastOffplanMatches = matches;
   const el=document.getElementById('opMatches'); if(!el) return;
-  el.innerHTML = matches.length ? matches.map(u=>`<div class="match-card">
-    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><div><b>${u.project||'-'}</b><div style="font-size:11px;color:var(--text3);">${u.developer||'-'} • ${u.area||'-'} • ${u.unitType||u.beds||'-'}</div></div><span class="tag ${u.score>=80?'tag-hot':u.score>=60?'tag-warm':'tag-cold'}">${u.score}% match</span></div>
-    <div style="font-size:12px;color:var(--text2);margin-top:8px;">${opMoney(u.price)} • ${u.size||'-'} sqft • ${u.paymentPlan||'-'} • Handover ${u.handover||'-'}</div>
-    <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="copyInventoryUnit('${u.id}')">Copy for WhatsApp</button>
-  </div>`).join('') : '<div class="empty" style="padding:1rem;">Add inventory units to start matching.</div>';
+  el.innerHTML = matches.length ? matches.map(u=>{
+    const chips=[...(u.reasons||[]).slice(0,4).map(r=>`<span class="smart-chip good">${r}</span>`),...(u.risks||[]).slice(0,3).map(r=>`<span class="smart-chip warn">${r}</span>`)].join('');
+    const ppsf=u.ppsf?`AED ${Math.round(u.ppsf).toLocaleString()}/sqft`: 'Size missing';
+    const bench=u.benchmark?.price?`Area avg AED ${Math.round(u.benchmark.price).toLocaleString()}/sqft • ${u.benchmark.confidence}`:'No area benchmark';
+    return `<div class="smart-match-card" onclick="openSmartUnitDetail('${u.id}')">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+        <div><b>${u.project||'-'}</b><div style="font-size:11px;color:var(--text3);">${u.developer||'-'} • ${u.area||'-'} • ${u.unitType||u.beds||'-'}</div></div>
+        <span class="smart-score ${scoreClass(u.score)}">${u.score}% ${u.label}</span>
+      </div>
+      <div class="deal-mini-grid" style="margin-top:10px;">
+        <div class="deal-mini"><small>Price</small><b>${opMoney(u.price)}</b></div>
+        <div class="deal-mini"><small>Price/Sqft</small><b>${ppsf}</b></div>
+        <div class="deal-mini"><small>Plan</small><b>${u.paymentPlan||'-'}</b></div>
+        <div class="deal-mini"><small>Handover</small><b>${u.handover||'-'}</b></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">${bench}</div>
+      <div style="margin-top:6px;">${chips}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyInventoryUnit('${u.id}')">Copy WA</button>
+        <button class="btn btn-green btn-sm" onclick="event.stopPropagation();shortlistSmartUnit('${u.id}')">Shortlist</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty" style="padding:1rem;">Add inventory units to start matching.</div>';
+}
+function resetSmartBuyerProfile(){ ['op_budget','op_area','op_handover','op_yield'].forEach(id=>{const e=document.getElementById(id); if(e)e.value='';}); ['op_beds','op_intent','op_payment_pref','op_budget_flex'].forEach(id=>{const e=document.getElementById(id); if(e)e.selectedIndex=0;}); renderRequirementMatches(); }
+function copySmartBuyerQuestionnaire(){
+  const text=`Quick questions so I can shortlist the right off-plan options:\n\n1) Budget range?\n2) Preferred area/developer?\n3) Studio/1BR/2BR/Villa?\n4) Investment, end-use, flip, or Golden Visa?\n5) Preferred payment plan: low down payment, 1% monthly, or post-handover?\n6) Target handover year?\n7) Cash or mortgage?`;
+  navigator.clipboard?.writeText(text).then(()=>toast&&toast('Questions copied','success')).catch(()=>alert(text));
+}
+function copySmartShortlist(){
+  const arr=(window.__lastOffplanMatches||[]).slice(0,5);
+  if(!arr.length){ alert('No matches yet.'); return; }
+  const text='Smart Off-Plan Shortlist\n\n'+arr.map((u,i)=>`${i+1}. ${u.project} — ${u.score}% match\nDeveloper: ${u.developer}\nArea: ${u.area}\nUnit: ${u.unitType}\nPrice: ${opMoney(u.price)}\nPayment Plan: ${u.paymentPlan||'-'}\nHandover: ${u.handover||'-'}\nWhy: ${(u.reasons||[]).slice(0,3).join(', ')||'-'}\nRisk: ${(u.risks||[]).slice(0,2).join(', ')||'None flagged'}`).join('\n\n');
+  navigator.clipboard?.writeText(text).then(()=>toast&&toast('Shortlist copied','success')).catch(()=>alert(text));
 }
 function addInventoryUnit(){
   const project=prompt('Project name?'); if(!project) return;
   const developer=prompt('Developer?', 'Emaar / Sobha / DAMAC / Danube')||'';
   const area=prompt('Area?', '')||'';
   const unitType=prompt('Unit type?', '1BR Apartment')||'';
-  const price=Number((prompt('Price AED?', '1500000')||'').replace(/[^0-9.]/g,''))||0;
-  const size=Number((prompt('Size sqft?', '750')||'').replace(/[^0-9.]/g,''))||0;
+  const price=opNum(prompt('Price AED?', '1500000'));
+  const size=opNum(prompt('Size sqft?', '750'));
   const handover=prompt('Handover?', 'Q4 2028')||'';
   const paymentPlan=prompt('Payment plan?', '60/40')||'';
-  offplanInventory=[{id:'inv_'+Date.now(),developer,project,area,unitType,beds:unitType,price,size,handover,paymentPlan,status:'Available',updatedAt:Date.now()},...(offplanInventory||[])];
+  const downPayment=prompt('Down payment?', '10%')||'';
+  const yieldPct=opNum(prompt('Expected yield %?', '7'));
+  const launchPriority=prompt('Launch priority? Hot / Medium / Low', 'Medium')||'Medium';
+  offplanInventory=[{id:'inv_'+Date.now(),developer,project,area,unitType,beds:unitType,price,size,handover,paymentPlan,downPayment,yieldPct,launchPriority,roi:'Manual estimate',status:'Available',updatedAt:Date.now()},...(offplanInventory||[])];
   localStorage.setItem('crm_offplan_inventory',JSON.stringify(offplanInventory)); save(); renderOffplanHub();
 }
 function renderOffplanInventory(){
   seedOffplanIfEmpty();
-  const q=(document.getElementById('opInvSearch')?.value||'').toLowerCase();
-  const arr=(offplanInventory||[]).filter(u=>!q || String(Object.values(u).join(' ')).toLowerCase().includes(q));
+  const q=opClean(document.getElementById('opInvSearch')?.value);
+  const arr=(offplanInventory||[]).map(scoreOffplanUnit).filter(u=>!q || opClean(Object.values(u).join(' ')).includes(q)).sort((a,b)=>b.score-a.score);
   const el=document.getElementById('opInventoryList'); if(!el) return;
-  el.innerHTML = arr.length ? arr.map(u=>`<div class="inventory-row">
+  el.innerHTML = arr.length ? arr.map(u=>`<div class="inventory-row" onclick="openSmartUnitDetail('${u.id}')" style="cursor:pointer;">
     <div><b>${u.project||'-'}</b><div style="font-size:11px;color:var(--text3);">${u.developer||'-'} • ${u.area||'-'}</div></div>
     <div style="font-size:12px;">${u.unitType||u.beds||'-'}</div>
     <div style="font-size:12px;color:var(--green);font-weight:700;">${opMoney(u.price)}</div>
     <div style="font-size:12px;">${u.paymentPlan||'-'}</div>
-    <div style="font-size:12px;">${u.handover||'-'}</div>
-    <button class="btn btn-ghost btn-sm" onclick="copyInventoryUnit('${u.id}')">Copy</button>
+    <div><span class="smart-score ${scoreClass(u.score)}">${u.score}%</span></div>
+    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyInventoryUnit('${u.id}')">Copy</button>
   </div>`).join('') : '<div class="empty">No inventory found.</div>';
 }
 function copyInventoryUnit(id){
   const u=(offplanInventory||[]).find(x=>x.id===id); if(!u) return;
-  const text=`Off-Plan Option\nProject: ${u.project}\nDeveloper: ${u.developer}\nArea: ${u.area}\nUnit: ${u.unitType}\nPrice: ${opMoney(u.price)}\nSize: ${u.size||'-'} sqft\nPayment Plan: ${u.paymentPlan||'-'}\nHandover: ${u.handover||'-'}`;
+  const s=scoreOffplanUnit(u);
+  const text=`Off-Plan Option\nProject: ${u.project}\nDeveloper: ${u.developer}\nArea: ${u.area}\nUnit: ${u.unitType}\nPrice: ${opMoney(u.price)}\nSize: ${u.size||'-'} sqft\nPrice/Sqft: ${s.ppsf?'AED '+Math.round(s.ppsf).toLocaleString():'-'}\nPayment Plan: ${u.paymentPlan||'-'}\nDown Payment: ${u.downPayment||'-'}\nHandover: ${u.handover||'-'}\nSmart Match: ${s.score}% ${s.label}\nWhy: ${(s.reasons||[]).slice(0,4).join(', ')||'-'}\nRisk Notes: ${(s.risks||[]).slice(0,3).join(', ')||'None flagged'}`;
   navigator.clipboard?.writeText(text).then(()=>toast&&toast('Unit copied','success')).catch(()=>alert(text));
+}
+function shortlistSmartUnit(id){
+  const u=(offplanInventory||[]).find(x=>x.id===id); if(!u) return;
+  u.status='Shortlist'; u.updatedAt=Date.now();
+  localStorage.setItem('crm_offplan_inventory',JSON.stringify(offplanInventory)); save(); renderOffplanHub();
+}
+function openSmartUnitDetail(id){
+  const u=(offplanInventory||[]).find(x=>x.id===id); if(!u) return;
+  const s=scoreOffplanUnit(u);
+  const html=`<div class="modal-overlay open" id="smartUnitDetailModal"><div class="modal" style="max-width:720px;"><div class="modal-header"><div class="modal-title">${u.project||'Unit Detail'}</div><button class="modal-close" onclick="document.getElementById('smartUnitDetailModal').remove()">✕</button></div>
+  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px;"><div style="font-size:12px;color:var(--text3);">${u.developer||'-'} • ${u.area||'-'} • ${u.unitType||'-'}</div><span class="smart-score ${scoreClass(s.score)}">${s.score}% ${s.label}</span></div>
+  <div class="deal-mini-grid"><div class="deal-mini"><small>Price</small><b>${opMoney(u.price)}</b></div><div class="deal-mini"><small>Size</small><b>${u.size||'-'} sqft</b></div><div class="deal-mini"><small>Price/Sqft</small><b>${s.ppsf?'AED '+Math.round(s.ppsf).toLocaleString():'-'}</b></div><div class="deal-mini"><small>Area Benchmark</small><b>${s.benchmark.price?'AED '+Math.round(s.benchmark.price).toLocaleString():'-'}</b></div><div class="deal-mini"><small>Payment</small><b>${u.paymentPlan||'-'}</b></div><div class="deal-mini"><small>Yield</small><b>${u.yieldPct?opPct(u.yieldPct):'-'}</b></div></div>
+  <div class="row2" style="margin-top:12px;"><div class="smart-mini"><small>Why this matches</small><div class="smart-reason-list">${(s.reasons||[]).map(x=>'✅ '+x).join('<br>')||'No strong reason yet'}</div></div><div class="smart-mini"><small>Risk / Verify</small><div class="smart-reason-list">${(s.risks||[]).map(x=>'⚠ '+x).join('<br>')||'No major risk flagged'}</div></div></div>
+  <div style="font-size:11px;color:var(--text3);margin-top:12px;line-height:1.6;">Benchmark source: ${s.benchmark.source||'-'} • Confidence: ${s.benchmark.confidence||'REFERENCE'} • Period: ${s.benchmark.period||'-'} • Transactions: ${s.benchmark.transactions||0}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;"><button class="btn btn-green" onclick="copyInventoryUnit('${u.id}')">📋 Copy WhatsApp</button><button class="btn btn-ghost" onclick="shortlistSmartUnit('${u.id}')">⭐ Mark Shortlist</button></div>
+  </div></div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
 }
 function addOffplanBooking(){
   const client=prompt('Client name?'); if(!client) return;
   const project=prompt('Project booked / shortlisted?', '')||'';
   const stage=prompt('Stage? EOI / Booking / SPA / Oqood / Installment / Commission', 'EOI')||'EOI';
-  const amount=Number((prompt('Booking / deal value AED?', '0')||'').replace(/[^0-9.]/g,''))||0;
+  const amount=opNum(prompt('Booking / deal value AED?', '0'));
   const dueDate=prompt('Next due date? YYYY-MM-DD', '')||'';
   offplanBookings=[{id:'opb_'+Date.now(),client,project,stage,amount,dueDate,updatedAt:Date.now()},...(offplanBookings||[])];
   localStorage.setItem('crm_offplan_bookings',JSON.stringify(offplanBookings)); save(); renderOffplanHub();
@@ -4731,14 +5407,42 @@ function renderOffplanBookings(){
   const arr=offplanBookings||[];
   const total=arr.length, spa=arr.filter(x=>/spa|oqood|commission|installment/i.test(x.stage||'')).length;
   const value=arr.reduce((s,x)=>s+(Number(x.amount)||0),0);
-  st.innerHTML=`<div class="market-pulse-card"><small>Bookings</small><b>${total}</b><span>Active off-plan files</span></div><div class="market-pulse-card"><small>Post Booking</small><b>${spa}</b><span>SPA/Oqood/Installments</span></div><div class="market-pulse-card"><small>Pipeline Value</small><b>${opMoney(value)}</b><span>Manual values</span></div>`;
-  el.innerHTML=arr.length?arr.slice(0,8).map(b=>`<div class="match-card"><div style="display:flex;justify-content:space-between;gap:8px;"><div><b>${b.client}</b><div style="font-size:11px;color:var(--text3);">${b.project||'-'} • ${b.stage||'-'}</div></div><span class="tag tag-warm">${b.dueDate||'No due date'}</span></div><div style="font-size:12px;color:var(--text2);margin-top:6px;">Value: ${opMoney(b.amount)}</div></div>`).join(''):'<div style="color:var(--text3);font-size:12px;">No bookings yet.</div>';
+  const risk=arr.filter(x=>bookingRisk(x).level!=='ok').length;
+  st.innerHTML=`<div class="market-pulse-card"><small>Bookings</small><b>${total}</b><span>Active off-plan files</span></div><div class="market-pulse-card"><small>Post Booking</small><b>${spa}</b><span>SPA/Oqood/Installments</span></div><div class="market-pulse-card"><small>Pipeline Value</small><b>${opMoney(value)}</b><span>Manual values</span></div><div class="market-pulse-card"><small>Risk Alerts</small><b>${risk}</b><span>Overdue / missing next step</span></div>`;
+  el.innerHTML=arr.length?arr.slice(0,10).map(b=>{const r=bookingRisk(b);return `<div class="match-card"><div style="display:flex;justify-content:space-between;gap:8px;"><div><b>${b.client}</b><div style="font-size:11px;color:var(--text3);">${b.project||'-'} • ${b.stage||'-'}</div></div><span class="smart-chip ${r.level==='bad'?'bad':r.level==='warn'?'warn':'good'}">${r.text}</span></div><div style="font-size:12px;color:var(--text2);margin-top:6px;">Value: ${opMoney(b.amount)} • Due: ${b.dueDate||'not set'}</div></div>`}).join(''):'<div style="color:var(--text3);font-size:12px;">No bookings yet.</div>';
+}
+function bookingRisk(b){
+  if(!b.dueDate) return {level:'warn',text:'No due date'};
+  const today=new Date(); today.setHours(0,0,0,0);
+  const days=Math.ceil((new Date(b.dueDate)-today)/86400000);
+  if(days<0) return {level:'bad',text:Math.abs(days)+' days overdue'};
+  if(days<=7) return {level:'warn',text:days+' days left'};
+  if(/eoi|booking/i.test(b.stage||'')) return {level:'warn',text:'Track SPA/Oqood'};
+  return {level:'ok',text:'On track'};
 }
 function renderOffplanReminders(){
   const el=document.getElementById('opReminderList'); if(!el) return;
-  const today=new Date(); today.setHours(0,0,0,0);
-  const arr=(offplanBookings||[]).filter(b=>b.dueDate).map(b=>({...b,days:Math.ceil((new Date(b.dueDate)-today)/86400000)})).sort((a,b)=>a.days-b.days);
-  el.innerHTML=arr.length?arr.slice(0,10).map(b=>`<div class="match-card"><b>${b.client}</b> <span style="color:${b.days<0?'var(--red)':b.days<=7?'var(--orange)':'var(--green)'};font-weight:700;">${b.days<0?Math.abs(b.days)+' days overdue':b.days+' days left'}</span><div style="font-size:11px;color:var(--text3);">${b.project||'-'} • ${b.stage||'-'} • Due ${b.dueDate}</div></div>`).join(''):'<div style="color:var(--text3);font-size:12px;">No installment/SPA/Oqood reminders added.</div>';
+  const arr=(offplanBookings||[]).map(b=>({...b,risk:bookingRisk(b)})).sort((a,b)=>({bad:0,warn:1,ok:2}[a.risk.level]-{bad:0,warn:1,ok:2}[b.risk.level]));
+  el.innerHTML=arr.length?arr.slice(0,12).map(b=>`<div class="match-card"><b>${b.client}</b> <span class="smart-chip ${b.risk.level==='bad'?'bad':b.risk.level==='warn'?'warn':'good'}">${b.risk.text}</span><div style="font-size:11px;color:var(--text3);margin-top:4px;">${b.project||'-'} • ${b.stage||'-'} • Due ${b.dueDate||'not set'}</div></div>`).join(''):'<div style="color:var(--text3);font-size:12px;">No installment/SPA/Oqood reminders added.</div>';
+}
+function renderOffplanComparisonSelectors(){
+  const a=document.getElementById('op_compare_a'), b=document.getElementById('op_compare_b'); if(!a||!b) return;
+  const opts=(offplanInventory||[]).map((u,i)=>`<option value="${u.id}">${u.project||'Unit '+(i+1)} — ${opMoney(u.price)}</option>`).join('');
+  const oldA=a.value, oldB=b.value;
+  a.innerHTML='<option value="">Select</option>'+opts; b.innerHTML='<option value="">Select</option>'+opts;
+  if(oldA) a.value=oldA; if(oldB) b.value=oldB;
+  if(!a.value && offplanInventory?.[0]) a.value=offplanInventory[0].id;
+  if(!b.value && offplanInventory?.[1]) b.value=offplanInventory[1].id;
+}
+function renderOffplanComparison(){
+  const el=document.getElementById('opCompareResult'); if(!el) return;
+  const ua=(offplanInventory||[]).find(x=>x.id===document.getElementById('op_compare_a')?.value);
+  const ub=(offplanInventory||[]).find(x=>x.id===document.getElementById('op_compare_b')?.value);
+  if(!ua||!ub){ el.innerHTML='<div style="color:var(--text3);font-size:12px;">Select two units to compare.</div>'; return; }
+  const a=scoreOffplanUnit(ua), b=scoreOffplanUnit(ub);
+  function card(u){return `<div class="smart-mini"><small>${u.developer||'-'}</small><b>${u.project||'-'}</b><div style="font-size:12px;color:var(--text2);line-height:1.8;margin-top:8px;">Score: <b>${u.score}%</b><br>Price: ${opMoney(u.price)}<br>Price/Sqft: ${u.ppsf?'AED '+Math.round(u.ppsf).toLocaleString():'-'}<br>Plan: ${u.paymentPlan||'-'}<br>Handover: ${u.handover||'-'}<br>Yield: ${u.yieldPct?opPct(u.yieldPct):'-'}</div></div>`}
+  const winner=a.score===b.score?'Tie':(a.score>b.score?a.project:b.project);
+  el.innerHTML=`<div class="offplan-compare-grid">${card(a)}${card(b)}</div><div style="font-size:12px;color:var(--green);font-weight:700;margin-top:10px;">Best fit: ${winner}</div>`;
 }
 
 const AREA_PRICES=[
@@ -4836,6 +5540,28 @@ function pauseAreaPopup(){_areaPaused=true;clearTimeout(_areaTimer);const p=docu
 function areaParsePrice(v){ return Number(String(v||'').replace(/[^0-9.]/g,'')) || 0; }
 function areaFormatPrice(v){ return 'AED '+Math.round(Number(v)||0).toLocaleString('en-US')+'/sqft'; }
 function areaTrendNum(v){ const m=String(v||'').match(/-?\d+(\.\d+)?/); return m ? Number(m[0]) : 0; }
+function areaConfidenceFromTransactions(tx){
+  tx = Number(tx)||0;
+  if(tx>=100) return 'high';
+  if(tx>=20) return 'medium';
+  if(tx>0) return 'low';
+  return 'reference';
+}
+function areaConfidenceLabel(row){
+  const c=(row?.confidence || areaConfidenceFromTransactions(row?.transactions)).toLowerCase();
+  if(c==='high') return 'HIGH';
+  if(c==='medium') return 'MEDIUM';
+  if(c==='low') return 'LOW';
+  return 'REFERENCE';
+}
+function areaConfidenceClass(row){ return (row?.confidence || areaConfidenceFromTransactions(row?.transactions)).toLowerCase(); }
+function areaVerifiedText(row){
+  const tx=Number(row?.transactions)||0;
+  const source=row?.source||'Manual / cached';
+  const period=row?.period||'Not set';
+  if(tx>0) return `${source} • ${period} • ${tx} transactions`;
+  return `${source} • transaction count not added`;
+}
 function areaDefaultRows(){
   const src = (typeof AREA_PRICES !== 'undefined' && Array.isArray(AREA_PRICES)) ? AREA_PRICES : [];
   return src.map((x,i)=>({
@@ -4844,7 +5570,11 @@ function areaDefaultRows(){
     price:areaParsePrice(x.price),
     type:x.type||'Apartment',
     trend:x.trend||'',
-    source:'Manual / DXB Interact',
+    period:'Manual reference',
+    transactions:0,
+    confidence:'reference',
+    source:'Cached reference — verify with DXB Interact/DLD',
+    sourceUrl:'https://www.dxbinteract.com',
     updatedAt:Date.now()-i*1000
   })).filter(x=>x.area && x.price);
 }
@@ -4880,8 +5610,9 @@ function getFilteredAreaPriceRows(){
 function renderDashboardAreaIntel(){
   seedAreaPricesIfEmpty();
   const el=document.getElementById('dashAreaPriceRows'); if(!el) return;
-  const top=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price||0)-Number(a.price||0)).slice(0,12);
-  el.innerHTML = '<div class="area-intel-grid">'+top.map(r=>`<div class="area-intel-card area-clickable" onclick="openAreaPriceDetails('${r.id}')" title="Open ${r.area}"><small>${r.type||'-'}</small><b>${r.area}</b><span>${areaFormatPrice(r.price)} • ${r.trend||'n/a'}</span></div>`).join('')+'</div><div style="font-size:10px;color:var(--text3);margin-top:8px;">Showing top '+top.length+' premium/high-value areas. Tap View All for full Dubai list.</div>';
+  const top=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price||0)-Number(a.price||0)).slice(0,6);
+  el.innerHTML = '<div class="area-source-banner"><b>Data transparency:</b> Every price shows source, period, transaction count and confidence. If confidence says <b>REFERENCE</b>, treat it as cached/manual until you verify from DXB Interact/DLD.</div>' +
+    '<div class="area-intel-grid compact-area-grid">'+top.map(r=>`<div class="area-intel-card area-clickable" onclick="openAreaPriceDetails('${r.id}')" title="Open ${r.area}"><small>${r.type||'-'}</small><b>${r.area}</b><span>${areaFormatPrice(r.price)}</span><div class="area-meta-line"><span class="area-confidence ${areaConfidenceClass(r)}">${areaConfidenceLabel(r)}</span><span>${Number(r.transactions)||0} tx</span><span>${r.period||'Period n/a'}</span></div></div>`).join('')+'</div><div style="font-size:10px;color:var(--text3);margin-top:8px;">Showing top 6 by AED/sqft. Open Area Prices for full Dubai list and source verification.</div>';
 }
 function populateAreaCheckerOptions(){
   const sel=document.getElementById('areaCheckArea'); if(!sel) return;
@@ -4899,13 +5630,15 @@ function renderAreaPricesPage(){
     const avg=prices.length?prices.reduce((a,b)=>a+b,0)/prices.length:0;
     const hi=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price)-Number(a.price))[0];
     const low=[...(areaPriceRows||[])].sort((a,b)=>Number(a.price)-Number(b.price))[0];
-    stats.innerHTML=`<div class="area-intel-card"><small>Tracked Areas</small><b>${areaPriceRows.length}</b><span>Manual + cached database</span></div><div class="area-intel-card"><small>Average Price</small><b>${areaFormatPrice(avg)}</b><span>Across tracked areas</span></div><div class="area-intel-card"><small>Highest</small><b>${hi?hi.area:'-'}</b><span>${hi?areaFormatPrice(hi.price):'-'}</span></div><div class="area-intel-card"><small>Most Affordable</small><b>${low?low.area:'-'}</b><span>${low?areaFormatPrice(low.price):'-'}</span></div>`;
+    const verified=(areaPriceRows||[]).filter(r=>Number(r.transactions)>0).length;
+    const high=(areaPriceRows||[]).filter(r=>areaConfidenceClass(r)==='high').length;
+    stats.innerHTML=`<div class="area-intel-card"><small>Tracked Areas</small><b>${areaPriceRows.length}</b><span>${verified} verified with tx count</span></div><div class="area-intel-card"><small>Average Price</small><b>${areaFormatPrice(avg)}</b><span>Across tracked areas</span></div><div class="area-intel-card"><small>High Confidence</small><b>${high}</b><span>100+ transactions</span></div><div class="area-intel-card"><small>Highest</small><b>${hi?hi.area:'-'}</b><span>${hi?areaFormatPrice(hi.price):'-'}</span></div>`;
   }
   const list=document.getElementById('areaPriceList');
   if(list){
-    list.innerHTML=arr.length?arr.map(r=>`<div class="area-intel-row area-clickable" onclick="openAreaPriceDetails('${r.id}')"><div><b>${r.area}</b><div style="font-size:10px;color:var(--text3);">Updated ${new Date(Number(r.updatedAt)||Date.now()).toLocaleDateString('en-GB')}</div></div><div style="color:var(--green);font-weight:800;">${areaFormatPrice(r.price)}</div><div>${r.type||'-'}</div><div><span class="area-pill ${areaTrendNum(r.trend)>=10?'green':areaTrendNum(r.trend)>=4?'yellow':'red'}">${r.trend||'n/a'}</span></div><div style="font-size:11px;color:var(--text3);">${r.source||'Manual'}</div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyAreaRow('${r.id}')">Copy</button><button class="btn btn-blue btn-sm" onclick="event.stopPropagation();editAreaPriceRow('${r.id}')">Edit</button></div></div>`).join(''):'<div class="empty">No area found.</div>';
+    list.innerHTML=arr.length?arr.map(r=>`<div class="area-intel-row area-clickable" onclick="openAreaPriceDetails('${r.id}')"><div><b>${r.area}</b><div style="font-size:10px;color:var(--text3);">Updated ${new Date(Number(r.updatedAt)||Date.now()).toLocaleString('en-GB')}</div></div><div style="color:var(--green);font-weight:800;">${areaFormatPrice(r.price)}</div><div>${r.type||'-'}</div><div><span class="area-pill ${areaTrendNum(r.trend)>=10?'green':areaTrendNum(r.trend)>=4?'yellow':'red'}">${r.trend||'n/a'}</span></div><div><span class="area-confidence ${areaConfidenceClass(r)}">${areaConfidenceLabel(r)}</span><div style="font-size:10px;color:var(--text3);margin-top:3px;">${Number(r.transactions)||0} tx • ${r.period||'Period n/a'}</div></div><div style="font-size:11px;color:var(--text3);">${r.source||'Manual'}</div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyAreaRow('${r.id}')">Copy</button><button class="btn btn-blue btn-sm" onclick="event.stopPropagation();editAreaPriceRow('${r.id}')">Edit</button></div></div>`).join(''):'<div class="empty">No area found.</div>';
   }
-  const meta=document.getElementById('areaPriceMeta'); if(meta) meta.textContent=`Showing ${arr.length} of ${areaPriceRows.length} areas • Source is manual/cached unless connected to a paid official API.`;
+  const meta=document.getElementById('areaPriceMeta'); if(meta) meta.textContent=`Showing ${arr.length} of ${areaPriceRows.length} areas • Every row displays source, period, transactions and confidence.`;
   calculateAreaDealCheck();
   renderDashboardAreaIntel();
 }
@@ -4921,7 +5654,7 @@ function calculateAreaDealCheck(){
   const cls=diffPct<=-7?'green':diffPct<=7?'yellow':'red';
   const verdict=diffPct<=-7?'🟢 Potential undervalued opportunity':diffPct<=7?'🟡 Near market average':'🔴 Above area average — justify premium';
   const fairLow=avg*size*0.95, fairHigh=avg*size*1.05;
-  el.innerHTML=`<div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px;">${verdict}</div><div>Area avg: <b>${areaFormatPrice(avg)}</b></div><div>Unit asking: <b>${areaFormatPrice(unitPsf)}</b></div><div>Difference: <span class="area-pill ${cls}">${diffPct>0?'+':''}${diffPct.toFixed(1)}%</span></div><div>Indicative fair range: <b>AED ${Math.round(fairLow).toLocaleString('en-US')} – AED ${Math.round(fairHigh).toLocaleString('en-US')}</b></div>`;
+  el.innerHTML=`<div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px;">${verdict}</div><div>Area avg: <b>${areaFormatPrice(avg)}</b> <span class="area-confidence ${areaConfidenceClass(row)}">${areaConfidenceLabel(row)}</span></div><div style="font-size:11px;color:var(--text3);">Basis: ${areaVerifiedText(row)}</div><div>Unit asking: <b>${areaFormatPrice(unitPsf)}</b></div><div>Difference: <span class="area-pill ${cls}">${diffPct>0?'+':''}${diffPct.toFixed(1)}%</span></div><div>Indicative fair range: <b>AED ${Math.round(fairLow).toLocaleString('en-US')} – AED ${Math.round(fairHigh).toLocaleString('en-US')}</b></div>`;
 }
 function openAreaPriceDetails(id){
   seedAreaPricesIfEmpty();
@@ -4939,12 +5672,16 @@ function openAreaPriceDetails(id){
     </div>
     <div class="area-detail-grid">
       <div class="area-detail-mini"><small>Average AED / sqft</small><b>${areaFormatPrice(avg)}</b></div>
+      <div class="area-detail-mini"><small>Confidence</small><b><span class="area-confidence ${areaConfidenceClass(r)}">${areaConfidenceLabel(r)}</span></b></div>
+      <div class="area-detail-mini"><small>Transactions</small><b>${Number(r.transactions)||0}</b></div>
+      <div class="area-detail-mini"><small>Period / Filter</small><b>${r.period||'Not set'}</b></div>
       <div class="area-detail-mini"><small>Trend</small><b>${r.trend||'n/a'}</b></div>
       <div class="area-detail-mini"><small>Property Type</small><b>${r.type||'-'}</b></div>
+      <div class="area-detail-mini"><small>Source</small><b>${r.source||'Manual / cached'}</b></div>
       <div class="area-detail-mini"><small>Last Updated</small><b>${updated}</b></div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;color:var(--text2);line-height:1.7;margin-top:10px;">
-      Use this as a quick market reference before pitching, valuation or comparison. For final client advice, verify with DXB Interact / official transaction data.
+      <b style="color:var(--text);">Accuracy rule:</b> HIGH = 100+ recent transactions, MEDIUM = 20–99, LOW = under 20, REFERENCE = cached/manual only. Final client advice should be verified from DXB Interact/DLD or your paid market data source.
     </div>
     <div class="dashboard-modal-actions">
       <button class="btn btn-green" onclick="copyAreaRow('${r.id}')">📋 Copy Snapshot</button>
@@ -4966,13 +5703,16 @@ function editAreaPriceRow(id){
   const old=id?(areaPriceRows||[]).find(r=>r.id===id):null;
   const area=prompt('Area name?', old?.area||''); if(!area) return;
   const price=areaParsePrice(prompt('Current AED per sqft?', old?.price||'')); if(!price) return;
-  const type=prompt('Property type?', old?.type||'Apartment')||'Apartment';
-  const trend=prompt('Trend / note? e.g. ↑ 8% YoY', old?.trend||'')||'';
-  const source=prompt('Source? e.g. DXB Interact, Property Monitor, Manual update', old?.source||'Manual / DXB Interact')||'Manual';
-  const row={id: old?.id || 'area_'+Date.now(), area, price, type, trend, source, updatedAt:Date.now()};
+  const type=prompt('Property type / filter? e.g. Apartment, Villa, Townhouse, All', old?.type||'Apartment')||'Apartment';
+  const period=prompt('Data period / filter? e.g. Last 30 days, 90 days, 2026 YTD', old?.period||'Last 30 days')||'Manual reference';
+  const transactions=areaParsePrice(prompt('Transaction count used for this average? Put 0 if unknown.', old?.transactions||'0'));
+  const trend=prompt('Trend / note? e.g. ↑ 8% YoY or 30d +3.2%', old?.trend||'')||'';
+  const source=prompt('Source? e.g. DXB Interact, DLD, Property Monitor, Manual update', old?.source||'DXB Interact / DLD')||'Manual';
+  const confidence=areaConfidenceFromTransactions(transactions);
+  const row={id: old?.id || 'area_'+Date.now(), area, price, type, period, transactions, confidence, trend, source, sourceUrl:old?.sourceUrl||'', updatedAt:Date.now()};
   if(old) areaPriceRows=areaPriceRows.map(r=>r.id===old.id?row:r); else areaPriceRows=[row,...(areaPriceRows||[])];
   localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows));
-  save(); renderAreaPricesPage(); toast('Area price saved','success');
+  save(); renderAreaPricesPage(); toast('Area price saved with source confidence','success');
 }
 function resetAreaPriceDefaults(){
   if(!confirm('Reset area price list to default sample list? Your custom area prices will be replaced.')) return;
@@ -4980,13 +5720,13 @@ function resetAreaPriceDefaults(){
 }
 function copyAreaRow(id){
   const r=(areaPriceRows||[]).find(x=>x.id===id); if(!r) return;
-  const text=`${r.area} market reference\nAverage price: ${areaFormatPrice(r.price)}\nType: ${r.type||'-'}\nTrend: ${r.trend||'-'}\nSource: ${r.source||'Manual'}\nUpdated: ${new Date(Number(r.updatedAt)||Date.now()).toLocaleDateString('en-GB')}`;
+  const text=`${r.area} market reference\nAverage price: ${areaFormatPrice(r.price)}\nType/filter: ${r.type||'-'}\nPeriod: ${r.period||'-'}\nTransactions: ${Number(r.transactions)||0}\nConfidence: ${areaConfidenceLabel(r)}\nTrend: ${r.trend||'-'}\nSource: ${r.source||'Manual'}\nUpdated: ${new Date(Number(r.updatedAt)||Date.now()).toLocaleString('en-GB')}\nNote: Verify final client advice from DXB Interact/DLD.`;
   navigator.clipboard?.writeText(text).then(()=>toast('Area price copied','success')).catch(()=>alert(text));
 }
 function copyAreaMarketSnapshot(){
   seedAreaPricesIfEmpty();
   const rows=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price)-Number(a.price)).slice(0,10);
-  const text='Dubai Area Price / sqft Snapshot\n'+rows.map(r=>`${r.area}: ${areaFormatPrice(r.price)} (${r.type||'-'}, ${r.trend||'trend n/a'})`).join('\n')+'\n\nNote: verify live values from official/paid source before final client advice.';
+  const text='Dubai Area Price / sqft Snapshot\n'+rows.map(r=>`${r.area}: ${areaFormatPrice(r.price)} (${r.type||'-'}, ${r.period||'period n/a'}, ${Number(r.transactions)||0} tx, ${areaConfidenceLabel(r)})`).join('\n')+'\n\nNote: verify live values from DXB Interact/DLD before final client advice.';
   navigator.clipboard?.writeText(text).then(()=>toast('Market snapshot copied','success')).catch(()=>alert(text));
 }
 
