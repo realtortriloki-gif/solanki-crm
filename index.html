@@ -443,6 +443,16 @@ tr:hover td{background:#161616;}
 
 
 
+
+
+/* Project Library Comparison Analyzer */
+.project-compare-report{background:linear-gradient(145deg,#151515,#101010);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:10px;}
+.project-compare-table{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:8px;margin-top:10px;font-size:12px;}
+.project-compare-table > div{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:9px;line-height:1.55;}
+.project-winner-box{background:linear-gradient(135deg,#0a2a1a,#101010);border:1px solid #0a4a2a;border-radius:12px;padding:12px;margin-top:12px;font-size:13px;line-height:1.7;}
+.project-risk-box{background:#2a1f0a;border:1px solid #4a3a0a;border-radius:10px;padding:10px;margin-top:10px;font-size:12px;line-height:1.6;color:#fbbf24;}
+@media(max-width:768px){.project-compare-table{grid-template-columns:1fr}.project-compare-report{padding:10px}}
+
 /* Commission Center */
 .comm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1rem;}
 .comm-card{background:linear-gradient(145deg,#171717,#101010);border:1px solid var(--border2);border-radius:12px;padding:12px;}
@@ -1006,6 +1016,27 @@ tr:hover td{background:#161616;}
       <div class="card-title">🏆 Smart Matches</div>
       <div id="opMatches"></div>
     </div>
+  </div>
+
+
+  <div class="offplan-card" id="projectComparisonAnalyzer">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <div>
+        <div class="card-title" style="margin-bottom:3px;">🧭 Project Library Comparison & Analysis</div>
+        <div style="font-size:11px;color:var(--text3);line-height:1.5;">Select any two projects from Project Library. CRM will compare price, payment plan, handover, ROI/yield, location benchmark and give a practical recommendation.</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="copyProjectComparisonReport()">📋 Copy Report</button>
+    </div>
+    <div class="row3" style="margin-bottom:10px;">
+      <div><label class="lbl">Project A</label><select id="op_project_compare_a" onchange="renderProjectComparison()"><option value="">Select Project</option></select></div>
+      <div><label class="lbl">Project B</label><select id="op_project_compare_b" onchange="renderProjectComparison()"><option value="">Select Project</option></select></div>
+      <div><label class="lbl">Client Purpose</label><select id="op_project_compare_intent" onchange="renderProjectComparison()"><option value="investment">Investment / ROI</option><option value="enduser">End User</option><option value="goldenvisa">Golden Visa</option><option value="flip">Short-term Flip</option></select></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="btn btn-green btn-sm" onclick="renderProjectComparison()">⚡ Analyze Projects</button>
+      <button class="btn btn-blue btn-sm" onclick="nav('projects', this);syncBottomNav('projects')">+ Update Project Library</button>
+    </div>
+    <div id="opProjectCompareResult"></div>
   </div>
 
   <div class="offplan-grid">
@@ -3837,6 +3868,8 @@ function saveProject(){
   }
 
   save(); closeAddProject(); renderProjects();
+  if(typeof renderProjectComparisonSelectors==='function') renderProjectComparisonSelectors();
+  if(typeof renderRequirementMatches==='function') renderRequirementMatches();
   toast('✅ Project saved!');
 }
 
@@ -3844,6 +3877,8 @@ function deleteProject(id){
   if(!confirm('Delete this project?')) return;
   projects=projects.filter(x=>x.id!==id);
   save(); renderProjects();
+  if(typeof renderProjectComparisonSelectors==='function') renderProjectComparisonSelectors();
+  if(typeof renderProjectComparison==='function') renderProjectComparison();
 }
 
 function buildProjectMsg(p, contactName){
@@ -5674,6 +5709,8 @@ function renderOffplanHub(){
   renderOffplanInventory();
   renderOffplanReminders();
   if(typeof renderPaymentTracker === 'function') renderPaymentTracker();
+  if(typeof renderProjectComparisonSelectors === 'function') renderProjectComparisonSelectors();
+  if(typeof renderProjectComparison === 'function') renderProjectComparison();
   renderOffplanComparisonSelectors();
   renderOffplanComparison();
 }
@@ -5902,6 +5939,122 @@ function renderOffplanComparison(){
   el.innerHTML=`<div class="offplan-compare-grid">${card(a)}${card(b)}</div><div style="font-size:12px;color:var(--green);font-weight:700;margin-top:10px;">Best fit: ${winner}</div>`;
 }
 
+
+
+
+// ─── PROJECT LIBRARY COMPARISON ANALYZER ─────────────────────────────
+function pcText(v){ return String(v||'').trim(); }
+function pcClean(v){ return pcText(v).toLowerCase(); }
+function pcMoneyNum(v){
+  if(typeof v === 'number') return v;
+  let s=String(v||'').replace(/,/g,'').toLowerCase().trim();
+  const m=s.match(/([0-9]+(?:\.[0-9]+)?)/);
+  if(!m) return 0;
+  let n=parseFloat(m[1]);
+  if(/\bm\b|million/.test(s)) n*=1000000;
+  if(/\bk\b|thousand/.test(s)) n*=1000;
+  return Math.round(n)||0;
+}
+function pcYear(v){ const m=String(v||'').match(/20\d{2}/); return m?Number(m[0]):0; }
+function pcRoiNum(v){ const m=String(v||'').match(/([0-9]+(?:\.[0-9]+)?)\s*%/); return m?Number(m[1]):0; }
+function pcProjectLabel(p){ return `${p.developer||'Developer'} — ${p.name||'Unnamed Project'}${p.location?' · '+p.location:''}`; }
+function pcAreaBenchmarkForProject(p){
+  try{
+    const loc=pcClean(p.location||p.name||'');
+    const rows=(typeof areaPriceRows!=='undefined' && Array.isArray(areaPriceRows)) ? areaPriceRows : [];
+    let found=rows.find(r=>loc && (pcClean(r.area)===loc || loc.includes(pcClean(r.area)) || pcClean(r.area).includes(loc)));
+    if(found) return {price:Number(found.priceSqft||found.price||0), confidence:found.confidence||'REFERENCE', source:found.source||'Area Prices', period:found.period||'Reference', transactions:found.transactions||'N/A'};
+  }catch(e){}
+  return {price:0, confidence:'REFERENCE', source:'No benchmark', period:'Manual', transactions:'N/A'};
+}
+function scoreLibraryProject(p, intent){
+  let score=50, reasons=[], risks=[];
+  const price=pcMoneyNum(p.startPrice);
+  const roi=pcRoiNum(p.roi);
+  const handover=pcYear(p.handover);
+  const plan=pcClean(p.payment);
+  const dev=pcClean(p.developer);
+  const type=pcClean(p.type+' '+p.units);
+  const bench=pcAreaBenchmarkForProject(p);
+  if(price){
+    if(price>=2000000){ reasons.push('AED 2M+ value can support Golden Visa positioning'); if(intent==='goldenvisa') score+=18; }
+    if(price<1200000 && intent==='investment'){ score+=8; reasons.push('Lower entry price can improve investor accessibility'); }
+    if(price>5000000 && intent==='flip'){ score-=8; risks.push('Higher ticket may reduce exit liquidity'); }
+  }else{ risks.push('Starting price missing'); score-=10; }
+  if(/1%|monthly|post|handover|60\/40|70\/30|80\/20|50\/50/.test(plan)){ score+=12; reasons.push('Payment plan is clear/flexible'); }
+  else { risks.push('Payment plan needs clarification'); score-=6; }
+  if(/emaar|sobha|ellington|omniyat|meraas|dubai holding|nakheel/.test(dev)){ score+=12; reasons.push('Strong developer brand'); }
+  else if(dev){ score+=4; reasons.push('Developer entered'); } else { risks.push('Developer missing'); score-=8; }
+  if(handover){
+    const now=new Date().getFullYear();
+    if(handover<=now+2){ score+=8; reasons.push('Nearer handover'); }
+    else if(handover>=now+4){ score-=6; risks.push('Longer wait until handover'); }
+  }else{ risks.push('Handover date missing'); score-=5; }
+  if(roi){
+    if(intent==='investment' && roi>=7){ score+=14; reasons.push('Strong ROI/yield claim'); }
+    else if(roi>=6){ score+=7; reasons.push('Moderate ROI/yield claim'); }
+    else risks.push('ROI/yield looks modest or needs proof');
+  }else if(intent==='investment'){ risks.push('ROI/yield missing'); score-=7; }
+  if(intent==='enduser'){
+    if(/villa|townhouse|3br|4br|family/.test(type+pcClean(p.highlights))){ score+=10; reasons.push('Better end-user/family suitability'); }
+    if(/school|park|community|lagoon|waterfront|metro|mall/.test(pcClean(p.highlights))){ score+=8; reasons.push('Lifestyle/community highlights'); }
+  }
+  if(intent==='flip'){
+    if(/launch|limited|allocation|premium|hot/i.test(p.highlights||'')){ score+=10; reasons.push('Launch/priority angle may support flip strategy'); }
+    if(handover && handover>=new Date().getFullYear()+4) risks.push('Flip may be harder with very long handover');
+  }
+  if(bench.price){ reasons.push(`Area benchmark available: AED ${Math.round(bench.price).toLocaleString()}/sqft (${bench.confidence})`); }
+  else risks.push('No area benchmark linked');
+  if(p.brochure||p.factsheet||p.paymentLink){ score+=5; reasons.push('Supporting documents attached'); }
+  else risks.push('No brochure/factsheet/payment link attached');
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  return {project:p, score, reasons, risks, price, roi, handover, bench, label: score>=80?'Best Fit':score>=65?'Strong':score>=50?'Possible':'Weak'};
+}
+function renderProjectComparisonSelectors(){
+  const a=document.getElementById('op_project_compare_a'), b=document.getElementById('op_project_compare_b');
+  if(!a||!b) return;
+  const list=Array.isArray(projects)?projects:[];
+  const oldA=a.value, oldB=b.value;
+  const opts=list.map(p=>`<option value="${p.id}">${pcProjectLabel(p)}</option>`).join('');
+  a.innerHTML='<option value="">Select Project</option>'+opts;
+  b.innerHTML='<option value="">Select Project</option>'+opts;
+  if(oldA) a.value=oldA;
+  if(oldB) b.value=oldB;
+  if(!a.value && list[0]) a.value=String(list[0].id);
+  if(!b.value && list[1]) b.value=String(list[1].id);
+}
+function renderProjectComparison(){
+  renderProjectComparisonSelectors();
+  const el=document.getElementById('opProjectCompareResult'); if(!el) return;
+  const list=Array.isArray(projects)?projects:[];
+  if(list.length<2){
+    el.innerHTML='<div class="project-compare-report" style="color:var(--text3);font-size:12px;line-height:1.6;">Add at least two projects in Project Library to compare. This analyzer uses Project Library fields: price, payment plan, handover, ROI, highlights and documents.</div>';
+    return;
+  }
+  const aid=document.getElementById('op_project_compare_a')?.value;
+  const bid=document.getElementById('op_project_compare_b')?.value;
+  const intent=document.getElementById('op_project_compare_intent')?.value||'investment';
+  const pa=list.find(x=>String(x.id)===String(aid));
+  const pb=list.find(x=>String(x.id)===String(bid));
+  if(!pa||!pb||String(pa.id)===String(pb.id)){
+    el.innerHTML='<div class="project-compare-report" style="color:var(--orange);font-size:12px;">Select two different projects.</div>'; return;
+  }
+  const A=scoreLibraryProject(pa,intent), B=scoreLibraryProject(pb,intent);
+  const winner=A.score===B.score?null:(A.score>B.score?A:B);
+  const loser=winner?(winner===A?B:A):null;
+  function projectCard(x){ const p=x.project; return `<div class="project-compare-report"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><div><b>${p.name||'-'}</b><div style="font-size:11px;color:var(--text3);">${p.developer||'-'} • ${p.location||'-'} • ${p.type||'-'}</div></div><span class="smart-score ${scoreClass?scoreClass(x.score):(x.score>=70?'good':'mid')}">${x.score}% ${x.label}</span></div><div class="project-compare-table"><div><small>Starting Price</small><br><b>${x.price?opMoney(x.price):(p.startPrice||'Missing')}</b></div><div><small>Payment Plan</small><br><b>${p.payment||'Missing'}</b></div><div><small>Handover</small><br><b>${p.handover||'Missing'}</b></div><div><small>ROI/Yield</small><br><b>${p.roi||'Missing'}</b></div><div><small>Unit Types</small><br><b>${p.units||'Missing'}</b></div><div><small>Area Benchmark</small><br><b>${x.bench.price?'AED '+Math.round(x.bench.price).toLocaleString()+'/sqft':'Not linked'}</b></div></div><div style="margin-top:8px;">${x.reasons.slice(0,5).map(r=>`<span class="smart-chip good">${r}</span>`).join('')}${x.risks.slice(0,4).map(r=>`<span class="smart-chip warn">${r}</span>`).join('')}</div></div>`; }
+  let verdict = winner ? `<b>${winner.project.name}</b> is the stronger option for <b>${intent}</b> because it scores ${winner.score}% vs ${loser.score}%. Main reasons: ${winner.reasons.slice(0,3).join(', ') || 'better overall data completeness'}.` : `Both projects are very close for <b>${intent}</b>. Decide based on client preference, unit availability, exact price/sqft and payment plan proof.`;
+  el.innerHTML=`<div class="offplan-compare-grid">${projectCard(A)}${projectCard(B)}</div><div class="project-winner-box">🏆 Recommendation: ${verdict}</div><div class="project-risk-box">Reality check: this is a CRM analysis from your Project Library inputs. If price, ROI, service charge, payment plan or inventory is outdated, update Project Library first before pitching.</div>`;
+  window.__lastProjectComparison = {A,B,winner,intent,verdictText: winner ? `${winner.project.name} is stronger for ${intent} (${winner.score}% vs ${loser.score}%). Reasons: ${winner.reasons.slice(0,3).join(', ')}.` : `Both projects are close for ${intent}.`};
+}
+function copyProjectComparisonReport(){
+  if(!window.__lastProjectComparison) renderProjectComparison();
+  const d=window.__lastProjectComparison;
+  if(!d){ alert('Select two projects first.'); return; }
+  const fmt=x=>`${x.project.name} by ${x.project.developer}\nScore: ${x.score}% ${x.label}\nLocation: ${x.project.location||'-'}\nStarting Price: ${x.price?opMoney(x.price):(x.project.startPrice||'-')}\nPayment Plan: ${x.project.payment||'-'}\nHandover: ${x.project.handover||'-'}\nROI/Yield: ${x.project.roi||'-'}\nWhy: ${(x.reasons||[]).slice(0,4).join(', ')||'-'}\nVerify: ${(x.risks||[]).slice(0,3).join(', ')||'No major risk flagged'}`;
+  const text=`Project Comparison Report\nPurpose: ${d.intent}\n\nOption A:\n${fmt(d.A)}\n\nOption B:\n${fmt(d.B)}\n\nRecommendation:\n${d.verdictText}\n\nNote: Final advice should be verified with latest inventory, price/sqft, payment plan and developer documents.`;
+  navigator.clipboard?.writeText(text).then(()=>toast&&toast('Comparison report copied','success')).catch(()=>alert(text));
+}
 
 // ─── OFF-PLAN PAYMENT TRACKER ───────────────────────────────────────
 function payNum(v){ return Number(String(v||'').replace(/[^0-9.]/g,''))||0; }
