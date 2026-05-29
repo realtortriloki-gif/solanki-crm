@@ -2188,25 +2188,25 @@ function renderDashboard(){
   const overdueOrToday=contacts.filter(c=>c.callbackDate&&c.callbackDate<=today&&c.status!=='closed').length;
 
   document.getElementById('statsGrid').innerHTML=`
-    <div class="stat-card" onclick="openDashboardData('total')" title="Open all contacts data">
+    <div class="stat-card" data-dash-open="total" onclick="dashboardCardOpen(event,'total')" onpointerup="dashboardCardOpen(event,'total')" ontouchend="dashboardCardOpen(event,'total')" title="Open all contacts data">
       <div class="stat-val" style="color:var(--blue);">${total}</div><div class="stat-lbl">Total Contacts</div>
     </div>
-    <div class="stat-card" onclick="openDashboardData('contacted')" title="Open contacted data">
+    <div class="stat-card" data-dash-open="contacted" onclick="dashboardCardOpen(event,'contacted')" onpointerup="dashboardCardOpen(event,'contacted')" ontouchend="dashboardCardOpen(event,'contacted')" title="Open contacted data">
       <div class="stat-val" style="color:var(--green);">${contacted}</div><div class="stat-lbl">Contacted</div>
     </div>
-    <div class="stat-card" onclick="openDashboardData('interested')" title="Open interested data">
+    <div class="stat-card" data-dash-open="interested" onclick="dashboardCardOpen(event,'interested')" onpointerup="dashboardCardOpen(event,'interested')" ontouchend="dashboardCardOpen(event,'interested')" title="Open interested data">
       <div class="stat-val" style="color:var(--purple);">${interested}</div><div class="stat-lbl">Interested</div>
     </div>
-    <div class="stat-card" onclick="openDashboardData('hot')" title="Open hot leads">
+    <div class="stat-card" data-dash-open="hot" onclick="dashboardCardOpen(event,'hot')" onpointerup="dashboardCardOpen(event,'hot')" ontouchend="dashboardCardOpen(event,'hot')" title="Open hot leads">
       <div class="stat-val" style="color:#fb923c;">${hot}</div><div class="stat-lbl">Hot Leads</div>
     </div>
-    <div class="stat-card" onclick="openDashboardData('followups')" title="Open follow-ups due">
+    <div class="stat-card" data-dash-open="followups" onclick="dashboardCardOpen(event,'followups')" onpointerup="dashboardCardOpen(event,'followups')" ontouchend="dashboardCardOpen(event,'followups')" title="Open follow-ups due">
       <div class="stat-val" style="color:var(--orange);">${overdueOrToday}</div><div class="stat-lbl">Follow-ups Due</div>
     </div>
-    <div class="stat-card" onclick="openDashboardData('closed')" title="Open closed deals">
+    <div class="stat-card" data-dash-open="closed" onclick="dashboardCardOpen(event,'closed')" onpointerup="dashboardCardOpen(event,'closed')" ontouchend="dashboardCardOpen(event,'closed')" title="Open closed deals">
       <div class="stat-val" style="color:var(--green);">${totalDeals}</div><div class="stat-lbl">Deals Closed</div>
     </div>
-    <div class="stat-card" onclick="openDashboardData('commission')" title="Open commission data">
+    <div class="stat-card" data-dash-open="commission" onclick="dashboardCardOpen(event,'commission')" onpointerup="dashboardCardOpen(event,'commission')" ontouchend="dashboardCardOpen(event,'commission')" title="Open commission data">
       <div class="stat-val" style="color:#fbbf24;font-size:18px;">AED ${totalCommission>0?totalCommission.toLocaleString('en-US',{maximumFractionDigits:0}):'0'}</div><div class="stat-lbl">Total Commission</div>
     </div>
   `;
@@ -6218,6 +6218,42 @@ function convertCurrency(){
 
 
 
+
+<script>
+// Ultra-robust dashboard KPI opener: inline + pointer/touch fallback.
+(function(){
+  let _lastDashOpen = 0;
+  window.dashboardCardOpen = function(ev,type){
+    try{ if(ev){ ev.preventDefault(); ev.stopPropagation(); } }catch(e){}
+    const now=Date.now();
+    if(now-_lastDashOpen<250) return false;
+    _lastDashOpen=now;
+    try{
+      if(typeof window.openDashboardData === 'function'){
+        window.openDashboardData(type);
+        setTimeout(function(){
+          const m=document.getElementById('dashboardDataModal');
+          if(m && !m.classList.contains('open')) dashboardFallbackOpen(type);
+        },80);
+      } else { dashboardFallbackOpen(type); }
+    }catch(err){
+      console.error('Dashboard card open failed:', err);
+      dashboardFallbackOpen(type);
+    }
+    return false;
+  };
+  window.dashboardFallbackOpen = function(type){
+    try{
+      const navBtn=(sel)=>document.querySelector(sel)||document.body;
+      if(type==='commission' && typeof nav==='function') return nav('commission', navBtn('.nav-item[onclick*=commission]'));
+      if(type==='closed' && typeof nav==='function') return nav('deals', navBtn('.nav-item[onclick*=deals]'));
+      if(type==='followups' && typeof nav==='function') return nav('followup', navBtn('.nav-item[onclick*=followup]'));
+      if(typeof nav==='function') return nav('contacts', navBtn('.nav-item[onclick*=contacts]'));
+    }catch(e){ console.warn(e); }
+  };
+})();
+</script>
+
 <script>
 // Dashboard clickability hard-fix: all KPI cards open their data reliably on desktop/mobile.
 (function(){
@@ -6266,6 +6302,18 @@ function convertCurrency(){
     };
     if(map[type]) map[type]();
   }
+
+  document.addEventListener('pointerup', function(e){
+    const card=e.target.closest && e.target.closest('#statsGrid .stat-card');
+    if(!card) return;
+    window.dashboardCardOpen(e, card.dataset.dashOpen);
+  }, true);
+  document.addEventListener('touchend', function(e){
+    const card=e.target.closest && e.target.closest('#statsGrid .stat-card');
+    if(!card) return;
+    window.dashboardCardOpen(e, card.dataset.dashOpen);
+  }, true);
+
   document.addEventListener('click', function(e){
     const card=e.target.closest && e.target.closest('#statsGrid .stat-card');
     if(!card) return;
