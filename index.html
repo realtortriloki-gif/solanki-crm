@@ -4281,6 +4281,29 @@ function openCommissionDash(){
   document.getElementById('commissionDashModal').classList.add('open');
 }
 
+function editContact(id){
+  const c=contacts.find(x=>parseInt(x.id)===parseInt(id));
+  if(!c) return;
+  document.getElementById('ac_name').value=c.name||'';
+  document.getElementById('ac_phone').value=c.phone||'';
+  document.getElementById('ac_nat').value=c.nationality||'';
+  document.getElementById('ac_com').value=c.community||'';
+  document.getElementById('ac_source').value=c.source||'';
+  document.getElementById('ac_notes').value='';
+  document.getElementById('ac_status').value=c.status||'pending';
+  document.getElementById('ac_priority').value=c.priority||'cold';
+  document.getElementById('ac_type').value=c.contactType||'client';
+  document.getElementById('ac_leadtype').value=c.leadType||'buyer';
+  if(document.getElementById('ac_budget')) document.getElementById('ac_budget').value=c.budget||'';
+  document.getElementById('ocrStatus').textContent='';
+  const modal=document.getElementById('addContactModal');
+  modal.dataset.editId=id;
+  modal.querySelector('.modal-title').textContent='✏️ Edit Contact';
+  const btn=modal.querySelector('button.btn-green:last-of-type');
+  if(btn){btn.textContent='💾 Save Changes';btn.onclick=()=>saveEditContact(id);}
+  modal.classList.add('open');
+}
+
 function saveEditContact(id){
   const c=contacts.find(x=>parseInt(x.id)===parseInt(id));
   if(!c) return;
