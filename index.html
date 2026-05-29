@@ -12,6 +12,7 @@
 <title>Solanki Capital CRM</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ─── SUPABASE + OFFLINE-FIRST SYNC ENGINE ─────────────────────────────
@@ -50,7 +51,7 @@ window.saveToFirebase = async function(data) {
   const payload = {
     contacts: Array.isArray(data.contacts) ? data.contacts : [],
     projects: Array.isArray(data.projects) ? data.projects : [],
-    settings: { ...(data.settings || {}), __sync: syncMeta(), __dealEnginesBackup: (Array.isArray(data.dealEngines) ? data.dealEngines : (typeof dealEngines !== 'undefined' ? dealEngines : [])), __offplanBackup: { bookings: (typeof offplanBookings !== 'undefined' ? offplanBookings : []), inventory: (typeof offplanInventory !== 'undefined' ? offplanInventory : []) }, __areaPriceBackup: (Array.isArray(data.areaPriceRows) ? data.areaPriceRows : (typeof areaPriceRows !== 'undefined' ? areaPriceRows : [])) },
+    settings: { ...(data.settings || {}), __sync: syncMeta(), __dealEnginesBackup: (Array.isArray(data.dealEngines) ? data.dealEngines : (typeof dealEngines !== 'undefined' ? dealEngines : [])), __offplanBackup: { bookings: (typeof offplanBookings !== 'undefined' ? offplanBookings : []), inventory: (typeof offplanInventory !== 'undefined' ? offplanInventory : []), payments: (typeof offplanPaymentPlans !== 'undefined' ? offplanPaymentPlans : []) }, __areaPriceBackup: (Array.isArray(data.areaPriceRows) ? data.areaPriceRows : (typeof areaPriceRows !== 'undefined' ? areaPriceRows : [])) },
     dealEngines: Array.isArray(data.dealEngines) ? data.dealEngines : (typeof dealEngines !== 'undefined' ? dealEngines : [])
   };
 
@@ -477,6 +478,26 @@ tr:hover td{background:#161616;}
 .adv-click-row:hover td{background:#1b1b1b!important;}
 @media(max-width:768px){.adv-mini-grid{grid-template-columns:1fr 1fr}.adv-action-item{flex-direction:column}.adv-tabs{gap:5px}.adv-tab-btn{font-size:11px;padding:7px 10px}}
 
+
+/* Off-Plan Payment Tracker */
+.payment-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:10px 0 12px;}
+.payment-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;}
+.payment-kpi small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.payment-kpi b{display:block;font-size:15px;color:var(--text);}
+.payment-plan-card{background:linear-gradient(145deg,#151515,#101010);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;transition:.15s;}
+.payment-plan-card:hover{border-color:#3a3a3a;transform:translateY(-1px);}
+.payment-progress{height:7px;border-radius:999px;background:#0b0b0b;border:1px solid var(--border);overflow:hidden;margin-top:8px;}
+.payment-progress-fill{height:100%;background:linear-gradient(90deg,var(--green),#60a5fa);}
+.pay-status{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:800;border:1px solid var(--border);white-space:nowrap;}
+.pay-status.paid{background:#0a2a1a;color:#34d399;border-color:#0a4a2a;}
+.pay-status.upcoming{background:#0a1a2a;color:#93c5fd;border-color:#0a2a4a;}
+.pay-status.due{background:#2a220a;color:#fbbf24;border-color:#4a3a0a;}
+.pay-status.overdue{background:#3a1515;color:#f87171;border-color:#5a2020;}
+.payment-row{display:grid;grid-template-columns:1.2fr .75fr .55fr .8fr .7fr .8fr;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:8px;margin-bottom:6px;font-size:12px;}
+.payment-row input,.payment-row select{font-size:12px;padding:6px 8px;}
+.payment-upload-box{background:var(--bg2);border:1px dashed var(--border2);border-radius:12px;padding:12px;margin-bottom:12px;}
+@media(max-width:768px){.payment-row{grid-template-columns:1fr 1fr}.payment-row .btn{grid-column:1/-1;justify-content:center}.payment-kpi-grid{grid-template-columns:1fr 1fr}}
+
 </style>
 </head>
 <body>
@@ -867,6 +888,8 @@ tr:hover td{background:#161616;}
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-green" onclick="addOffplanBooking()">+ Booking</button>
         <button class="btn btn-blue" onclick="addInventoryUnit()">+ Unit</button>
+        <button class="btn btn-orange" onclick="openPaymentPlanModal()">+ Payment Tracker</button>
+        <button class="btn btn-purple" onclick="openSalesOfferImport()">📄 Upload Sales Offer</button>
         <button class="btn btn-ghost" onclick="copySmartShortlist()">📋 Copy Shortlist</button>
       </div>
     </div>
@@ -934,6 +957,83 @@ tr:hover td{background:#161616;}
   <div class="offplan-card">
     <div class="card-title">⏰ Installment / SPA / Oqood / Commission Reminders</div>
     <div id="opReminderList"></div>
+  </div>
+
+  <div class="offplan-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <div>
+        <div class="card-title" style="margin-bottom:3px;">💳 Off-Plan Payment Tracker</div>
+        <div style="font-size:11px;color:var(--text3);">Track paid, remaining, next installment, overdue amount, SPA/Oqood and handover payments.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-green btn-sm" onclick="openPaymentPlanModal()">+ Manual Plan</button>
+        <button class="btn btn-purple btn-sm" onclick="openSalesOfferImport()">📄 Upload / Paste Offer</button>
+      </div>
+    </div>
+    <div id="opPaymentKpis" class="payment-kpi-grid"></div>
+    <div id="opPaymentPlansList"></div>
+  </div>
+</div>
+
+<!-- Off-Plan Payment Plan Modal -->
+<div class="modal-overlay" id="paymentPlanModal">
+  <div class="modal" style="max-width:920px;">
+    <div class="modal-header">
+      <div class="modal-title" id="paymentPlanModalTitle">Off-Plan Payment Tracker</div>
+      <button class="modal-close" onclick="closePaymentPlanModal()">✕</button>
+    </div>
+    <div class="row3" style="margin-bottom:10px;">
+      <div><label class="lbl">Buyer Name</label><input type="text" id="pay_buyer" placeholder="Client name"/></div>
+      <div><label class="lbl">Developer</label><input type="text" id="pay_developer" placeholder="Emaar / DAMAC / Sobha"/></div>
+      <div><label class="lbl">Project</label><input type="text" id="pay_project" placeholder="Project name"/></div>
+    </div>
+    <div class="row3" style="margin-bottom:10px;">
+      <div><label class="lbl">Unit No.</label><input type="text" id="pay_unit" placeholder="Unit number"/></div>
+      <div><label class="lbl">Total Price AED</label><input type="text" id="pay_total" placeholder="e.g. 1600000" oninput="renderPaymentScheduleEditor()"/></div>
+      <div><label class="lbl">Payment Plan Name</label><input type="text" id="pay_planName" placeholder="70/30, 1% monthly..."/></div>
+    </div>
+    <div class="row3" style="margin-bottom:10px;">
+      <div><label class="lbl">Booking Date</label><input type="date" id="pay_bookingDate"/></div>
+      <div><label class="lbl">SPA Status</label><select id="pay_spaStatus"><option>Pending</option><option>Signed</option><option>Not Required</option></select></div>
+      <div><label class="lbl">Oqood Status</label><select id="pay_oqoodStatus"><option>Pending</option><option>Issued</option><option>Not Required</option></select></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Commission Status</label><select id="pay_commissionStatus"><option>Pending</option><option>Partially Received</option><option>Received</option><option>Not Applicable</option></select></div>
+      <div><label class="lbl">Notes</label><input type="text" id="pay_notes" placeholder="Sales offer ref, remarks..."/></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <div class="card-title" style="margin-bottom:0;">Installment Schedule</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="addPaymentScheduleRow()">+ Add Installment</button><button class="btn btn-ghost btn-sm" onclick="autoBuildScheduleFromPlan()">Auto Build from % Plan</button></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:8px;">Review before saving. Auto extraction is a helper, not final truth. If a sales offer has unusual wording, edit rows manually.</div>
+    <div id="paymentScheduleEditor"></div>
+    <div id="paymentPlanPreview" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin:12px 0;font-size:12px;color:var(--text2);line-height:1.8;">Add installments to calculate paid and remaining.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-green" style="flex:1;" onclick="savePaymentPlan()">Save Payment Tracker</button>
+      <button class="btn btn-red" id="deletePaymentPlanBtn" style="display:none;" onclick="deletePaymentPlan()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sales Offer Import Modal -->
+<div class="modal-overlay" id="salesOfferImportModal">
+  <div class="modal" style="max-width:850px;">
+    <div class="modal-header">
+      <div class="modal-title">📄 Upload / Paste Sales Offer</div>
+      <button class="modal-close" onclick="closeSalesOfferImport()">✕</button>
+    </div>
+    <div class="payment-upload-box">
+      <label class="lbl">Upload Sales Offer / Booking Form</label>
+      <input type="file" id="salesOfferFile" accept=".pdf,.txt,.csv,.text" onchange="readSalesOfferFile(event)"/>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:6px;">PDF text extraction works only for text-based PDFs. Scanned images need manual paste or future OCR backend.</div>
+    </div>
+    <label class="lbl">Extracted / pasted text</label>
+    <textarea id="salesOfferText" style="min-height:220px;" placeholder="Paste sales offer text here if upload does not extract correctly..."></textarea>
+    <div id="salesOfferExtractStatus" style="font-size:12px;color:var(--text3);margin:8px 0;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-green" onclick="parseSalesOfferToPaymentPlan()">Extract Payment Plan</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('salesOfferText').value=''">Clear</button>
+    </div>
   </div>
 </div>
 
@@ -1613,6 +1713,9 @@ let currentDealFilter = 'all';
 let editingDealId = null;
 let offplanBookings = [];
 let offplanInventory = [];
+let offplanPaymentPlans = [];
+let editingPaymentPlanId = null;
+let extractedPaymentDraft = null;
 let editingOffplanBookingId = null;
 let areaPriceRows = [];
 let currentAreaPriceFilter = '';
@@ -1802,6 +1905,7 @@ function persistLocalCRM(){
   if(typeof dealEngines !== 'undefined') localStorage.setItem('crm_deal_engines', JSON.stringify(dealEngines));
   if(typeof offplanBookings !== 'undefined') localStorage.setItem('crm_offplan_bookings', JSON.stringify(offplanBookings));
   if(typeof offplanInventory !== 'undefined') localStorage.setItem('crm_offplan_inventory', JSON.stringify(offplanInventory));
+  if(typeof offplanPaymentPlans !== 'undefined') localStorage.setItem('crm_offplan_payment_plans', JSON.stringify(offplanPaymentPlans));
   if(typeof areaPriceRows !== 'undefined') localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows));
 }
 function applySettingsToInputs(){
@@ -1859,7 +1963,7 @@ function save(){
     contacts = stampChangedRecords(contacts, oldContacts, 'c');
     projects = stampChangedRecords(projects, oldProjects, 'p');
     if(typeof areaPriceRows !== 'undefined') settings = { ...(settings||{}), __areaPriceBackup: areaPriceRows };
-    if(typeof offplanBookings !== 'undefined' || typeof offplanInventory !== 'undefined') settings = { ...(settings||{}), __offplanBackup: { bookings: (typeof offplanBookings !== 'undefined' ? offplanBookings : []), inventory: (typeof offplanInventory !== 'undefined' ? offplanInventory : []) } };
+    if(typeof offplanBookings !== 'undefined' || typeof offplanInventory !== 'undefined') settings = { ...(settings||{}), __offplanBackup: { bookings: (typeof offplanBookings !== 'undefined' ? offplanBookings : []), inventory: (typeof offplanInventory !== 'undefined' ? offplanInventory : []), payments: (typeof offplanPaymentPlans !== 'undefined' ? offplanPaymentPlans : []) } };
     settings = { ...(settings||{}), __sync: { deviceId: window.CRM_DEVICE_ID, updatedAt: Date.now(), version: 'offline-pwa-v10' } };
     persistLocalCRM();
     localStorage.setItem('sccrm_pending_sync', '1');
@@ -1879,6 +1983,7 @@ function load(){
     const de=localStorage.getItem('crm_deal_engines'); if(de && typeof dealEngines !== 'undefined') { dealEngines=JSON.parse(de); window.dealEngines = dealEngines; }
     const ob=localStorage.getItem('crm_offplan_bookings'); if(ob && typeof offplanBookings !== 'undefined') offplanBookings=JSON.parse(ob);
     const oi=localStorage.getItem('crm_offplan_inventory'); if(oi && typeof offplanInventory !== 'undefined') offplanInventory=JSON.parse(oi);
+    const opp=localStorage.getItem('crm_offplan_payment_plans'); if(opp && typeof offplanPaymentPlans !== 'undefined') offplanPaymentPlans=JSON.parse(opp);
     const ap=localStorage.getItem('crm_area_price_rows'); if(ap && typeof areaPriceRows !== 'undefined') areaPriceRows=JSON.parse(ap);
   }catch(e){ console.error('Local load failed:', e); }
   if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
@@ -1903,6 +2008,7 @@ async function loadFromCloud(){
       if(settings && settings.__offplanBackup){
         if(Array.isArray(settings.__offplanBackup.bookings)) offplanBookings = settings.__offplanBackup.bookings;
         if(Array.isArray(settings.__offplanBackup.inventory)) offplanInventory = settings.__offplanBackup.inventory;
+        if(Array.isArray(settings.__offplanBackup.payments)) offplanPaymentPlans = settings.__offplanBackup.payments;
       }
       if(settings && Array.isArray(settings.__areaPriceBackup)) areaPriceRows = settings.__areaPriceBackup;
       persistLocalCRM();
@@ -1944,6 +2050,7 @@ window.handleRemoteCRMUpdate = function(row){
     if(settings && settings.__offplanBackup){
       if(Array.isArray(settings.__offplanBackup.bookings)) offplanBookings = settings.__offplanBackup.bookings;
       if(Array.isArray(settings.__offplanBackup.inventory)) offplanInventory = settings.__offplanBackup.inventory;
+      if(Array.isArray(settings.__offplanBackup.payments)) offplanPaymentPlans = settings.__offplanBackup.payments;
     }
     if(settings && Array.isArray(settings.__areaPriceBackup)) areaPriceRows = settings.__areaPriceBackup;
     persistLocalCRM();
@@ -4545,6 +4652,26 @@ function closeQRScan(){
 .offplan-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 @media(max-width:768px){.offplan-compare-grid{grid-template-columns:1fr}.smart-offplan-toolbar .btn{flex:1;justify-content:center}.offplan-kpi-grid{grid-template-columns:1fr 1fr}.smart-match-card{padding:10px}}
 
+
+/* Off-Plan Payment Tracker */
+.payment-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:10px 0 12px;}
+.payment-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;}
+.payment-kpi small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.payment-kpi b{display:block;font-size:15px;color:var(--text);}
+.payment-plan-card{background:linear-gradient(145deg,#151515,#101010);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;transition:.15s;}
+.payment-plan-card:hover{border-color:#3a3a3a;transform:translateY(-1px);}
+.payment-progress{height:7px;border-radius:999px;background:#0b0b0b;border:1px solid var(--border);overflow:hidden;margin-top:8px;}
+.payment-progress-fill{height:100%;background:linear-gradient(90deg,var(--green),#60a5fa);}
+.pay-status{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:800;border:1px solid var(--border);white-space:nowrap;}
+.pay-status.paid{background:#0a2a1a;color:#34d399;border-color:#0a4a2a;}
+.pay-status.upcoming{background:#0a1a2a;color:#93c5fd;border-color:#0a2a4a;}
+.pay-status.due{background:#2a220a;color:#fbbf24;border-color:#4a3a0a;}
+.pay-status.overdue{background:#3a1515;color:#f87171;border-color:#5a2020;}
+.payment-row{display:grid;grid-template-columns:1.2fr .75fr .55fr .8fr .7fr .8fr;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:8px;margin-bottom:6px;font-size:12px;}
+.payment-row input,.payment-row select{font-size:12px;padding:6px 8px;}
+.payment-upload-box{background:var(--bg2);border:1px dashed var(--border2);border-radius:12px;padding:12px;margin-bottom:12px;}
+@media(max-width:768px){.payment-row{grid-template-columns:1fr 1fr}.payment-row .btn{grid-column:1/-1;justify-content:center}.payment-kpi-grid{grid-template-columns:1fr 1fr}}
+
 </style>
 <script>
 (function(){
@@ -4857,6 +4984,26 @@ function ADV_markStaleCold(){
 .offplan-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px;}
 .offplan-compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 @media(max-width:768px){.offplan-compare-grid{grid-template-columns:1fr}.smart-offplan-toolbar .btn{flex:1;justify-content:center}.offplan-kpi-grid{grid-template-columns:1fr 1fr}.smart-match-card{padding:10px}}
+
+
+/* Off-Plan Payment Tracker */
+.payment-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:10px 0 12px;}
+.payment-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;}
+.payment-kpi small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.payment-kpi b{display:block;font-size:15px;color:var(--text);}
+.payment-plan-card{background:linear-gradient(145deg,#151515,#101010);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;transition:.15s;}
+.payment-plan-card:hover{border-color:#3a3a3a;transform:translateY(-1px);}
+.payment-progress{height:7px;border-radius:999px;background:#0b0b0b;border:1px solid var(--border);overflow:hidden;margin-top:8px;}
+.payment-progress-fill{height:100%;background:linear-gradient(90deg,var(--green),#60a5fa);}
+.pay-status{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:800;border:1px solid var(--border);white-space:nowrap;}
+.pay-status.paid{background:#0a2a1a;color:#34d399;border-color:#0a4a2a;}
+.pay-status.upcoming{background:#0a1a2a;color:#93c5fd;border-color:#0a2a4a;}
+.pay-status.due{background:#2a220a;color:#fbbf24;border-color:#4a3a0a;}
+.pay-status.overdue{background:#3a1515;color:#f87171;border-color:#5a2020;}
+.payment-row{display:grid;grid-template-columns:1.2fr .75fr .55fr .8fr .7fr .8fr;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:8px;margin-bottom:6px;font-size:12px;}
+.payment-row input,.payment-row select{font-size:12px;padding:6px 8px;}
+.payment-upload-box{background:var(--bg2);border:1px dashed var(--border2);border-radius:12px;padding:12px;margin-bottom:12px;}
+@media(max-width:768px){.payment-row{grid-template-columns:1fr 1fr}.payment-row .btn{grid-column:1/-1;justify-content:center}.payment-kpi-grid{grid-template-columns:1fr 1fr}}
 
 </style>
 
@@ -5231,6 +5378,7 @@ function renderOffplanHub(){
   renderOffplanBookings();
   renderOffplanInventory();
   renderOffplanReminders();
+  if(typeof renderPaymentTracker === 'function') renderPaymentTracker();
   renderOffplanComparisonSelectors();
   renderOffplanComparison();
 }
@@ -5458,6 +5606,207 @@ function renderOffplanComparison(){
   const winner=a.score===b.score?'Tie':(a.score>b.score?a.project:b.project);
   el.innerHTML=`<div class="offplan-compare-grid">${card(a)}${card(b)}</div><div style="font-size:12px;color:var(--green);font-weight:700;margin-top:10px;">Best fit: ${winner}</div>`;
 }
+
+
+// ─── OFF-PLAN PAYMENT TRACKER ───────────────────────────────────────
+function payNum(v){ return Number(String(v||'').replace(/[^0-9.]/g,''))||0; }
+function payMoney(v){ const n=payNum(v); return n ? 'AED '+Math.round(n).toLocaleString() : 'AED 0'; }
+function normalizePayDate(v){
+  if(!v) return '';
+  const s=String(v).trim();
+  const m=s.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(m){ const y=String(m[3]).length===2?'20'+m[3]:m[3]; return `${y}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`; }
+  const d=new Date(s); if(!isNaN(d)) return d.toISOString().slice(0,10);
+  return '';
+}
+function paymentScheduleStatus(row){
+  if(row.status==='Paid') return 'paid';
+  const today=new Date(); today.setHours(0,0,0,0);
+  const due=row.dueDate?new Date(row.dueDate):null;
+  if(due && !isNaN(due) && due < today) return 'overdue';
+  if(due && !isNaN(due)){
+    const days=Math.ceil((due-today)/86400000);
+    if(days<=7) return 'due';
+  }
+  return 'upcoming';
+}
+function summarizePaymentPlan(plan){
+  const total=payNum(plan.totalPrice);
+  const rows=Array.isArray(plan.schedule)?plan.schedule:[];
+  const paid=rows.filter(r=>r.status==='Paid').reduce((s,r)=>s+payNum(r.amount),0);
+  const remaining=Math.max(total-paid,0);
+  const overdue=rows.filter(r=>paymentScheduleStatus(r)==='overdue').reduce((s,r)=>s+payNum(r.amount),0);
+  const unpaid=rows.filter(r=>r.status!=='Paid').slice().sort((a,b)=>String(a.dueDate||'9999').localeCompare(String(b.dueDate||'9999')));
+  const next=unpaid[0]||null;
+  const pct=total?Math.min(100,Math.round((paid/total)*100)):0;
+  return {total,paid,remaining,overdue,next,pct,rows};
+}
+function renderPaymentTracker(){
+  const k=document.getElementById('opPaymentKpis'), list=document.getElementById('opPaymentPlansList');
+  if(!k||!list) return;
+  const plans=Array.isArray(offplanPaymentPlans)?offplanPaymentPlans:[];
+  const sums=plans.map(summarizePaymentPlan);
+  const totalValue=sums.reduce((a,x)=>a+x.total,0), paid=sums.reduce((a,x)=>a+x.paid,0), rem=sums.reduce((a,x)=>a+x.remaining,0), overdue=sums.reduce((a,x)=>a+x.overdue,0);
+  k.innerHTML=`<div class="payment-kpi"><small>Tracked Files</small><b>${plans.length}</b></div><div class="payment-kpi"><small>Total Value</small><b>${payMoney(totalValue)}</b></div><div class="payment-kpi"><small>Paid</small><b style="color:var(--green);">${payMoney(paid)}</b></div><div class="payment-kpi"><small>Remaining</small><b style="color:var(--orange);">${payMoney(rem)}</b></div><div class="payment-kpi"><small>Overdue</small><b style="color:${overdue?'var(--red)':'var(--green)'};">${payMoney(overdue)}</b></div>`;
+  if(!plans.length){ list.innerHTML='<div class="empty">No payment tracker yet. Upload Sales Offer or add manual plan.</div>'; return; }
+  list.innerHTML=plans.slice().sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0)).map(plan=>{
+    const sm=summarizePaymentPlan(plan); const next=sm.next;
+    const spa=(plan.spaStatus||'Pending')==='Signed'?'good':'warn'; const oq=(plan.oqoodStatus||'Pending')==='Issued'?'good':'warn';
+    return `<div class="payment-plan-card" onclick="openPaymentPlanModal('${plan.id}')">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start;"><div><b>${escapeHtml(plan.buyer||'Unnamed Buyer')}</b><div style="font-size:11px;color:var(--text3);margin-top:3px;">${escapeHtml(plan.developer||'-')} • ${escapeHtml(plan.project||'-')} • Unit ${escapeHtml(plan.unit||'-')}</div></div><span class="smart-score ${sm.overdue?'low':sm.pct>=70?'good':'mid'}">${sm.pct}% paid</span></div>
+      <div class="payment-kpi-grid"><div class="payment-kpi"><small>Total</small><b>${payMoney(sm.total)}</b></div><div class="payment-kpi"><small>Paid</small><b>${payMoney(sm.paid)}</b></div><div class="payment-kpi"><small>Remaining</small><b>${payMoney(sm.remaining)}</b></div><div class="payment-kpi"><small>Next</small><b>${next?payMoney(next.amount):'Clear'}</b><span style="font-size:10px;color:var(--text3);">${next?escapeHtml(next.dueDate||'No date'):''}</span></div></div>
+      <div class="payment-progress"><div class="payment-progress-fill" style="width:${sm.pct}%"></div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;"><span class="smart-chip ${spa}">SPA: ${escapeHtml(plan.spaStatus||'Pending')}</span><span class="smart-chip ${oq}">Oqood: ${escapeHtml(plan.oqoodStatus||'Pending')}</span><span class="smart-chip ${sm.overdue?'bad':'good'}">Overdue: ${payMoney(sm.overdue)}</span><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyPaymentReminder('${plan.id}')">Copy Reminder</button><button class="btn btn-green btn-sm" onclick="event.stopPropagation();markNextInstallmentPaid('${plan.id}')">Mark Next Paid</button></div>
+    </div>`;
+  }).join('');
+}
+function openPaymentPlanModal(id){
+  editingPaymentPlanId=id||null;
+  const plan=id?(offplanPaymentPlans||[]).find(x=>x.id===id):null;
+  const draft=extractedPaymentDraft && !id ? extractedPaymentDraft : null;
+  const p=plan||draft||{buyer:'',developer:'',project:'',unit:'',totalPrice:'',planName:'',bookingDate:'',spaStatus:'Pending',oqoodStatus:'Pending',commissionStatus:'Pending',notes:'',schedule:[]};
+  ['buyer','developer','project','unit','planName','bookingDate','spaStatus','oqoodStatus','commissionStatus','notes'].forEach(k=>{const el=document.getElementById('pay_'+k); if(el) el.value=p[k]||'';});
+  const total=document.getElementById('pay_total'); if(total) total.value=p.totalPrice||'';
+  window.__payScheduleDraft=Array.isArray(p.schedule)?JSON.parse(JSON.stringify(p.schedule)):[];
+  const title=document.getElementById('paymentPlanModalTitle'); if(title) title.textContent=id?'Edit Payment Tracker':'New Payment Tracker';
+  const del=document.getElementById('deletePaymentPlanBtn'); if(del) del.style.display=id?'inline-flex':'none';
+  renderPaymentScheduleEditor();
+  document.getElementById('paymentPlanModal')?.classList.add('open');
+  extractedPaymentDraft=null;
+}
+function closePaymentPlanModal(){ document.getElementById('paymentPlanModal')?.classList.remove('open'); editingPaymentPlanId=null; }
+function addPaymentScheduleRow(row){
+  if(!Array.isArray(window.__payScheduleDraft)) window.__payScheduleDraft=[];
+  window.__payScheduleDraft.push(row||{name:'Installment '+(window.__payScheduleDraft.length+1),dueDate:'',percent:'',amount:'',status:'Upcoming',paidDate:'',notes:''});
+  renderPaymentScheduleEditor();
+}
+function removePaymentScheduleRow(i){ if(Array.isArray(window.__payScheduleDraft)){ window.__payScheduleDraft.splice(i,1); renderPaymentScheduleEditor(); } }
+function collectPaymentScheduleEditor(){
+  const rows=[];
+  document.querySelectorAll('#paymentScheduleEditor .payment-row').forEach((r,idx)=>{
+    rows.push({
+      name:r.querySelector('[data-k="name"]')?.value||('Installment '+(idx+1)),
+      dueDate:r.querySelector('[data-k="dueDate"]')?.value||'',
+      percent:r.querySelector('[data-k="percent"]')?.value||'',
+      amount:r.querySelector('[data-k="amount"]')?.value||'',
+      status:r.querySelector('[data-k="status"]')?.value||'Upcoming',
+      paidDate:r.querySelector('[data-k="paidDate"]')?.value||'',
+      notes:r.querySelector('[data-k="notes"]')?.value||''
+    });
+  });
+  window.__payScheduleDraft=rows;
+  return rows;
+}
+function renderPaymentScheduleEditor(){
+  if(document.activeElement && document.activeElement.closest && document.activeElement.closest('#paymentScheduleEditor')) return;
+  const el=document.getElementById('paymentScheduleEditor'); if(!el) return;
+  const rows=Array.isArray(window.__payScheduleDraft)?window.__payScheduleDraft:[];
+  el.innerHTML=rows.length?rows.map((r,i)=>`<div class="payment-row">
+    <input data-k="name" value="${escapeAttr(r.name||'')}" placeholder="Name" onchange="collectPaymentScheduleEditor();renderPaymentPreview()"/>
+    <input data-k="dueDate" type="date" value="${escapeAttr(r.dueDate||'')}" onchange="collectPaymentScheduleEditor();renderPaymentPreview()"/>
+    <input data-k="percent" value="${escapeAttr(r.percent||'')}" placeholder="%" onchange="syncPaymentRowAmount(${i});collectPaymentScheduleEditor();renderPaymentPreview()"/>
+    <input data-k="amount" value="${escapeAttr(r.amount||'')}" placeholder="Amount" onchange="collectPaymentScheduleEditor();renderPaymentPreview()"/>
+    <select data-k="status" onchange="collectPaymentScheduleEditor();renderPaymentPreview()"><option ${r.status==='Upcoming'?'selected':''}>Upcoming</option><option ${r.status==='Paid'?'selected':''}>Paid</option><option ${r.status==='Due'?'selected':''}>Due</option><option ${r.status==='Overdue'?'selected':''}>Overdue</option></select>
+    <div style="display:flex;gap:5px;"><input data-k="paidDate" type="date" value="${escapeAttr(r.paidDate||'')}" title="Paid date"/><button class="btn btn-red btn-sm" type="button" onclick="removePaymentScheduleRow(${i})">✕</button></div>
+    <input data-k="notes" value="${escapeAttr(r.notes||'')}" placeholder="Notes" style="grid-column:1/-1;" onchange="collectPaymentScheduleEditor()"/>
+  </div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;">No schedule rows. Add manually or extract from sales offer.</div>';
+  renderPaymentPreview();
+}
+function renderPaymentPreview(){
+  const rows=collectPaymentScheduleEditor(); const total=payNum(document.getElementById('pay_total')?.value);
+  const sm=summarizePaymentPlan({totalPrice:total,schedule:rows});
+  const el=document.getElementById('paymentPlanPreview'); if(!el) return;
+  el.innerHTML=`Total: <b>${payMoney(sm.total)}</b> • Paid: <b style="color:var(--green);">${payMoney(sm.paid)}</b> • Remaining: <b style="color:var(--orange);">${payMoney(sm.remaining)}</b> • Overdue: <b style="color:${sm.overdue?'var(--red)':'var(--green)'};">${payMoney(sm.overdue)}</b> • Next: <b>${sm.next?escapeHtml(sm.next.name||'Installment')+' '+payMoney(sm.next.amount)+' due '+escapeHtml(sm.next.dueDate||'no date'):'No upcoming payment'}</b>`;
+}
+function syncPaymentRowAmount(i){
+  const total=payNum(document.getElementById('pay_total')?.value); if(!total) return;
+  const rows=document.querySelectorAll('#paymentScheduleEditor .payment-row'); const row=rows[i]; if(!row) return;
+  const pct=payNum(row.querySelector('[data-k="percent"]')?.value); const amt=row.querySelector('[data-k="amount"]');
+  if(pct && amt && !payNum(amt.value)) amt.value=Math.round(total*pct/100);
+}
+function autoBuildScheduleFromPlan(){
+  const txt=prompt('Enter percentages separated by comma. Example: 10,10,10,10,20,40', '10,10,10,10,20,40'); if(!txt) return;
+  const total=payNum(document.getElementById('pay_total')?.value); const start=document.getElementById('pay_bookingDate')?.value || new Date().toISOString().slice(0,10);
+  const base=new Date(start); const arr=txt.split(/[,;+]/).map(x=>payNum(x)).filter(Boolean);
+  window.__payScheduleDraft=arr.map((pct,i)=>{const d=new Date(base); d.setMonth(base.getMonth()+i*3); return {name:i===0?'Booking':'Installment '+i,dueDate:d.toISOString().slice(0,10),percent:pct,amount:total?Math.round(total*pct/100):'',status:i===0?'Paid':'Upcoming',paidDate:i===0?new Date().toISOString().slice(0,10):'',notes:''};});
+  renderPaymentScheduleEditor();
+}
+function savePaymentPlan(){
+  const rows=collectPaymentScheduleEditor();
+  const plan={
+    id: editingPaymentPlanId || 'pay_'+Date.now(),
+    buyer:document.getElementById('pay_buyer')?.value||'', developer:document.getElementById('pay_developer')?.value||'', project:document.getElementById('pay_project')?.value||'', unit:document.getElementById('pay_unit')?.value||'',
+    totalPrice:document.getElementById('pay_total')?.value||'', planName:document.getElementById('pay_planName')?.value||'', bookingDate:document.getElementById('pay_bookingDate')?.value||'',
+    spaStatus:document.getElementById('pay_spaStatus')?.value||'Pending', oqoodStatus:document.getElementById('pay_oqoodStatus')?.value||'Pending', commissionStatus:document.getElementById('pay_commissionStatus')?.value||'Pending', notes:document.getElementById('pay_notes')?.value||'',
+    schedule:rows, updatedAt:Date.now()
+  };
+  if(!plan.buyer && !plan.project){ alert('Buyer or Project required.'); return; }
+  if(!Array.isArray(offplanPaymentPlans)) offplanPaymentPlans=[];
+  const idx=offplanPaymentPlans.findIndex(x=>x.id===plan.id);
+  if(idx>=0) offplanPaymentPlans[idx]=plan; else offplanPaymentPlans.unshift(plan);
+  localStorage.setItem('crm_offplan_payment_plans',JSON.stringify(offplanPaymentPlans)); save(); closePaymentPlanModal(); renderOffplanHub(); toast&&toast('Payment tracker saved','success');
+}
+function deletePaymentPlan(){ if(!editingPaymentPlanId) return; if(!confirm('Delete this payment tracker?')) return; offplanPaymentPlans=(offplanPaymentPlans||[]).filter(x=>x.id!==editingPaymentPlanId); localStorage.setItem('crm_offplan_payment_plans',JSON.stringify(offplanPaymentPlans)); save(); closePaymentPlanModal(); renderOffplanHub(); }
+function markNextInstallmentPaid(id){
+  const p=(offplanPaymentPlans||[]).find(x=>x.id===id); if(!p) return;
+  const sm=summarizePaymentPlan(p); if(!sm.next){ toast&&toast('No unpaid installment','info'); return; }
+  const row=p.schedule.find(r=>r===sm.next || (r.name===sm.next.name && r.dueDate===sm.next.dueDate && String(r.amount)===String(sm.next.amount)));
+  if(row){ row.status='Paid'; row.paidDate=new Date().toISOString().slice(0,10); p.updatedAt=Date.now(); localStorage.setItem('crm_offplan_payment_plans',JSON.stringify(offplanPaymentPlans)); save(); renderOffplanHub(); toast&&toast('Next installment marked paid','success'); }
+}
+function copyPaymentReminder(id){
+  const p=(offplanPaymentPlans||[]).find(x=>x.id===id); if(!p) return;
+  const sm=summarizePaymentPlan(p); const n=sm.next;
+  const text=n?`Hi ${p.buyer||''}, quick reminder for your ${p.project||'off-plan'} unit ${p.unit||''}.\n\nNext installment: ${payMoney(n.amount)}\nDue date: ${n.dueDate||'as per payment plan'}\nRemaining balance after paid amount: ${payMoney(sm.remaining)}\n\nPlease confirm once payment is completed so we can update your file.`:`Hi ${p.buyer||''}, your payment tracker for ${p.project||'off-plan'} shows no upcoming unpaid installment. Paid: ${payMoney(sm.paid)} / Total: ${payMoney(sm.total)}.`;
+  navigator.clipboard?.writeText(text).then(()=>toast&&toast('Payment reminder copied','success')).catch(()=>alert(text));
+}
+function openSalesOfferImport(){ document.getElementById('salesOfferImportModal')?.classList.add('open'); }
+function closeSalesOfferImport(){ document.getElementById('salesOfferImportModal')?.classList.remove('open'); }
+async function readSalesOfferFile(e){
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const st=document.getElementById('salesOfferExtractStatus'); if(st) st.textContent='Reading '+f.name+'...';
+  try{
+    let text='';
+    if(/pdf$/i.test(f.name) && window.pdfjsLib){
+      const buf=await f.arrayBuffer();
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      for(let i=1;i<=pdf.numPages;i++){ const page=await pdf.getPage(i); const content=await page.getTextContent(); text += content.items.map(it=>it.str).join(' ')+'\n'; }
+    }else{
+      text=await f.text();
+    }
+    document.getElementById('salesOfferText').value=text;
+    if(st) st.textContent=text.trim()?`Extracted ${text.length.toLocaleString()} characters. Review then click Extract Payment Plan.`:'No text extracted. Paste manually.';
+  }catch(err){ console.error(err); if(st) st.textContent='Could not extract file. Paste text manually.'; }
+}
+function parseMoneyFromText(t){ const m=t.match(/(?:purchase|selling|total|property|unit)\s*(?:price|value)?[^\d]{0,20}(?:AED|د\.إ)?\s*([0-9][0-9,\.]{4,})/i) || t.match(/(?:AED|د\.إ)\s*([0-9][0-9,\.]{4,})/i); return m?payNum(m[1]):0; }
+function parseSalesOfferToPaymentPlan(){
+  const text=document.getElementById('salesOfferText')?.value||''; if(!text.trim()){ alert('Paste or upload sales offer text first.'); return; }
+  const lines=text.split(/\n|\r|(?<=AED\s[0-9,]{4,})\s+/).map(x=>x.trim()).filter(Boolean);
+  const get=(label)=>{ const re=new RegExp(label+'\\s*[:\\-]?\\s*([^\\n\\r]{2,80})','i'); const m=text.match(re); return m?m[1].trim():''; };
+  const total=parseMoneyFromText(text);
+  const buyer=get('Buyer|Purchaser|Customer|Client');
+  const developer=get('Developer');
+  const project=get('Project|Development|Property Name');
+  const unit=get('Unit No|Unit Number|Apartment No|Villa No|Unit');
+  const planName=(text.match(/(\d{2}\s*\/\s*\d{2}|\d+%\s*monthly|post\s*handover|payment\s*plan[^\n\r]{0,40})/i)||[])[0]||'';
+  const schedule=[];
+  lines.forEach((line)=>{
+    const hasPct=/%/.test(line), hasMoney=/AED|د\.إ|[0-9][0-9,]{4,}/i.test(line);
+    if(!(hasPct||hasMoney)) return;
+    if(!/(booking|installment|instalment|payment|handover|completion|spa|oqood|down payment|on signing|on booking|due)/i.test(line) && !hasPct) return;
+    const pct=(line.match(/(\d+(?:\.\d+)?)\s*%/)||[])[1]||'';
+    const money=(line.match(/(?:AED|د\.إ)?\s*([0-9][0-9,\.]{4,})/)||[])[1]||'';
+    const date=(line.match(/\b\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}\b/)||line.match(/\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4}\b/i)||[])[0]||'';
+    const name=(line.match(/(Booking|Down Payment|Installment\s*\d+|Instalment\s*\d+|Handover|On Completion|SPA|Oqood|On Signing)/i)||[])[0]||('Installment '+(schedule.length+1));
+    let amount=payNum(money); if(!amount && pct && total) amount=Math.round(total*payNum(pct)/100);
+    schedule.push({name,dueDate:normalizePayDate(date),percent:pct,amount:amount||'',status:/booking|down payment|paid/i.test(name)?'Paid':'Upcoming',paidDate:/booking|down payment/i.test(name)?new Date().toISOString().slice(0,10):'',notes:line.slice(0,180)});
+  });
+  if(!schedule.length && total){ schedule.push({name:'Booking',dueDate:new Date().toISOString().slice(0,10),percent:'10',amount:Math.round(total*.10),status:'Paid',paidDate:new Date().toISOString().slice(0,10),notes:'Auto-created fallback row. Verify manually.'}); }
+  extractedPaymentDraft={buyer,developer,project,unit,totalPrice:total||'',planName,bookingDate:new Date().toISOString().slice(0,10),spaStatus:'Pending',oqoodStatus:'Pending',commissionStatus:'Pending',notes:'Extracted from sales offer - review required',schedule};
+  closeSalesOfferImport(); openPaymentPlanModal();
+  const st=document.getElementById('salesOfferExtractStatus'); if(st) st.textContent='';
+}
+function escapeAttr(v){ return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 const AREA_PRICES=[
   {area:'Downtown Dubai',price:'AED 3,100',type:'Apartment',trend:'↑ 11%'},
