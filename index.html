@@ -351,6 +351,24 @@ tr:hover td{background:#161616;}
 .area-intel-table-head{display:grid;grid-template-columns:1.4fr .8fr .8fr .7fr .8fr .9fr;gap:8px;padding:0 9px 6px;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
 @media(max-width:768px){.area-intel-row,.area-intel-table-head{grid-template-columns:1fr 1fr}.area-intel-table-head{display:none}.area-intel-row .btn{grid-column:1/-1;justify-content:center}}
 
+
+/* Compact dashboard area-price widget */
+#dashAreaPriceIntel{padding:12px!important;margin-bottom:12px!important;}
+#dashAreaPriceIntel .card-title{font-size:10px!important;letter-spacing:.6px;}
+#dashAreaPriceIntel .area-intel-grid{grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:6px;margin-bottom:0;}
+#dashAreaPriceIntel .area-intel-card{padding:8px 9px;border-radius:9px;cursor:pointer;min-height:68px;transition:transform .15s,border-color .15s,background .15s;}
+#dashAreaPriceIntel .area-intel-card:hover{transform:translateY(-2px);border-color:#1e4a7c;background:#111827;}
+#dashAreaPriceIntel .area-intel-card small{font-size:8px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#dashAreaPriceIntel .area-intel-card b{font-size:13px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#dashAreaPriceIntel .area-intel-card span{font-size:11px;line-height:1.25;color:var(--text2);display:block;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.area-clickable{cursor:pointer;}
+.area-clickable:hover{border-color:#1e4a7c;background:#111827;}
+.area-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0;}
+.area-detail-mini{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px;}
+.area-detail-mini small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.area-detail-mini b{font-size:14px;color:var(--text);}
+@media(max-width:768px){#dashAreaPriceIntel .area-intel-grid{grid-template-columns:1fr 1fr;}#dashAreaPriceIntel{padding:10px!important;}}
+
 /* Deal Engine */
 .deal-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:10px;transition:border-color .15s;}
 .deal-card:hover{border-color:#3a3a3a;}
@@ -547,13 +565,13 @@ tr:hover td{background:#161616;}
       </div>
     </div>
   </div>
-  <div class="card" id="dashAreaPriceIntel">
+  <div class="card dash-area-compact" id="dashAreaPriceIntel">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
       <div>
-        <div class="card-title" style="margin-bottom:3px;">📍 Dubai Area Price / sqft Intelligence</div>
-        <div style="font-size:11px;color:var(--text3);">Know current area averages before pitching, valuing or comparing a unit.</div>
+        <div class="card-title" style="margin-bottom:3px;">📍 Area Price / sqft</div>
+        <div style="font-size:11px;color:var(--text3);">Tap any area to open details. Use Area Prices for full Dubai list.</div>
       </div>
-      <button class="btn btn-blue btn-sm" onclick="nav('areaprices', this);syncBottomNav('areaprices')">Open Area Prices</button>
+      <button class="btn btn-blue btn-sm" onclick="nav('areaprices', this);syncBottomNav('areaprices')">View All</button>
     </div>
     <div id="dashAreaPriceRows"></div>
   </div>
@@ -4731,20 +4749,24 @@ const AREA_PRICES=[
   {area:'JVC',price:'AED 1,250',type:'Apartment',trend:'↑ 5%'},
   {area:'Dubai Hills Estate',price:'AED 1,950',type:'Villa/Apt',trend:'↑ 12%'},
   {area:'Arabian Ranches 3',price:'AED 1,600',type:'Villa',trend:'↑ 8%'},
+  {area:'DAMAC Hills',price:'AED 1,450',type:'Villa/Apt',trend:'↑ 7%'},
   {area:'DAMAC Hills 2',price:'AED 1,100',type:'Villa/Apt',trend:'↑ 6%'},
   {area:'Al Barsha',price:'AED 1,150',type:'Apartment',trend:'↑ 4%'},
-  {area:'Creek Harbour',price:'AED 2,600',type:'Apartment',trend:'↑ 14%'},
+  {area:'Dubai Creek Harbour',price:'AED 2,600',type:'Apartment',trend:'↑ 14%'},
   {area:'Emaar Beachfront',price:'AED 4,100',type:'Apartment',trend:'↑ 18%'},
-  {area:'MBR City',price:'AED 2,050',type:'Villa/Apt',trend:'↑ 10%'},
+  {area:'Mohammed Bin Rashid City',price:'AED 2,050',type:'Villa/Apt',trend:'↑ 10%'},
+  {area:'District One',price:'AED 2,450',type:'Villa/Apt',trend:'↑ 12%'},
+  {area:'Sobha Hartland',price:'AED 2,250',type:'Apartment',trend:'↑ 11%'},
   {area:'Sobha Hartland 2',price:'AED 2,200',type:'Apartment',trend:'↑ 14%'},
   {area:'Bluewaters Island',price:'AED 4,300',type:'Apartment',trend:'↑ 16%'},
   {area:'DIFC',price:'AED 3,400',type:'Apartment',trend:'↑ 11%'},
   {area:'JBR',price:'AED 2,800',type:'Apartment',trend:'↑ 10%'},
   {area:'Palm Jebel Ali',price:'AED 2,600',type:'Villa',trend:'↑ 22%'},
   {area:'Dubai South',price:'AED 1,100',type:'Apartment',trend:'↑ 7%'},
+  {area:'Emaar South',price:'AED 1,150',type:'Villa/Apt',trend:'↑ 8%'},
   {area:'Tilal Al Ghaf',price:'AED 1,850',type:'Villa',trend:'↑ 13%'},
   {area:'Al Furjan',price:'AED 1,200',type:'Apartment',trend:'↑ 6%'},
-  {area:'Sports City',price:'AED 980',type:'Apartment',trend:'↑ 3%'},
+  {area:'Dubai Sports City',price:'AED 980',type:'Apartment',trend:'↑ 3%'},
   {area:'Discovery Gardens',price:'AED 800',type:'Apartment',trend:'↑ 2%'},
   {area:'International City',price:'AED 600',type:'Apartment',trend:'↑ 2%'},
   {area:'Town Square',price:'AED 950',type:'Apt/Villa',trend:'↑ 4%'},
@@ -4752,8 +4774,47 @@ const AREA_PRICES=[
   {area:'Deira',price:'AED 820',type:'Apartment',trend:'↑ 2%'},
   {area:'Bur Dubai',price:'AED 950',type:'Apartment',trend:'↑ 3%'},
   {area:'Motor City',price:'AED 920',type:'Apartment',trend:'↑ 3%'},
-  {area:'JVT',price:'AED 1,150',type:'Apartment',trend:'↑ 5%'},
+  {area:'Jumeirah Village Triangle',price:'AED 1,150',type:'Apartment',trend:'↑ 5%'},
   {area:'Arjan',price:'AED 1,050',type:'Apartment',trend:'↑ 5%'},
+  {area:'Dubai Islands',price:'AED 2,100',type:'Apartment',trend:'↑ 9%'},
+  {area:'Jumeirah Islands',price:'AED 2,050',type:'Villa',trend:'↑ 8%'},
+  {area:'Jumeirah Park',price:'AED 1,700',type:'Villa',trend:'↑ 7%'},
+  {area:'Jumeirah Golf Estates',price:'AED 1,650',type:'Villa/Apt',trend:'↑ 6%'},
+  {area:'The Valley',price:'AED 1,350',type:'Villa/Townhouse',trend:'↑ 9%'},
+  {area:'The Springs',price:'AED 1,650',type:'Villa',trend:'↑ 6%'},
+  {area:'The Meadows',price:'AED 1,750',type:'Villa',trend:'↑ 6%'},
+  {area:'The Lakes',price:'AED 1,900',type:'Villa',trend:'↑ 7%'},
+  {area:'Emirates Living',price:'AED 1,850',type:'Villa',trend:'↑ 7%'},
+  {area:'Al Sufouh',price:'AED 2,300',type:'Apartment',trend:'↑ 8%'},
+  {area:'Jumeirah Lake Towers',price:'AED 1,650',type:'Apartment',trend:'↑ 7%'},
+  {area:'Dubai Production City',price:'AED 850',type:'Apartment',trend:'↑ 3%'},
+  {area:'Dubai Silicon Oasis',price:'AED 850',type:'Apartment',trend:'↑ 3%'},
+  {area:'Dubai Investment Park',price:'AED 780',type:'Apartment',trend:'↑ 2%'},
+  {area:'Dubai Science Park',price:'AED 1,050',type:'Apartment',trend:'↑ 4%'},
+  {area:'Dubai Studio City',price:'AED 930',type:'Apartment',trend:'↑ 3%'},
+  {area:'Dubai Land Residence Complex',price:'AED 900',type:'Apartment',trend:'↑ 4%'},
+  {area:'Meydan',price:'AED 1,900',type:'Apartment',trend:'↑ 9%'},
+  {area:'Meydan Horizon',price:'AED 1,850',type:'Apartment',trend:'↑ 8%'},
+  {area:'Dubai Design District',price:'AED 2,300',type:'Apartment',trend:'↑ 8%'},
+  {area:'City Walk',price:'AED 2,850',type:'Apartment',trend:'↑ 10%'},
+  {area:'Port de La Mer',price:'AED 3,100',type:'Apartment',trend:'↑ 11%'},
+  {area:'Jumeirah Beach Residence',price:'AED 2,800',type:'Apartment',trend:'↑ 10%'},
+  {area:'Al Jaddaf',price:'AED 1,650',type:'Apartment',trend:'↑ 6%'},
+  {area:'Wadi Al Safa',price:'AED 1,100',type:'Villa/Apt',trend:'↑ 4%'},
+  {area:'Dubai Festival City',price:'AED 1,900',type:'Apartment',trend:'↑ 6%'},
+  {area:'Dubai Healthcare City',price:'AED 1,500',type:'Apartment',trend:'↑ 5%'},
+  {area:'Al Wasl',price:'AED 2,600',type:'Apartment/Villa',trend:'↑ 9%'},
+  {area:'Jumeirah',price:'AED 2,400',type:'Villa/Apt',trend:'↑ 8%'},
+  {area:'Umm Suqeim',price:'AED 2,550',type:'Villa/Apt',trend:'↑ 8%'},
+  {area:'Nad Al Sheba',price:'AED 1,550',type:'Villa',trend:'↑ 7%'},
+  {area:'Majan',price:'AED 950',type:'Apartment',trend:'↑ 4%'},
+  {area:'Liwan',price:'AED 780',type:'Apartment',trend:'↑ 3%'},
+  {area:'Remraam',price:'AED 820',type:'Apartment',trend:'↑ 3%'},
+  {area:'Serena',price:'AED 1,150',type:'Townhouse',trend:'↑ 5%'},
+  {area:'Mudon',price:'AED 1,350',type:'Townhouse/Villa',trend:'↑ 6%'},
+  {area:'Arabian Ranches',price:'AED 1,750',type:'Villa',trend:'↑ 7%'},
+  {area:'Arabian Ranches 2',price:'AED 1,650',type:'Villa',trend:'↑ 7%'},
+  {area:'Dubai Waterfront',price:'AED 1,000',type:'Apartment',trend:'↑ 4%'},
 ];
 let _areaIdx=0,_areaTimer=null,_areaPaused=false;
 function showAreaPopup(){
@@ -4793,7 +4854,12 @@ function seedAreaPricesIfEmpty(){
     const local=localStorage.getItem('crm_area_price_rows');
     if(local){ try{ areaPriceRows=JSON.parse(local)||[]; }catch(e){} }
   }
-  if(!areaPriceRows.length) areaPriceRows=areaDefaultRows();
+  const defaults=areaDefaultRows();
+  const byId=new Map(defaults.map(r=>[r.id,r]));
+  (areaPriceRows||[]).forEach(r=>{
+    if(r && r.id) byId.set(r.id, { ...(byId.get(r.id)||{}), ...r });
+  });
+  areaPriceRows=[...byId.values()].filter(x=>x.area && x.price);
   localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows));
 }
 function getFilteredAreaPriceRows(){
@@ -4814,8 +4880,8 @@ function getFilteredAreaPriceRows(){
 function renderDashboardAreaIntel(){
   seedAreaPricesIfEmpty();
   const el=document.getElementById('dashAreaPriceRows'); if(!el) return;
-  const top=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price||0)-Number(a.price||0)).slice(0,6);
-  el.innerHTML = '<div class="area-intel-grid">'+top.map(r=>`<div class="area-intel-card"><small>${r.type||'-'}</small><b>${r.area}</b><span>${areaFormatPrice(r.price)} • ${r.trend||'trend n/a'}</span></div>`).join('')+'</div>';
+  const top=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price||0)-Number(a.price||0)).slice(0,12);
+  el.innerHTML = '<div class="area-intel-grid">'+top.map(r=>`<div class="area-intel-card area-clickable" onclick="openAreaPriceDetails('${r.id}')" title="Open ${r.area}"><small>${r.type||'-'}</small><b>${r.area}</b><span>${areaFormatPrice(r.price)} • ${r.trend||'n/a'}</span></div>`).join('')+'</div><div style="font-size:10px;color:var(--text3);margin-top:8px;">Showing top '+top.length+' premium/high-value areas. Tap View All for full Dubai list.</div>';
 }
 function populateAreaCheckerOptions(){
   const sel=document.getElementById('areaCheckArea'); if(!sel) return;
@@ -4837,7 +4903,7 @@ function renderAreaPricesPage(){
   }
   const list=document.getElementById('areaPriceList');
   if(list){
-    list.innerHTML=arr.length?arr.map(r=>`<div class="area-intel-row"><div><b>${r.area}</b><div style="font-size:10px;color:var(--text3);">Updated ${new Date(Number(r.updatedAt)||Date.now()).toLocaleDateString('en-GB')}</div></div><div style="color:var(--green);font-weight:800;">${areaFormatPrice(r.price)}</div><div>${r.type||'-'}</div><div><span class="area-pill ${areaTrendNum(r.trend)>=10?'green':areaTrendNum(r.trend)>=4?'yellow':'red'}">${r.trend||'n/a'}</span></div><div style="font-size:11px;color:var(--text3);">${r.source||'Manual'}</div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="copyAreaRow('${r.id}')">Copy</button><button class="btn btn-blue btn-sm" onclick="editAreaPriceRow('${r.id}')">Edit</button></div></div>`).join(''):'<div class="empty">No area found.</div>';
+    list.innerHTML=arr.length?arr.map(r=>`<div class="area-intel-row area-clickable" onclick="openAreaPriceDetails('${r.id}')"><div><b>${r.area}</b><div style="font-size:10px;color:var(--text3);">Updated ${new Date(Number(r.updatedAt)||Date.now()).toLocaleDateString('en-GB')}</div></div><div style="color:var(--green);font-weight:800;">${areaFormatPrice(r.price)}</div><div>${r.type||'-'}</div><div><span class="area-pill ${areaTrendNum(r.trend)>=10?'green':areaTrendNum(r.trend)>=4?'yellow':'red'}">${r.trend||'n/a'}</span></div><div style="font-size:11px;color:var(--text3);">${r.source||'Manual'}</div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyAreaRow('${r.id}')">Copy</button><button class="btn btn-blue btn-sm" onclick="event.stopPropagation();editAreaPriceRow('${r.id}')">Edit</button></div></div>`).join(''):'<div class="empty">No area found.</div>';
   }
   const meta=document.getElementById('areaPriceMeta'); if(meta) meta.textContent=`Showing ${arr.length} of ${areaPriceRows.length} areas • Source is manual/cached unless connected to a paid official API.`;
   calculateAreaDealCheck();
@@ -4857,6 +4923,43 @@ function calculateAreaDealCheck(){
   const fairLow=avg*size*0.95, fairHigh=avg*size*1.05;
   el.innerHTML=`<div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px;">${verdict}</div><div>Area avg: <b>${areaFormatPrice(avg)}</b></div><div>Unit asking: <b>${areaFormatPrice(unitPsf)}</b></div><div>Difference: <span class="area-pill ${cls}">${diffPct>0?'+':''}${diffPct.toFixed(1)}%</span></div><div>Indicative fair range: <b>AED ${Math.round(fairLow).toLocaleString('en-US')} – AED ${Math.round(fairHigh).toLocaleString('en-US')}</b></div>`;
 }
+function openAreaPriceDetails(id){
+  seedAreaPricesIfEmpty();
+  const r=(areaPriceRows||[]).find(x=>x.id===id);
+  if(!r){ toast('Area not found','error'); return; }
+  const avg=Number(r.price)||0;
+  const updated=new Date(Number(r.updatedAt)||Date.now()).toLocaleString('en-GB');
+  const html=`
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <div>
+        <div style="font-size:20px;font-weight:900;color:var(--text);">${r.area}</div>
+        <div style="font-size:12px;color:var(--text3);">${r.type||'-'} • ${r.source||'Manual / cached'}</div>
+      </div>
+      <div style="font-size:22px;font-weight:900;color:var(--green);">${areaFormatPrice(avg)}</div>
+    </div>
+    <div class="area-detail-grid">
+      <div class="area-detail-mini"><small>Average AED / sqft</small><b>${areaFormatPrice(avg)}</b></div>
+      <div class="area-detail-mini"><small>Trend</small><b>${r.trend||'n/a'}</b></div>
+      <div class="area-detail-mini"><small>Property Type</small><b>${r.type||'-'}</b></div>
+      <div class="area-detail-mini"><small>Last Updated</small><b>${updated}</b></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;color:var(--text2);line-height:1.7;margin-top:10px;">
+      Use this as a quick market reference before pitching, valuation or comparison. For final client advice, verify with DXB Interact / official transaction data.
+    </div>
+    <div class="dashboard-modal-actions">
+      <button class="btn btn-green" onclick="copyAreaRow('${r.id}')">📋 Copy Snapshot</button>
+      <button class="btn btn-blue" onclick="useAreaInChecker('${r.id}')">⚖️ Use in Checker</button>
+      <button class="btn btn-ghost" onclick="editAreaPriceRow('${r.id}')">✏️ Edit Price</button>
+      <button class="btn btn-ghost" onclick="closeDashboardDataModal();nav('areaprices', null);syncBottomNav('areaprices')">Open Full List</button>
+    </div>`;
+  openDashboardModal('Area Price Details', html);
+}
+function useAreaInChecker(id){
+  closeDashboardDataModal();
+  nav('areaprices', null); syncBottomNav('areaprices');
+  setTimeout(()=>{ const s=document.getElementById('areaCheckArea'); if(s){s.value=id; calculateAreaDealCheck(); s.scrollIntoView({behavior:'smooth',block:'center'});} },100);
+}
+
 function addAreaPriceRow(){ editAreaPriceRow(null); }
 function editAreaPriceRow(id){
   seedAreaPricesIfEmpty();
