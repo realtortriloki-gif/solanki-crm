@@ -371,6 +371,20 @@ tr:hover td{background:#161616;}
 .deal-mini small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
 .deal-mini b{font-size:13px;}
 
+
+/* Compact sync pill + clickable dashboard cards */
+.compact-sync-row{display:flex;justify-content:flex-end;margin:-6px 0 14px 0;}
+.sync-mini-pill{display:inline-flex;align-items:center;gap:8px;background:#101827;border:1px solid #1e4a7c;color:#60a5fa;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.22);}
+.sync-mini-pill:hover{background:#13233a;border-color:#2b6cb0;}
+.stat-card{cursor:pointer;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.25);}
+.dashboard-data-list{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto;}
+.dashboard-data-item{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px;font-size:13px;line-height:1.55;}
+.dashboard-data-item b{color:var(--text);}
+.dashboard-data-item small{color:var(--text3);display:block;margin-top:2px;}
+.dashboard-modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+@media(max-width:768px){.compact-sync-row{justify-content:flex-start;margin:0 0 12px 0}.sync-mini-pill{width:100%;justify-content:center}.stat-card:hover{transform:none}}
+
 </style>
 </head>
 <body>
@@ -449,12 +463,8 @@ tr:hover td{background:#161616;}
   </div>
   <h2 style="font-size:18px;font-weight:600;margin-bottom:4px;">Dashboard <span style="font-size:11px;color:var(--green);font-weight:500;">ADVANCED v9</span></h2>
   <p style="font-size:13px;color:var(--text3);margin-bottom:1.25rem;" id="dash-date"></p>
-  <div class="card" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-color:#1e4a7c;background:linear-gradient(135deg,#101827,#111);">
-    <div>
-      <div style="font-size:13px;font-weight:800;color:#60a5fa;margin-bottom:4px;">☁️ Offline + Live Sync Enabled</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.6;">Use the same hosted CRM link on laptop and mobile. Offline changes save locally; when internet returns, they merge back to Supabase and update the other device.</div>
-    </div>
-    <button class="btn btn-blue" onclick="manualCRMSync()">↻ Sync Now</button>
+  <div class="compact-sync-row">
+    <button class="sync-mini-pill" onclick="manualCRMSync()" title="Offline changes are saved locally and synced to Supabase when online">☁️ Sync Now</button>
   </div>
   <div class="stats-grid" id="statsGrid"></div>
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.25rem;">
@@ -1381,6 +1391,62 @@ function toast(msg, type='success'){
   setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2500);
 }
 
+
+function renderNewsFallbackCards(){
+  const links=[
+    ['Khaleej Times','https://www.khaleejtimes.com/uae'],
+    ['Arabian Business','https://www.arabianbusiness.com/industries/real-estate'],
+    ['Gulf News','https://gulfnews.com/uae'],
+    ['Dubai Media','https://mediaoffice.ae']
+  ];
+  return links.map(([name,url])=>`<a href="${url}" target="_blank" style="display:block;min-width:190px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;flex-shrink:0;">
+    <div style="font-size:12px;color:var(--blue);font-weight:700;margin-bottom:5px;">📰 ${name}</div>
+    <div style="font-size:10px;color:var(--text3);line-height:1.4;">Live news feed unavailable. Tap to verify directly.</div>
+  </a>`).join('');
+}
+
+function closeDashboardDataModal(){
+  const m=document.getElementById('dashboardDataModal');
+  if(m) m.classList.remove('open');
+}
+function openDashboardModal(title, html){
+  const m=document.getElementById('dashboardDataModal');
+  const t=document.getElementById('dashboardDataTitle');
+  const c=document.getElementById('dashboardDataContent');
+  if(!m||!t||!c) return;
+  t.textContent=title;
+  c.innerHTML=html;
+  m.classList.add('open');
+}
+function _contactMiniList(arr, emptyMsg='No data found'){
+  if(!arr.length) return `<div class="empty">${emptyMsg}</div>`;
+  return `<div class="dashboard-data-list">${arr.slice(0,35).map(c=>`<div class="dashboard-data-item"><b>${escapeHtml(c.name||'Unknown')}</b> <span class="tag tag-${c.status||'pending'}">${c.status||'pending'}</span><small>📞 ${escapeHtml(c.phone||'-')} • ${escapeHtml(c.community||c.project||'-')} • ${escapeHtml(c.source||c.sourceFile||'Manual')}</small></div>`).join('')}</div>${arr.length>35?`<div style="font-size:11px;color:var(--text3);margin-top:8px;">Showing 35 of ${arr.length}. Open Contacts for full list.</div>`:''}`;
+}
+function openDashboardData(type){
+  const today=new Date().toISOString().slice(0,10);
+  let arr=[], title='Dashboard Data', action='';
+  if(type==='total'){ arr=contacts; title='All Contacts'; action=`<button class="btn btn-blue" onclick="closeDashboardDataModal();navToContacts('')">Open Contacts</button>`; }
+  if(type==='contacted'){ arr=contacts.filter(c=>c.status!=='pending'); title='Contacted Leads'; action=`<button class="btn btn-blue" onclick="closeDashboardDataModal();navToContacts('contacted')">Open Contacted</button>`; }
+  if(type==='interested'){ arr=contacts.filter(c=>c.status==='interested'); title='Interested Leads'; action=`<button class="btn btn-blue" onclick="closeDashboardDataModal();navToContacts('interested')">Open Interested</button>`; }
+  if(type==='hot'){ arr=contacts.filter(c=>c.priority==='hot'); title='Hot Leads'; action=`<button class="btn btn-blue" onclick="closeDashboardDataModal();navToContactsPriority('hot')">Open Hot Leads</button>`; }
+  if(type==='followups'){
+    arr=contacts.filter(c=>c.callbackDate&&c.callbackDate<=today&&c.status!=='closed'); title='Follow-ups Due / Overdue'; action=`<button class="btn btn-blue" onclick="closeDashboardDataModal();navToFollowup()">Open Follow-up</button>`;
+  }
+  if(type==='closed'){
+    const deals=(typeof dealEngines!=='undefined'&&Array.isArray(dealEngines)?dealEngines:[]).filter(d=>d.stage==='closed'||d.stage==='commission');
+    const html=deals.length?`<div class="dashboard-data-list">${deals.slice(0,35).map(d=>`<div class="dashboard-data-item"><b>${escapeHtml(d.project||d.property||'Deal')}</b> <span class="deal-stage ds-${d.stage||'closed'}">${d.stage||'closed'}</span><small>Buyer: ${escapeHtml(d.buyer||'-')} • Unit: ${escapeHtml(d.unit||'-')} • Price: AED ${Number(d.selling||0).toLocaleString()}</small></div>`).join('')}</div>`:`<div class="empty">No closed deal data found</div>`;
+    openDashboardModal('Closed / Commission Deals', html+`<div class="dashboard-modal-actions"><button class="btn btn-blue" onclick="closeDashboardDataModal();nav('deals',document.querySelector('.nav-item[onclick*=\'deals\']')||this)">Open Deal Engine</button></div>`); return;
+  }
+  if(type==='commission'){
+    const deals=(typeof dealEngines!=='undefined'&&Array.isArray(dealEngines)?dealEngines:[]);
+    const rows=deals.filter(d=>d.commission).slice(0,40);
+    const total=rows.reduce((a,d)=>a+Number(d.commission?.myCommission||d.commission?.gross||0),0);
+    const html=`<div style="font-size:18px;font-weight:800;color:#fbbf24;margin-bottom:10px;">AED ${Math.round(total).toLocaleString()} tracked in Deal Engine</div>`+(rows.length?`<div class="dashboard-data-list">${rows.map(d=>`<div class="dashboard-data-item"><b>${escapeHtml(d.project||d.property||'Deal')}</b><small>Buyer: ${escapeHtml(d.buyer||'-')} • My Commission: AED ${Math.round(Number(d.commission?.myCommission||0)).toLocaleString()} • Company Net: AED ${Math.round(Number(d.commission?.companyNet||0)).toLocaleString()}</small></div>`).join('')}</div>`:`<div class="empty">No Deal Engine commission rows found. Older contact commission may still be counted in dashboard.</div>`);
+    openDashboardModal('Commission Breakdown', html+`<div class="dashboard-modal-actions"><button class="btn btn-blue" onclick="closeDashboardDataModal();nav('deals',document.querySelector('.nav-item[onclick*=\'deals\']')||this)">Open Deal Engine</button></div>`); return;
+  }
+  openDashboardModal(title, _contactMiniList(arr)+`<div class="dashboard-modal-actions">${action}</div>`);
+}
+
 // ─── STORAGE + OFFLINE-FIRST DEVICE SYNC ─────────────────────────────
 let _saveTimer = null;
 let _remoteApplying = false;
@@ -1746,25 +1812,25 @@ function renderDashboard(){
   const overdueOrToday=contacts.filter(c=>c.callbackDate&&c.callbackDate<=today&&c.status!=='closed').length;
 
   document.getElementById('statsGrid').innerHTML=`
-    <div class="stat-card" onclick="navToContacts('')" style="cursor:pointer;" title="All contacts">
+    <div class="stat-card" onclick="openDashboardData('total')" title="Open all contacts data">
       <div class="stat-val" style="color:var(--blue);">${total}</div><div class="stat-lbl">Total Contacts</div>
     </div>
-    <div class="stat-card" onclick="navToContacts('contacted')" style="cursor:pointer;" title="View contacted">
+    <div class="stat-card" onclick="openDashboardData('contacted')" title="Open contacted data">
       <div class="stat-val" style="color:var(--green);">${contacted}</div><div class="stat-lbl">Contacted</div>
     </div>
-    <div class="stat-card" onclick="navToContacts('interested')" style="cursor:pointer;" title="View interested">
+    <div class="stat-card" onclick="openDashboardData('interested')" title="Open interested data">
       <div class="stat-val" style="color:var(--purple);">${interested}</div><div class="stat-lbl">Interested</div>
     </div>
-    <div class="stat-card" onclick="navToContactsPriority('hot')" style="cursor:pointer;" title="View hot leads">
+    <div class="stat-card" onclick="openDashboardData('hot')" title="Open hot leads">
       <div class="stat-val" style="color:#fb923c;">${hot}</div><div class="stat-lbl">Hot Leads</div>
     </div>
-    <div class="stat-card" onclick="navToFollowup()" style="cursor:pointer;" title="View follow-ups due">
+    <div class="stat-card" onclick="openDashboardData('followups')" title="Open follow-ups due">
       <div class="stat-val" style="color:var(--orange);">${overdueOrToday}</div><div class="stat-lbl">Follow-ups Due</div>
     </div>
-    <div class="stat-card" onclick="navToContacts('closed')" style="cursor:pointer;" title="View closed deals">
+    <div class="stat-card" onclick="openDashboardData('closed')" title="Open closed deals">
       <div class="stat-val" style="color:var(--green);">${totalDeals}</div><div class="stat-lbl">Deals Closed</div>
     </div>
-    <div class="stat-card" style="cursor:default;">
+    <div class="stat-card" onclick="openDashboardData('commission')" title="Open commission data">
       <div class="stat-val" style="color:#fbbf24;font-size:18px;">AED ${totalCommission>0?totalCommission.toLocaleString('en-US',{maximumFractionDigits:0}):'0'}</div><div class="stat-lbl">Total Commission</div>
     </div>
   `;
@@ -3770,7 +3836,7 @@ async function loadMarketData(forceRefresh){
         <a href="${item.link}" target="_blank" style="display:block;min-width:230px;max-width:230px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;flex-shrink:0;">
           <div style="font-size:12px;color:var(--blue);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${item.title}</div>
           <div style="font-size:10px;color:var(--text3);">${item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : 'Live news'}</div>
-        </a>`).join('') : `<div style="color:var(--text3);font-size:12px;">News API unavailable. Use quick links below for verification.</div>`;
+        </a>`).join('') : renderNewsFallbackCards();
     }
     return true;
   };
@@ -4919,5 +4985,17 @@ function convertCurrency(){
   if(el) el.textContent=d+' '+to;
 }
 </script>
+
+<!-- Dashboard Data Modal -->
+<div class="modal-overlay" id="dashboardDataModal">
+  <div class="modal" style="max-width:760px;">
+    <div class="modal-header">
+      <div class="modal-title" id="dashboardDataTitle">Dashboard Data</div>
+      <button class="modal-close" onclick="closeDashboardDataModal()">✕</button>
+    </div>
+    <div id="dashboardDataContent"></div>
+  </div>
+</div>
+
 </body>
 </html>
