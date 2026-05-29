@@ -1434,6 +1434,8 @@ JVC,Apartment,850,950000,2026-05-21"></textarea>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
           <button class="btn btn-red" onclick="ADV_removeExactDuplicates()">Remove Exact Phone Duplicates</button>
           <button class="btn btn-orange" onclick="ADV_markStaleCold()">Move Stale Pending to Cold</button>
+          <button class="btn btn-red" onclick="ADV_deleteInvalidPhones()">Delete Invalid Phone Leads</button>
+          <button class="btn btn-red" onclick="ADV_deleteStalePending()">Delete Stale Pending Leads</button>
           <button class="btn btn-ghost" onclick="ADV_exportDuplicateReport()">Copy Duplicate Report</button>
         </div>
         <div class="adv-small-muted">Danger zone: cleanup changes live contacts. Export before cleaning if data is important.</div>
@@ -1488,7 +1490,7 @@ JVC,Apartment,850,950000,2026-05-21"></textarea>
       </div>
     </div>
     <div class="adv-mini-grid">
-      <div class="adv-tool-card"><h4>📐 Area Price Checker</h4><div class="adv-small-muted">Open Area Prices tab for price/sqft confidence, source and unit comparison.</div><button class="btn btn-blue btn-sm" style="margin-top:8px" onclick="nav('areaPrices',document.getElementById('navAreaPricesBtn')||this)">Open Area Prices</button></div>
+      <div class="adv-tool-card"><h4>📐 Area Price Checker</h4><div class="adv-small-muted">Open Area Prices tab for price/sqft confidence, source and unit comparison.</div><button class="btn btn-blue btn-sm" style="margin-top:8px" onclick="nav('areaprices',document.getElementById('navAreaPricesBtn')||this)">Open Area Prices</button></div>
       <div class="adv-tool-card"><h4>🏠 Deal Engine</h4><div class="adv-small-muted">Open deal room, update stages, documents and commission.</div><button class="btn btn-blue btn-sm" style="margin-top:8px" onclick="nav('deals',this)">Open Deals</button></div>
       <div class="adv-tool-card"><h4>🏗 Off-Plan Hub</h4><div class="adv-small-muted">Smart buyer matching, booking pipeline and off-plan scoring.</div><button class="btn btn-blue btn-sm" style="margin-top:8px" onclick="nav('offplan',this)">Open Off-Plan</button></div>
     </div>
@@ -1849,20 +1851,31 @@ function syncBottomNav(p){
 }
 
 function nav(p, btn){
+  // Robust navigation: prevents crashes from old aliases or programmatic calls without a button.
+  if(p === 'areaPrices') p = 'areaprices';
+  const page = document.getElementById('page-' + p);
+  if(!page){ console.warn('Missing page:', p); return false; }
   document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active');
-  btn.classList.add('active');
-  if(p==='dashboard') renderDashboard();
-  if(p==='contacts') renderContacts();
-  if(p==='outreach') renderOutreach();
-  if(p==='followup') renderFU();
-  if(p==='pipeline') renderPipeline();
-  if(p==='projects') renderProjects();
+  page.classList.add('active');
+  if(btn && btn.classList) btn.classList.add('active');
+  else {
+    const navBtn = document.querySelector(`[onclick*="nav('${p}'"], [onclick*='nav("${p}"']`);
+    if(navBtn && navBtn.classList) navBtn.classList.add('active');
+  }
+  if(typeof syncBottomNav === 'function') syncBottomNav(p);
+  if(p==='dashboard' && typeof renderDashboard === 'function') renderDashboard();
+  if(p==='contacts' && typeof renderContacts === 'function') renderContacts();
+  if(p==='outreach' && typeof renderOutreach === 'function') renderOutreach();
+  if(p==='followup' && typeof renderFU === 'function') renderFU();
+  if(p==='pipeline' && typeof renderPipeline === 'function') renderPipeline();
+  if(p==='projects' && typeof renderProjects === 'function') renderProjects();
   if(p==='deals' && typeof renderDeals === 'function') renderDeals();
   if(p==='commission' && typeof renderCommissionCenter === 'function') renderCommissionCenter();
   if(p==='offplan' && typeof renderOffplanHub === 'function') renderOffplanHub();
   if(p==='areaprices' && typeof renderAreaPricesPage === 'function') renderAreaPricesPage();
+  if(p==='advanced' && typeof ADV_refreshAdvanced === 'function') ADV_refreshAdvanced(false);
+  return true;
 }
 
 // ─── TOAST NOTIFICATION ──────────────────────────────────────────────
@@ -4954,7 +4967,7 @@ function ADV_renderQueue(m){
   body.innerHTML=rows.length ? rows.map((c,i)=>{
     const problems=ADV_contactProblems(c); const p=problems.length?problems.join(', '):'Clean';
     const wa=ADV_cleanPhone(c.phone)?`https://wa.me/${ADV_cleanPhone(c.phone)}?text=${encodeURIComponent('Hi '+(c.name||'')+', hope you are doing well. Just checking if you are still open to discuss Dubai real estate options. Simple yes/no is fine.')}`:'#';
-    return `<tr class="adv-click-row"><td>${i+1}</td><td>${c.name||'-'}</td><td>${c.phone||'-'}</td><td><span class="tag tag-${c.status||'pending'}">${c.status||'pending'}</span></td><td><span class="tag tag-${c.priority||'cold'}">${c.priority||'cold'}</span></td><td>${c.community||'-'}</td><td>${p}</td><td><a class="btn btn-green btn-sm" target="_blank" href="${wa}">WhatsApp</a></td></tr>`;
+    return `<tr class="adv-click-row"><td>${i+1}</td><td>${c.name||'-'}</td><td>${c.phone||'-'}</td><td><span class="tag tag-${c.status||'pending'}">${c.status||'pending'}</span></td><td><span class="tag tag-${c.priority||'cold'}">${c.priority||'cold'}</span></td><td>${c.community||'-'}</td><td>${p}</td><td><div style="display:flex;gap:6px;flex-wrap:wrap;"><a class="btn btn-green btn-sm" target="_blank" href="${wa}">WhatsApp</a><button class="btn btn-red btn-sm" onclick="ADV_deleteContact(${c.id});event.stopPropagation();">Delete</button></div></td></tr>`;
   }).join('') : `<tr><td colspan="8" class="empty">No matching contacts.</td></tr>`;
 }
 function ADV_renderOutreachRules(m){
@@ -5011,6 +5024,45 @@ function ADV_exportDuplicateReport(){
   const dups=ADV_findDuplicates();
   const text=dups.map(([p,arr])=>`${p}: ${arr.map(c=>c.name||'Unnamed').join(', ')}`).join('\n') || 'No duplicates found';
   navigator.clipboard.writeText(text).then(()=>toast('Duplicate report copied'));
+}
+function ADV_deleteContact(id){
+  const idx=(contacts||[]).findIndex(c=>String(c.id)===String(id));
+  if(idx<0){ toast('Contact not found'); return; }
+  const c=contacts[idx];
+  const label=(c.name||'Unnamed') + (c.phone ? ' / '+c.phone : '');
+  if(!confirm('Delete this lead permanently?\n\n' + label)) return;
+  contacts.splice(idx,1);
+  save();
+  if(typeof renderDashboard==='function') renderDashboard();
+  if(typeof renderContacts==='function') renderContacts();
+  if(typeof renderFollowups==='function') renderFollowups();
+  if(typeof renderPipeline==='function') renderPipeline();
+  ADV_refreshAdvanced(false);
+  toast('Lead deleted');
+}
+function ADV_deleteInvalidPhones(){
+  const bad=(contacts||[]).filter(c=>!ADV_cleanPhone(c.phone));
+  if(!bad.length){ toast('No invalid phone leads found'); return; }
+  if(!confirm('Delete '+bad.length+' lead(s) with missing/invalid phone numbers? This cannot be undone unless you have backup/export.')) return;
+  const badIds=new Set(bad.map(c=>String(c.id)));
+  contacts=(contacts||[]).filter(c=>!badIds.has(String(c.id)));
+  save();
+  if(typeof renderDashboard==='function') renderDashboard();
+  if(typeof renderContacts==='function') renderContacts();
+  ADV_refreshAdvanced(false);
+  toast(bad.size ? bad.size+' invalid leads deleted' : bad.length+' invalid leads deleted');
+}
+function ADV_deleteStalePending(){
+  const stale=(contacts||[]).filter(c=>(c.status||'pending')==='pending' && ADV_daysSinceLast(c)>30);
+  if(!stale.length){ toast('No stale pending leads found'); return; }
+  if(!confirm('Delete '+stale.length+' stale pending lead(s)? Better export before deleting.')) return;
+  const staleIds=new Set(stale.map(c=>String(c.id)));
+  contacts=(contacts||[]).filter(c=>!staleIds.has(String(c.id)));
+  save();
+  if(typeof renderDashboard==='function') renderDashboard();
+  if(typeof renderContacts==='function') renderContacts();
+  ADV_refreshAdvanced(false);
+  toast(stale.length+' stale pending leads deleted');
 }
 function ADV_removeExactDuplicates(){
   const dups=ADV_findDuplicates(); if(!dups.length){ toast('No exact phone duplicates found'); return; }
@@ -6476,12 +6528,8 @@ function dxbParseAreaMetrics(text){
     /([A-Z][A-Za-z0-9 '&.\-]+?)\s+([0-9]{3,5}(?:,[0-9]{3})?)\s*AED\s*per\s*sqft/gi
   ];
   patterns.forEach(re=>{ let m; while((m=re.exec(raw))){ add(m[1], 'Apartment', m[2], 0, ''); } });
-  // Card style copied text can be: area 
- value AED 
- price AED per sqft
-  const lines=raw.split(/
-?
-/).map(l=>l.trim()).filter(Boolean);
+  // Card style copied text can be: area / value AED / price AED per sqft
+  const lines=raw.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   for(let i=0;i<lines.length;i++){
     const a=lines[i];
     const b=lines[i+1]||'';
