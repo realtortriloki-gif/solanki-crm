@@ -1281,6 +1281,7 @@ tr:hover td{background:#161616;}
         <select id="commissionSort" onchange="renderCommissionCenter()"><option value="updatedDesc">Recently Updated</option><option value="myDesc">Highest My Commission</option><option value="companyDesc">Highest Company Net</option><option value="valueDesc">Highest Deal Value</option></select>
       </div>
       <div class="comm-note">Best practice: don’t keep commission as a separate random entry. Keep it attached to its deal, otherwise later reconciliation becomes messy.</div>
+      <div id="commissionFilterStatus" class="comm-note" style="margin-top:8px;color:var(--blue);"></div>
     </div>
   </div>
 
@@ -5331,9 +5332,17 @@ function getCommissionDealRows(){
 }
 function renderCommissionCenter(){
   const rows=getCommissionDealRows();
-  const all=(Array.isArray(dealEngines)?dealEngines:[]).map(d=>d.commission||ccCalc(d.sellingPrice||0,d.revenuePct||0,d.referralBonus||0,d.splitPct||0,d.agentBonus||0));
+  const allDeals=(Array.isArray(dealEngines)?dealEngines:[]);
+  const activeStage=document.getElementById('commissionStageFilter')?.value||'';
+  const activeSearch=String(document.getElementById('commissionSearch')?.value||'').trim();
+  const statusEl=document.getElementById('commissionFilterStatus');
+  if(statusEl){
+    const label=activeStage ? dealStageLabel(activeStage) : 'All Stages';
+    statusEl.innerHTML=`Showing <b style="color:var(--text);">${rows.length}</b> deal(s) from <b style="color:var(--text);">${label}</b>${activeSearch ? ' matching search' : ''}. Total deals in Deal Engine: <b style="color:var(--text);">${allDeals.length}</b>.`;
+  }
+  const all=allDeals.map(d=>d.commission||ccCalc(d.sellingPrice||0,d.revenuePct||0,d.referralBonus||0,d.splitPct||0,d.agentBonus||0));
   const sum=k=>all.reduce((t,c)=>t+(Number(c[k])||0),0);
-  const totalDeal=(Array.isArray(dealEngines)?dealEngines:[]).reduce((t,d)=>t+(Number(d.sellingPrice)||0),0);
+  const totalDeal=allDeals.reduce((t,d)=>t+(Number(d.sellingPrice)||0),0);
   const kpis=document.getElementById('commissionKpis');
   if(kpis) kpis.innerHTML=`
     <div class="comm-card"><small>Total Deals Value</small><b>${ccMoney(totalDeal)}</b></div>
@@ -5342,7 +5351,15 @@ function renderCommissionCenter(){
     <div class="comm-card purple"><small>Total Agent Earning</small><b>${ccMoney(sum('totalAgentEarning'))}</b></div>
     <div class="comm-card blue"><small>Net Company Revenue</small><b>${ccMoney(sum('companyNet'))}</b></div>`;
   const el=document.getElementById('commissionRows'); if(!el) return;
-  if(!rows.length){ el.innerHTML='<div class="empty">No commission rows found. Create deals inside Deal Engine first.</div>'; return; }
+  if(!rows.length){
+    const total=allDeals.length;
+    if(total){
+      el.innerHTML=`<div class="empty">No rows match the current filter. Your Deal Engine has ${total} deal(s).<br><button class="btn btn-blue" style="margin-top:12px;" onclick="document.getElementById('commissionStageFilter').value='';document.getElementById('commissionSearch').value='';renderCommissionCenter();">Show All Deals</button></div>`;
+    }else{
+      el.innerHTML='<div class="empty">No commission rows found. Create deals inside Deal Engine first.</div>';
+    }
+    return;
+  }
   el.innerHTML=rows.map(d=>{
     const c=d._commission||{};
     const title=(d.project||d.property||'Untitled Deal')+(d.unit?' • '+d.unit:'');
