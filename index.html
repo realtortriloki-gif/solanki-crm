@@ -50,7 +50,8 @@ window.saveToFirebase = async function(data) {
   const payload = {
     contacts: Array.isArray(data.contacts) ? data.contacts : [],
     projects: Array.isArray(data.projects) ? data.projects : [],
-    settings: { ...(data.settings || {}), __sync: syncMeta() }
+    settings: { ...(data.settings || {}), __sync: syncMeta() },
+    dealEngines: Array.isArray(data.dealEngines) ? data.dealEngines : (typeof dealEngines !== 'undefined' ? dealEngines : [])
   };
 
   if(!isOnlineNow()){
@@ -64,7 +65,8 @@ window.saveToFirebase = async function(data) {
       id: 'main',
       contacts: payload.contacts,
       projects: payload.projects,
-      settings: payload.settings
+      settings: payload.settings,
+      dealEngines: payload.dealEngines
     }, { onConflict: 'id' });
     if(error){
       console.error('Supabase save error:', error);
@@ -73,6 +75,7 @@ window.saveToFirebase = async function(data) {
       return { ok:false, error };
     }
     localStorage.setItem(CRM_LAST_SYNC_KEY, new Date().toISOString());
+    localStorage.setItem('crm_deal_engines', JSON.stringify(payload.dealEngines));
     markPendingSync(false);
     if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('synced', 'Synced');
     return { ok:true };
@@ -89,7 +92,12 @@ window.loadFromFirebase = async function() {
   try {
     const { data, error } = await _sb.from('crm_data').select('*').eq('id','main').maybeSingle();
     if(error) { console.error('Supabase load error:', error); return null; }
-    if(data) return { contacts: data.contacts||[], projects: data.projects||[], settings: data.settings||{} };
+    if(data) return {
+      contacts: data.contacts||[],
+      projects: data.projects||[],
+      settings: data.settings||{},
+      dealEngines: Array.isArray(data.dealEngines) ? data.dealEngines : []
+    };
   } catch(e) { console.error('Supabase load exception:', e); }
   return null;
 };
@@ -298,6 +306,25 @@ tr:hover td{background:#161616;}
 .divider{height:1px;background:var(--border);margin:12px 0;}
 .bulk-bar{display:flex;gap:8px;align-items:center;background:var(--bg2);border-radius:8px;padding:8px 12px;border:1px solid var(--border);margin-bottom:10px;}
 .bulk-bar span{font-size:12px;color:var(--text3);white-space:nowrap;}
+
+/* ── Deal Engine ─────────────────────────────────────────────────── */
+.deal-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:10px;transition:border-color .15s;cursor:pointer;}
+.deal-card:hover{border-color:#3a3a3a;}
+.deal-stage-label{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.ds-interested{background:#1a1a3a;color:var(--purple);}
+.ds-offer{background:#1a2a0a;color:#86efac;}
+.ds-formf{background:#0a2a3a;color:var(--blue);}
+.ds-noc{background:#2a1a0a;color:var(--orange);}
+.ds-trustee{background:#1a0a2a;color:#c4b5fd;}
+.ds-transfer{background:#0a2a1a;color:var(--green);}
+.ds-closed{background:#1a3a1a;color:#4ade80;}
+.deal-stage-btn.active{background:var(--bg4)!important;color:var(--text)!important;border-color:#3a3a3a!important;}
+.doc-check{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.doc-check input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--green);}
+.deal-timeline-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.deal-tl-dot{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:4px;}
+.det-tab-btn{flex:1;padding:7px 4px;font-size:12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;white-space:nowrap;}
+.det-tab-btn.active{background:var(--bg4);border-color:#3a3a3a;color:var(--text);}
 </style>
 </head>
 <body>
@@ -312,6 +339,7 @@ tr:hover td{background:#161616;}
   <button class="nav-item" onclick="nav('followup',this)"><span class="nav-icon">🔔</span> Follow-up</button>
   <button class="nav-item" onclick="nav('pipeline',this)"><span class="nav-icon">🏆</span> Pipeline</button>
   <button class="nav-item" onclick="nav('projects',this)"><span class="nav-icon">🏗️</span> Projects</button>
+  <button class="nav-item" onclick="nav('deals',this)"><span class="nav-icon">🏠</span> Deal Engine</button>
   <button class="nav-item" onclick="nav('settings',this)"><span class="nav-icon">⚙️</span> Settings</button>
   <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
   <button class="nav-item" onclick="openCalcModal('mortgage')" style="background:#0a2a1a;color:#25D366;border:1px solid #1a4a2a;"><span class="nav-icon">🏦</span> Mortgage</button>
@@ -342,6 +370,9 @@ tr:hover td{background:#161616;}
   </button>
   <button onclick="nav('projects',this);syncBottomNav('projects')" id="bnav-projects">
     <span class="bnav-icon">🏗️</span><span>Projects</span>
+  </button>
+  <button onclick="nav('deals',this);syncBottomNav('deals')" id="bnav-deals">
+    <span class="bnav-icon">🏠</span><span>Deals</span>
   </button>
   <button onclick="openCalcModal('mortgage')" id="bnav-calc">
     <span class="bnav-icon">🧮</span><span>Calc</span>
@@ -447,21 +478,7 @@ tr:hover td{background:#161616;}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
     <h2 style="font-size:18px;font-weight:600;">Contacts</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-green" onclick="openAddContact()">+ Add</button>
-      <div style="position:relative;display:inline-block;">
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('quickAddMenu').style.display=document.getElementById('quickAddMenu').style.display==='none'?'block':'none'" style="font-size:18px;padding:4px 8px;" title="Quick Add from Social">⚡</button>
-        <div id="quickAddMenu" style="display:none;position:absolute;top:100%;left:0;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:6px;z-index:999;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
-          <div style="font-size:10px;color:var(--text3);padding:4px 8px;text-transform:uppercase;letter-spacing:0.5px;">Quick Add from</div>
-          <button onclick="quickAdd('WhatsApp');document.getElementById('quickAddMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:transparent;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#1a3a28'" onmouseout="this.style.background='transparent'">💬 WhatsApp</button>
-          <button onclick="quickAdd('Facebook');document.getElementById('quickAddMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:transparent;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#1a2a3a'" onmouseout="this.style.background='transparent'">📘 Facebook</button>
-          <button onclick="quickAdd('Instagram');document.getElementById('quickAddMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:transparent;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#3a1a2a'" onmouseout="this.style.background='transparent'">📸 Instagram</button>
-          <button onclick="quickAdd('LinkedIn');document.getElementById('quickAddMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:transparent;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#1a2a3a'" onmouseout="this.style.background='transparent'">💼 LinkedIn</button>
-          <button onclick="quickAdd('Referral');document.getElementById('quickAddMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:transparent;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#2a1a0a'" onmouseout="this.style.background='transparent'">🤝 Referral</button>
-          <button onclick="quickAdd('Walk In');document.getElementById('quickAddMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:transparent;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='transparent'">🚶 Walk In</button>
-          <button onclick="quickAdd('PropertyFinder');document.getElementById('quickAddMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:transparent;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='transparent'">🏠 PropertyFinder</button>
-          <button onclick="quickAdd('Bayut');document.getElementById('quickAddMenu').style.display='none'" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;background:transparent;border:none;color:var(--text);font-size:13px;cursor:pointer;border-radius:6px;font-family:inherit;" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='transparent'">🏡 Bayut</button>
-        </div>
-      </div>
+      <button class="btn btn-green" onclick="openAddContact()">+ Add Contact</button>
       <button class="btn btn-ghost" onclick="openImport()">⬆ Import Excel</button>
       <button class="btn btn-ghost" onclick="document.getElementById('csvDirectInput').click()">⬆ Import CSV</button>
       <input type="file" id="csvDirectInput" accept=".csv,.txt" style="display:none;" onchange="handleDirectCSV(event)"/>
@@ -654,6 +671,24 @@ tr:hover td{background:#161616;}
 </div>
 
 <!-- SETTINGS -->
+<div id="page-deals" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+    <h2 style="font-size:18px;font-weight:600;">🏠 Deal Engine</h2>
+    <button class="btn btn-green" onclick="openNewDeal()">+ New Deal</button>
+  </div>
+  <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:1rem;-webkit-overflow-scrolling:touch;">
+    <button class="btn btn-ghost btn-sm deal-stage-btn active" onclick="filterDeals('all',this)">All</button>
+    <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('interested',this)">🤝 Interested</button>
+    <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('offer',this)">📝 Offer</button>
+    <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('formf',this)">📋 Form F</button>
+    <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('noc',this)">🏛 NOC</button>
+    <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('trustee',this)">🤝 Trustee</button>
+    <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('transfer',this)">🔑 Transfer</button>
+    <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('closed',this)">✅ Closed</button>
+  </div>
+  <div id="dealEngineList"></div>
+</div>
+
 <div id="page-settings" class="page">
   <h2 style="font-size:18px;font-weight:600;margin-bottom:1.25rem;">Settings</h2>
   <div class="card">
@@ -1149,16 +1184,32 @@ function mergeCRMData(localData, remoteData){
   const settingsWinner = Number(remoteMeta.updatedAt||0) > Number(localMeta.updatedAt||0)
     ? { ...(localData.settings||{}), ...(remoteData.settings||{}) }
     : { ...(remoteData.settings||{}), ...(localData.settings||{}) };
+
+  // Merge dealEngines by id — keep whichever has newer updatedAt
+  const localDE = Array.isArray(localData.dealEngines) ? localData.dealEngines : [];
+  const remoteDE = Array.isArray(remoteData.dealEngines) ? remoteData.dealEngines : [];
+  const deMap = {};
+  localDE.forEach(d=>{ if(d.id) deMap[d.id]=d; });
+  remoteDE.forEach(d=>{
+    if(!d.id) return;
+    if(!deMap[d.id] || Number(d.updatedAt||0) > Number(deMap[d.id].updatedAt||0)){
+      deMap[d.id]=d;
+    }
+  });
+  const mergedDealEngines = Object.values(deMap).sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0));
+
   return {
     contacts: mergeByRecordTime(localData.contacts||[], remoteData.contacts||[], 'c'),
     projects: mergeByRecordTime(localData.projects||[], remoteData.projects||[], 'p'),
-    settings: { ...settingsWinner, __sync: { ...(settingsWinner.__sync||{}), lastMergedAt: Date.now() } }
+    settings: { ...settingsWinner, __sync: { ...(settingsWinner.__sync||{}), lastMergedAt: Date.now() } },
+    dealEngines: mergedDealEngines
   };
 }
 function persistLocalCRM(){
   localStorage.setItem('sccrm_contacts', JSON.stringify(contacts));
   localStorage.setItem('sccrm_settings', JSON.stringify(settings));
   localStorage.setItem('sccrm_projects', JSON.stringify(projects));
+  if(typeof dealEngines !== 'undefined') localStorage.setItem('crm_deal_engines', JSON.stringify(dealEngines));
 }
 function applySettingsToInputs(){
   const n=document.getElementById('agentName'), c=document.getElementById('agentCompany'), t=document.getElementById('agentTagline');
@@ -1174,6 +1225,7 @@ function refreshActiveCRMViews(){
     if(document.getElementById('page-followup')?.classList.contains('active') && typeof renderFU === 'function') renderFU();
     if(document.getElementById('page-pipeline')?.classList.contains('active') && typeof renderPipeline === 'function') renderPipeline();
     if(document.getElementById('page-projects')?.classList.contains('active') && typeof renderProjects === 'function') renderProjects();
+    if(document.getElementById('page-deals')?.classList.contains('active') && typeof renderDeals === 'function') renderDeals();
   }catch(e){ console.warn('View refresh failed:', e); }
 }
 window.updateSyncBadge = function(forceState, forceText){
@@ -1212,7 +1264,7 @@ function save(){
   }catch(e){ console.error('Local save failed:', e); }
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(()=>{
-    try{ window.saveToFirebase({contacts, settings, projects}); }catch(e){ console.error(e); }
+    try{ window.saveToFirebase({contacts, settings, projects, dealEngines: typeof dealEngines !== 'undefined' ? dealEngines : []}); }catch(e){ console.error(e); }
   }, 1200);
   if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
 }
@@ -1222,6 +1274,7 @@ function load(){
     const c=localStorage.getItem('sccrm_contacts'); if(c) contacts=JSON.parse(c);
     const s=localStorage.getItem('sccrm_settings'); if(s){ settings=JSON.parse(s); applySettingsToInputs(); }
     const p=localStorage.getItem('sccrm_projects'); if(p) projects=JSON.parse(p);
+    const de=localStorage.getItem('crm_deal_engines'); if(de && typeof dealEngines !== 'undefined') dealEngines=JSON.parse(de);
   }catch(e){ console.error('Local load failed:', e); }
   if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
 }
@@ -1235,18 +1288,21 @@ async function loadFromCloud(){
     if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('syncing', 'Syncing...');
     const remote = await window.loadFromFirebase();
     if(remote && (remote.contacts || remote.projects || remote.settings)){
-      const merged = mergeCRMData({contacts, projects, settings}, remote);
+      const localDE = typeof dealEngines !== 'undefined' ? dealEngines : [];
+      const merged = mergeCRMData({contacts, projects, settings, dealEngines: localDE}, remote);
       _remoteApplying = true;
       contacts = merged.contacts;
       projects = merged.projects;
       settings = merged.settings;
+      if(typeof dealEngines !== 'undefined') dealEngines = merged.dealEngines || [];
       persistLocalCRM();
       applySettingsToInputs();
       _remoteApplying = false;
       refreshActiveCRMViews();
-      await window.saveToFirebase({contacts, settings, projects});
+      if(document.getElementById('page-deals')?.classList.contains('active') && typeof renderDeals==='function') renderDeals();
+      await window.saveToFirebase({contacts, settings, projects, dealEngines: typeof dealEngines !== 'undefined' ? dealEngines : []});
     }else{
-      await window.saveToFirebase({contacts, settings, projects});
+      await window.saveToFirebase({contacts, settings, projects, dealEngines: typeof dealEngines !== 'undefined' ? dealEngines : []});
     }
     if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('synced', 'Synced');
   } catch(e){
@@ -1260,18 +1316,26 @@ async function loadFromCloud(){
 window.handleRemoteCRMUpdate = function(row){
   try{
     if(!row) return;
-    const remote = { contacts: row.contacts||[], projects: row.projects||[], settings: row.settings||{} };
+    const remote = {
+      contacts: row.contacts||[],
+      projects: row.projects||[],
+      settings: row.settings||{},
+      dealEngines: Array.isArray(row.dealEngines) ? row.dealEngines : []
+    };
     const meta = remote.settings && remote.settings.__sync;
     if(meta && meta.deviceId === window.CRM_DEVICE_ID) return;
-    const merged = mergeCRMData({contacts, projects, settings}, remote);
+    const localDE = typeof dealEngines !== 'undefined' ? dealEngines : [];
+    const merged = mergeCRMData({contacts, projects, settings, dealEngines: localDE}, remote);
     _remoteApplying = true;
     contacts = merged.contacts;
     projects = merged.projects;
     settings = merged.settings;
+    if(typeof dealEngines !== 'undefined') dealEngines = merged.dealEngines || [];
     persistLocalCRM();
     applySettingsToInputs();
     _remoteApplying = false;
     refreshActiveCRMViews();
+    if(document.getElementById('page-deals')?.classList.contains('active') && typeof renderDeals==='function') renderDeals();
     localStorage.setItem('sccrm_last_sync_at', new Date().toISOString());
     localStorage.setItem('sccrm_pending_sync', '0');
     if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('synced', 'Live update received');
@@ -2325,24 +2389,6 @@ Return ONLY the JSON. No explanation.`;
   }
 }
 
-function quickAdd(source){
-  openAddContact();
-  setTimeout(()=>{
-    document.getElementById('ac_source').value = source;
-    // Highlight the source field
-    const el = document.getElementById('ac_source');
-    el.style.borderColor = 'var(--green)';
-    el.style.background = '#0a2a1a';
-    setTimeout(()=>{ el.style.borderColor=''; el.style.background=''; }, 2000);
-  }, 100);
-  // Close menu if clicked outside
-  document.addEventListener('click', function closeMenu(e){
-    const menu = document.getElementById('quickAddMenu');
-    if(menu && !menu.contains(e.target)) menu.style.display='none';
-    document.removeEventListener('click', closeMenu);
-  }, {once: true});
-}
-
 function openAddContact(){
   document.getElementById('ac_name').value='';
   document.getElementById('ac_phone').value='';
@@ -2982,13 +3028,6 @@ function sendProjectWA(){
 }
 
 // Update preview when contact selected
-document.addEventListener('click', function(e){
-  const menu = document.getElementById('quickAddMenu');
-  if(menu && !document.querySelector('[onclick*="quickAddMenu"]')?.contains(e.target)){
-    menu.style.display = 'none';
-  }
-});
-
 document.addEventListener('DOMContentLoaded',()=>{
   loadCustomTemplatesInSelect();
   const sel=document.getElementById('sp_contact');
@@ -4269,5 +4308,449 @@ function convertCurrency(){
   if(el) el.textContent=d+' '+to;
 }
 </script>
+<!-- Deal Engine Modal -->
+<div class="modal-overlay" id="dealEngineModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <div class="modal-title" id="dealEngineModalTitle">🏠 New Deal</div>
+      <button class="modal-close" onclick="closeDealEngineModal()">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;">
+      <button class="det-tab-btn active" id="det-details" onclick="setDETab('details')">📋 Details</button>
+      <button class="det-tab-btn" id="det-financial" onclick="setDETab('financial')">💰 Commission</button>
+      <button class="det-tab-btn" id="det-docs" onclick="setDETab('docs')">📁 Documents</button>
+      <button class="det-tab-btn" id="det-timeline" onclick="setDETab('timeline')">⏱ Timeline</button>
+    </div>
+
+    <!-- TAB: Details -->
+    <div id="deTab-details">
+      <div class="row2" style="gap:10px;margin-bottom:10px;">
+        <div><label class="lbl">Stage</label>
+          <select id="de_stage">
+            <option value="interested">🤝 Interested</option>
+            <option value="offer">📝 Offer Made</option>
+            <option value="formf">📋 Form F Signed</option>
+            <option value="noc">🏛 NOC Pending</option>
+            <option value="trustee">🤝 Trustee Appointment</option>
+            <option value="transfer">🔑 Transfer in Progress</option>
+            <option value="closed">✅ Closed</option>
+          </select>
+        </div>
+        <div><label class="lbl">Deal Date</label><input type="date" id="de_date"/></div>
+      </div>
+      <div class="row2" style="gap:10px;margin-bottom:10px;">
+        <div><label class="lbl">Buyer Name</label><input type="text" id="de_buyer" placeholder="e.g. Ahmed Al Mansoori"/></div>
+        <div><label class="lbl">Buyer Phone</label><input type="text" id="de_buyer_phone" placeholder="971501234567"/></div>
+      </div>
+      <div class="row2" style="gap:10px;margin-bottom:10px;">
+        <div><label class="lbl">Seller Name</label><input type="text" id="de_seller" placeholder="e.g. Emaar Properties"/></div>
+        <div><label class="lbl">Seller Phone</label><input type="text" id="de_seller_phone" placeholder="971501234567"/></div>
+      </div>
+      <div class="row2" style="gap:10px;margin-bottom:10px;">
+        <div><label class="lbl">Developer</label><input type="text" id="de_developer" placeholder="e.g. Emaar, Aldar, Sobha"/></div>
+        <div><label class="lbl">Project</label><input type="text" id="de_project" placeholder="e.g. Creek Harbour"/></div>
+      </div>
+      <div class="row2" style="gap:10px;margin-bottom:10px;">
+        <div><label class="lbl">Unit Number</label><input type="text" id="de_unit_no" placeholder="e.g. 2401, Villa 12"/></div>
+        <div><label class="lbl">Unit Type</label>
+          <select id="de_unit_type">
+            <option>Studio</option><option>1 BR</option><option>2 BR</option><option>3 BR</option>
+            <option>4+ BR</option><option>Villa</option><option>Townhouse</option><option>Penthouse</option>
+            <option>Plot</option><option>Commercial</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2" style="gap:10px;margin-bottom:10px;">
+        <div><label class="lbl">Selling Price (AED)</label><input type="text" id="de_selling_price" placeholder="e.g. 1,800,000"/></div>
+        <div><label class="lbl">Original Price (AED)</label><input type="text" id="de_original_price" placeholder="e.g. 1,500,000"/></div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl">Payment Breakdown</label>
+        <textarea id="de_payment" placeholder="e.g. 20% Down | 60% During Construction | 20% Handover" style="min-height:60px;"></textarea>
+      </div>
+      <div class="row2" style="gap:10px;margin-bottom:10px;">
+        <div><label class="lbl">NOC Status</label>
+          <select id="de_noc">
+            <option value="pending">⏳ Pending</option><option value="applied">📤 Applied</option>
+            <option value="received">✅ Received</option><option value="na">N/A</option>
+          </select>
+        </div>
+        <div><label class="lbl">Trustee Status</label>
+          <select id="de_trustee">
+            <option value="pending">⏳ Pending</option><option value="booked">📅 Booked</option>
+            <option value="done">✅ Completed</option><option value="na">N/A</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl">Notes</label>
+        <textarea id="de_notes" placeholder="Deal notes, important dates, special conditions..."></textarea>
+      </div>
+    </div>
+
+    <!-- TAB: Commission -->
+    <div id="deTab-financial" style="display:none;">
+      <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #1a3a28;">
+        <div style="font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:8px;">STEP 1 — DEAL VALUE & GROSS REVENUE</div>
+        <div class="row2" style="gap:8px;">
+          <div><label class="lbl">Deal Value (X)</label><input type="text" id="de_deal_value" placeholder="e.g. 1,800,000" oninput="calcDealEngine()"/></div>
+          <div><label class="lbl">Gross Revenue % (B)</label><input type="number" id="de_rev_pct" placeholder="e.g. 5" step="0.1" oninput="calcDealEngine()"/></div>
+        </div>
+        <div style="margin-top:8px;padding:8px;background:var(--bg);border-radius:7px;display:flex;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--text3);">Gross Company Revenue (Y = X × B%)</span>
+          <span id="de_disp_gross" style="font-size:14px;font-weight:700;color:#fbbf24;">—</span>
+        </div>
+      </div>
+      <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #2a1f0a;">
+        <div style="font-size:11px;color:var(--orange);font-weight:700;margin-bottom:8px;">STEP 2 — REFERRAL DEDUCTION</div>
+        <div class="row2" style="gap:8px;">
+          <div><label class="lbl">Referral Bonus Paid (Z)</label><input type="text" id="de_referral" placeholder="e.g. 5,000 or 0" oninput="calcDealEngine()"/></div>
+          <div style="padding-top:20px;">
+            <div style="padding:8px;background:var(--bg);border-radius:7px;">
+              <div style="font-size:11px;color:var(--text3);">Net After Referral (Y - Z)</div>
+              <div id="de_disp_net_ref" style="font-size:14px;font-weight:700;color:var(--orange);">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #1a2a3a;">
+        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:8px;">STEP 3 — COMMISSION SPLIT</div>
+        <div class="row2" style="gap:8px;margin-bottom:8px;">
+          <div><label class="lbl">My Split % (S)</label><input type="number" id="de_split_pct" placeholder="e.g. 60" step="1" value="60" oninput="calcDealEngine()"/></div>
+          <div><label class="lbl">Agent Bonus from Developer (A)</label><input type="text" id="de_agent_bonus" placeholder="e.g. 2,000 or 0" oninput="calcDealEngine()"/></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="padding:8px;background:var(--bg);border-radius:7px;"><div style="font-size:11px;color:var(--text3);">My Commission (C)</div><div id="de_disp_my_comm" style="font-size:14px;font-weight:700;color:var(--blue);">—</div></div>
+          <div style="padding:8px;background:var(--bg);border-radius:7px;"><div style="font-size:11px;color:var(--text3);">Net Company Revenue</div><div id="de_disp_co_rev" style="font-size:14px;font-weight:700;color:var(--green);">—</div></div>
+        </div>
+      </div>
+      <div id="de_commission_summary" style="display:none;background:linear-gradient(135deg,#0a2a1a,#051510);border:1px solid #25D366;border-radius:10px;padding:14px;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:10px;">📊 COMMISSION SUMMARY</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;" id="de_comm_rows"></div>
+        <div style="margin-top:12px;padding:10px;background:rgba(37,211,102,.1);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:var(--text2);">Total Agent Earnings (C + A)</span>
+          <span id="de_disp_total" style="font-size:18px;font-weight:800;color:#a78bfa;">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Documents -->
+    <div id="deTab-docs" style="display:none;">
+      <div style="margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Required Documents Checklist</div>
+        <div id="de_docs_list">
+          <div class="doc-check"><input type="checkbox" id="doc_mou"/><label for="doc_mou">MOU / Agreement of Sale</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_formf"/><label for="doc_formf">Form F (DLD)</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_noc"/><label for="doc_noc">NOC from Developer</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_title"/><label for="doc_title">Title Deed</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_passport_buyer"/><label for="doc_passport_buyer">Buyer Passport Copy</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_passport_seller"/><label for="doc_passport_seller">Seller Passport Copy</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_visa_buyer"/><label for="doc_visa_buyer">Buyer Visa / Emirates ID</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_visa_seller"/><label for="doc_visa_seller">Seller Visa / Emirates ID</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_cheque_mgr"/><label for="doc_cheque_mgr">Manager's Cheque (Purchase Price)</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_cheque_dld"/><label for="doc_cheque_dld">DLD Fee Cheque (4%)</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_poa"/><label for="doc_poa">POA (if applicable)</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_mortgage"/><label for="doc_mortgage">Mortgage Pre-approval (if financed)</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_commission_signed"/><label for="doc_commission_signed">Commission Agreement Signed</label></div>
+          <div class="doc-check"><input type="checkbox" id="doc_transfer"/><label for="doc_transfer">Transfer Appointment Confirmation</label></div>
+        </div>
+      </div>
+      <div><label class="lbl">Document Links / Notes</label><textarea id="de_doc_notes" placeholder="Google Drive links, document notes..."></textarea></div>
+    </div>
+
+    <!-- TAB: Timeline -->
+    <div id="deTab-timeline" style="display:none;">
+      <div id="de_timeline_list" style="margin-bottom:12px;min-height:40px;"></div>
+      <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Add Timeline Event</div>
+        <div class="row2" style="gap:8px;margin-bottom:8px;">
+          <div><label class="lbl">Date</label><input type="date" id="de_tl_date"/></div>
+          <div><label class="lbl">Event</label>
+            <select id="de_tl_stage">
+              <option>Lead Received</option><option>Interest Confirmed</option><option>Offer Made</option>
+              <option>Offer Accepted</option><option>Form F Signed</option><option>NOC Applied</option>
+              <option>NOC Received</option><option>Trustee Booked</option><option>Transfer Done</option>
+              <option>Commission Received</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <input type="text" id="de_tl_note" placeholder="Notes for this event..." style="margin-bottom:8px;"/>
+        <button class="btn btn-ghost btn-sm" onclick="addDETimeline()" style="width:100%;">+ Add Event</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="btn btn-ghost" onclick="closeDealEngineModal()" style="flex:1;">Cancel</button>
+      <button class="btn btn-green" onclick="saveDealEngine()" style="flex:2;">💾 Save Deal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// DEAL ENGINE — Solanki Capital CRM
+// Syncs via Supabase crm_data table (dealEngines column)
+// SECURITY: Only publishable key in frontend. Enable RLS in Supabase!
+// ════════════════════════════════════════════════════════════════
+let dealEngines = JSON.parse(localStorage.getItem('crm_deal_engines')||'[]');
+let _deEditId = null;
+let _deTLEvents = [];
+let _deActiveStage = 'all';
+
+function saveDealEngines(){
+  localStorage.setItem('crm_deal_engines', JSON.stringify(dealEngines));
+  clearTimeout(window._deSaveTimer);
+  window._deSaveTimer = setTimeout(()=>{
+    try{
+      window.saveToFirebase({
+        contacts: typeof contacts!=='undefined'?contacts:[],
+        settings: typeof settings!=='undefined'?settings:{},
+        projects: typeof projects!=='undefined'?projects:[],
+        dealEngines
+      });
+    }catch(e){ console.error('Deal Engine sync error:',e); }
+  }, 1000);
+}
+
+function renderDeals(){
+  const el=document.getElementById('dealEngineList');
+  if(!el) return;
+  const list=_deActiveStage==='all'?dealEngines:dealEngines.filter(d=>d.stage===_deActiveStage);
+  if(!list.length){ el.innerHTML='<div class="empty">No deals found. Click "+ New Deal" to start.</div>'; return; }
+  const stageLabels={interested:'🤝 Interested',offer:'📝 Offer',formf:'📋 Form F',noc:'🏛 NOC',trustee:'🤝 Trustee',transfer:'🔑 Transfer',closed:'✅ Closed'};
+  const f=n=>n>0?'AED '+Math.round(n).toLocaleString('en-US'):'—';
+  el.innerHTML=list.map(d=>{
+    const docs=d.docs||{};
+    const docKeys=['mou','formf','noc','title','passport_buyer','passport_seller','visa_buyer','visa_seller','cheque_mgr','cheque_dld','poa','mortgage','commission_signed','transfer'];
+    const docsDone=docKeys.filter(k=>docs[k]).length;
+    const docPct=Math.round(docsDone/docKeys.length*100);
+    return `<div class="deal-card" onclick="editDealEngine('${d.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+        <div>
+          <div style="font-size:15px;font-weight:700;">${d.developer||'—'} — ${d.project||'—'}</div>
+          <div style="font-size:12px;color:var(--text3);">Unit ${d.unitNo||'—'} · ${d.unitType||'—'} · ${d.date||'—'}</div>
+        </div>
+        <span class="deal-stage-label ds-${d.stage||'interested'}">${stageLabels[d.stage]||d.stage}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px;">
+        <div style="background:var(--bg2);border-radius:7px;padding:8px;">
+          <div style="font-size:10px;color:var(--text3);">Selling Price</div>
+          <div style="font-size:13px;font-weight:700;color:#fbbf24;">${d.sellingPrice?'AED '+parseInt((d.sellingPrice||'0').replace(/[^0-9]/g,'')).toLocaleString():'—'}</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:7px;padding:8px;">
+          <div style="font-size:10px;color:var(--text3);">My Commission</div>
+          <div style="font-size:13px;font-weight:700;color:var(--blue);">${d.commission?.myComm?f(d.commission.myComm):'—'}</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:7px;padding:8px;">
+          <div style="font-size:10px;color:var(--text3);">Buyer</div>
+          <div style="font-size:13px;font-weight:600;">${d.buyer||'—'}</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:11px;color:var(--text3);">📁 Docs ${docsDone}/${docKeys.length}</span>
+          <div style="width:80px;height:4px;background:var(--bg2);border-radius:2px;">
+            <div style="width:${docPct}%;height:4px;background:${docPct>=80?'var(--green)':docPct>=40?'var(--orange)':'var(--red)'};border-radius:2px;"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);">
+          NOC: <span style="color:${d.nocStatus==='received'?'var(--green)':d.nocStatus==='applied'?'var(--orange)':'var(--red)'};">${d.nocStatus||'pending'}</span>
+          · Trustee: <span style="color:${d.trusteeStatus==='done'?'var(--green)':d.trusteeStatus==='booked'?'var(--orange)':'var(--red)'};">${d.trusteeStatus||'pending'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterDeals(stage,btn){
+  _deActiveStage=stage;
+  document.querySelectorAll('.deal-stage-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderDeals();
+}
+
+function openNewDeal(){
+  _deEditId=null; _deTLEvents=[];
+  const textIds=['de_buyer','de_buyer_phone','de_seller','de_seller_phone','de_developer','de_project','de_unit_no','de_selling_price','de_original_price','de_payment','de_notes','de_doc_notes','de_deal_value','de_referral','de_agent_bonus','de_tl_note'];
+  textIds.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['de_disp_gross','de_disp_net_ref','de_disp_my_comm','de_disp_co_rev','de_disp_total'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
+  document.getElementById('de_stage').value='interested';
+  document.getElementById('de_unit_type').value='1 BR';
+  document.getElementById('de_noc').value='pending';
+  document.getElementById('de_trustee').value='pending';
+  document.getElementById('de_split_pct').value='60';
+  document.getElementById('de_rev_pct').value='';
+  document.getElementById('de_date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('de_tl_date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('de_commission_summary').style.display='none';
+  ['mou','formf','noc','title','passport_buyer','passport_seller','visa_buyer','visa_seller','cheque_mgr','cheque_dld','poa','mortgage','commission_signed','transfer'].forEach(k=>{const el=document.getElementById('doc_'+k);if(el)el.checked=false;});
+  renderDETimeline();
+  document.getElementById('dealEngineModalTitle').textContent='🏠 New Deal';
+  setDETab('details');
+  document.getElementById('dealEngineModal').classList.add('open');
+}
+
+function editDealEngine(id){
+  const d=dealEngines.find(x=>x.id===id);
+  if(!d) return;
+  _deEditId=id; _deTLEvents=[...(d.timeline||[])];
+  document.getElementById('de_stage').value=d.stage||'interested';
+  document.getElementById('de_date').value=d.date||'';
+  document.getElementById('de_buyer').value=d.buyer||'';
+  document.getElementById('de_buyer_phone').value=d.buyerPhone||'';
+  document.getElementById('de_seller').value=d.seller||'';
+  document.getElementById('de_seller_phone').value=d.sellerPhone||'';
+  document.getElementById('de_developer').value=d.developer||'';
+  document.getElementById('de_project').value=d.project||'';
+  document.getElementById('de_unit_no').value=d.unitNo||'';
+  document.getElementById('de_unit_type').value=d.unitType||'1 BR';
+  document.getElementById('de_selling_price').value=d.sellingPrice||'';
+  document.getElementById('de_original_price').value=d.originalPrice||'';
+  document.getElementById('de_payment').value=d.payment||'';
+  document.getElementById('de_noc').value=d.nocStatus||'pending';
+  document.getElementById('de_trustee').value=d.trusteeStatus||'pending';
+  document.getElementById('de_notes').value=d.notes||'';
+  if(d.commission){
+    document.getElementById('de_deal_value').value=d.commission.dealValue||'';
+    document.getElementById('de_rev_pct').value=d.commission.revPct||'';
+    document.getElementById('de_referral').value=d.commission.referral||'';
+    document.getElementById('de_split_pct').value=d.commission.splitPct||60;
+    document.getElementById('de_agent_bonus').value=d.commission.agentBonus||'';
+    calcDealEngine();
+  }
+  const docs=d.docs||{};
+  ['mou','formf','noc','title','passport_buyer','passport_seller','visa_buyer','visa_seller','cheque_mgr','cheque_dld','poa','mortgage','commission_signed','transfer'].forEach(k=>{const el=document.getElementById('doc_'+k);if(el)el.checked=!!docs[k];});
+  document.getElementById('de_doc_notes').value=d.docNotes||'';
+  renderDETimeline();
+  document.getElementById('dealEngineModalTitle').textContent='🏠 Edit — '+d.developer;
+  setDETab('details');
+  document.getElementById('dealEngineModal').classList.add('open');
+}
+
+function closeDealEngineModal(){ document.getElementById('dealEngineModal').classList.remove('open'); }
+
+function setDETab(tab){
+  ['details','financial','docs','timeline'].forEach(t=>{
+    const el=document.getElementById('deTab-'+t);
+    const btn=document.getElementById('det-'+t);
+    if(el) el.style.display=t===tab?'block':'none';
+    if(btn) btn.classList.toggle('active',t===tab);
+  });
+  if(tab==='timeline') renderDETimeline();
+}
+
+function calcDealEngine(){
+  const pn2=id=>parseFloat((document.getElementById(id)?.value||'').replace(/[^0-9.]/g,''))||0;
+  const X=pn2('de_deal_value');
+  const B=parseFloat(document.getElementById('de_rev_pct')?.value)||0;
+  const Y=X&&B?X*B/100:0;
+  const Z=pn2('de_referral');
+  const netRef=Math.max(0,Y-Z);
+  const S=parseFloat(document.getElementById('de_split_pct')?.value)||60;
+  const C=netRef*S/100;
+  const coRev=netRef-C;
+  const A=pn2('de_agent_bonus');
+  const total=C+A;
+  const f=n=>n>0?'AED '+Math.round(n).toLocaleString('en-US'):'—';
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('de_disp_gross',f(Y));
+  set('de_disp_net_ref',f(netRef));
+  set('de_disp_my_comm',f(C));
+  set('de_disp_co_rev',f(coRev));
+  set('de_disp_total',total>0?f(total):'—');
+  if(X>0){
+    document.getElementById('de_commission_summary').style.display='block';
+    document.getElementById('de_comm_rows').innerHTML=`
+      <div style="color:var(--text3);">Deal Value (X)</div><div style="font-weight:700;">${f(X)}</div>
+      <div style="color:#fbbf24;">Gross Revenue (Y=X×${B}%)</div><div style="font-weight:700;color:#fbbf24;">${f(Y)}</div>
+      <div style="color:var(--orange);">Referral Bonus (Z)</div><div style="color:var(--orange);">- ${Z?f(Z):'0'}</div>
+      <div style="color:var(--text2);">Net After Referral</div><div style="font-weight:600;">${f(netRef)}</div>
+      <div style="color:var(--blue);">My Comm (C=Net×${S}%)</div><div style="font-weight:700;color:var(--blue);">${f(C)}</div>
+      <div style="color:var(--green);">Net Company Revenue</div><div style="font-weight:700;color:var(--green);">${f(coRev)}</div>
+      <div style="color:#a78bfa;">Agent Bonus (A)</div><div style="color:#a78bfa;">${A?f(A):'—'}</div>`;
+    window._deCalc={X,B,Y,Z,netRef,S,C,coRev,A,total};
+  }
+}
+
+function addDETimeline(){
+  const date=document.getElementById('de_tl_date').value;
+  const stage=document.getElementById('de_tl_stage').value;
+  const note=document.getElementById('de_tl_note').value.trim();
+  if(!date||!stage) return;
+  _deTLEvents.push({date,stage,note,ts:Date.now()});
+  _deTLEvents.sort((a,b)=>b.date>a.date?1:-1);
+  document.getElementById('de_tl_note').value='';
+  renderDETimeline();
+}
+
+function renderDETimeline(){
+  const el=document.getElementById('de_timeline_list');
+  if(!el) return;
+  if(!_deTLEvents.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px 0;">No events yet</div>';return;}
+  el.innerHTML=_deTLEvents.map(e=>`
+    <div class="deal-timeline-item">
+      <div class="deal-tl-dot"></div>
+      <div><div style="font-size:12px;font-weight:600;">${e.stage}</div>
+      <div style="font-size:11px;color:var(--text3);">${e.date}${e.note?' · '+e.note:''}</div></div>
+    </div>`).join('');
+}
+
+function saveDealEngine(){
+  calcDealEngine();
+  const dc=window._deCalc||{};
+  const docKeys=['mou','formf','noc','title','passport_buyer','passport_seller','visa_buyer','visa_seller','cheque_mgr','cheque_dld','poa','mortgage','commission_signed','transfer'];
+  const docs={};
+  docKeys.forEach(k=>{const el=document.getElementById('doc_'+k);if(el)docs[k]=el.checked;});
+  const deal={
+    id: _deEditId||('de_'+Date.now()),
+    stage: document.getElementById('de_stage').value,
+    date: document.getElementById('de_date').value,
+    buyer: document.getElementById('de_buyer').value.trim(),
+    buyerPhone: document.getElementById('de_buyer_phone').value.trim(),
+    seller: document.getElementById('de_seller').value.trim(),
+    sellerPhone: document.getElementById('de_seller_phone').value.trim(),
+    developer: document.getElementById('de_developer').value.trim(),
+    project: document.getElementById('de_project').value.trim(),
+    unitNo: document.getElementById('de_unit_no').value.trim(),
+    unitType: document.getElementById('de_unit_type').value,
+    sellingPrice: document.getElementById('de_selling_price').value.trim(),
+    originalPrice: document.getElementById('de_original_price').value.trim(),
+    payment: document.getElementById('de_payment').value.trim(),
+    nocStatus: document.getElementById('de_noc').value,
+    trusteeStatus: document.getElementById('de_trustee').value,
+    notes: document.getElementById('de_notes').value.trim(),
+    commission:{
+      dealValue: document.getElementById('de_deal_value').value.trim(),
+      revPct: document.getElementById('de_rev_pct').value,
+      referral: document.getElementById('de_referral').value.trim(),
+      splitPct: document.getElementById('de_split_pct').value,
+      agentBonus: document.getElementById('de_agent_bonus').value.trim(),
+      grossRevenue: dc.Y||0,
+      netAfterReferral: dc.netRef||0,
+      myComm: dc.C||0,
+      coRevenue: dc.coRev||0,
+      totalAgentEarning: dc.total||0
+    },
+    docs,
+    docNotes: document.getElementById('de_doc_notes').value.trim(),
+    timeline: _deTLEvents,
+    updatedAt: Date.now()
+  };
+  if(_deEditId){ const idx=dealEngines.findIndex(x=>x.id===_deEditId); if(idx>=0) dealEngines[idx]=deal; }
+  else { dealEngines.unshift(deal); }
+  saveDealEngines();
+  closeDealEngineModal();
+  renderDeals();
+  if(typeof toast==='function') toast('✅ Deal saved!');
+}
+
+// Hook nav to render deals page
+const _origNav2=typeof nav==='function'?nav:null;
+if(_origNav2){ nav=function(page,btn){ _origNav2(page,btn); if(page==='deals') renderDeals(); }; }
+
+// Auto-refresh market every 15 min
+if(!window._mktRefreshSet){ window._mktRefreshSet=true; setInterval(()=>{ if(typeof loadMarketData==='function') loadMarketData(); },15*60*1000); }
+</script>
+
 </body>
 </html>
