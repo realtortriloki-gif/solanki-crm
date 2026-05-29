@@ -923,7 +923,24 @@ tr:hover td{background:#161616;}
       <div><label class="lbl">Phone *</label><input type="text" id="ac_phone" placeholder="971501234567"/></div>
     </div>
     <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Nationality</label><input type="text" id="ac_nat" placeholder="e.g. Pakistani"/></div>
+      <div><label class="lbl">Nationality</label>
+<select id="ac_nat">
+<option value="">-- Select Nationality --</option>
+<option>Indian</option><option>Pakistani</option><option>British</option><option>American</option>
+<option>Emirati</option><option>Saudi Arabian</option><option>Qatari</option><option>Kuwaiti</option>
+<option>Bahraini</option><option>Omani</option><option>Jordanian</option><option>Lebanese</option>
+<option>Egyptian</option><option>Syrian</option><option>Iraqi</option><option>Yemeni</option>
+<option>Iranian</option><option>Turkish</option><option>Azerbaijani</option><option>Afghan</option>
+<option>Bangladeshi</option><option>Sri Lankan</option><option>Nepali</option><option>Filipino</option>
+<option>Indonesian</option><option>Malaysian</option><option>Chinese</option><option>Japanese</option>
+<option>Korean</option><option>Russian</option><option>Ukrainian</option><option>Kazakhstani</option>
+<option>German</option><option>French</option><option>Italian</option><option>Spanish</option>
+<option>Portuguese</option><option>Dutch</option><option>Belgian</option><option>Swiss</option>
+<option>Australian</option><option>Canadian</option><option>South African</option><option>Nigerian</option>
+<option>Kenyan</option><option>Ghanaian</option><option>Ethiopian</option><option>Moroccan</option>
+<option>Tunisian</option><option>Algerian</option><option>Libyan</option><option>Sudanese</option>
+<option>Other</option>
+</select></div>
       <div><label class="lbl">Community</label><input type="text" id="ac_com" placeholder="e.g. District One"/></div>
     </div>
     <div class="row2" style="margin-bottom:12px;">
@@ -1382,7 +1399,10 @@ function renderDashboard(){
   const interested=contacts.filter(c=>c.status==='interested').length;
   const closed=contacts.filter(c=>c.status==='closed'||c.status==='repeat').length;
   const totalDeals=contacts.reduce((a,c)=>a+(c.deals||[]).length,0);
-  const totalCommission=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(parseFloat((d.commission||'0').replace(/[^0-9.]/g,''))||0),a),0);
+  const totalCommission=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(d.commissionAmt||parseFloat((d.commission||'0').replace(/[^0-9.]/g,''))||0),a),0);
+  const totalAgentComm=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(d.agentCommission||0),a),0);
+  const totalReferral=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(d.referralBonus||0),a),0);
+  const totalCompanyRev=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(d.companyRevenue||0),a),0);
   const hot=contacts.filter(c=>c.priority==='hot').length;
   const today=new Date().toISOString().slice(0,10);
   const overdueOrToday=contacts.filter(c=>c.callbackDate&&c.callbackDate<=today&&c.status!=='closed').length;
@@ -1406,7 +1426,7 @@ function renderDashboard(){
     <div class="stat-card" onclick="navToContacts('closed')" style="cursor:pointer;" title="View closed deals">
       <div class="stat-val" style="color:var(--green);">${totalDeals}</div><div class="stat-lbl">Deals Closed</div>
     </div>
-    <div class="stat-card" style="cursor:default;">
+    <div class="stat-card" style="cursor:pointer;" onclick="openCommissionDash()">
       <div class="stat-val" style="color:#fbbf24;font-size:18px;">AED ${totalCommission>0?totalCommission.toLocaleString('en-US',{maximumFractionDigits:0}):'0'}</div><div class="stat-lbl">Total Commission</div>
     </div>
   `;
@@ -3022,8 +3042,20 @@ function clearAllData(){ if(!confirm('Delete all data? This cannot be undone!'))
       <div><label class="lbl">Deal Value (AED)</label><input type="text" id="deal_value" placeholder="e.g. 2,500,000"/></div>
     </div>
     <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Commission (AED)</label><input type="text" id="deal_commission" placeholder="e.g. 62,500"/></div>
+      <div><label class="lbl">Deal Value (AED)</label><input type="text" id="deal_value2" placeholder="e.g. 2,500,000"/></div>
       <div><label class="lbl">Date of Closing</label><input type="date" id="deal_date"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Total Commission (AED)</label><input type="text" id="deal_commission" placeholder="e.g. 62,500" oninput="autoCalcDeal()"/></div>
+      <div><label class="lbl">Commission % of deal</label><input type="number" id="deal_commission_pct" placeholder="e.g. 2.5" step="0.1" oninput="autoCalcDeal()"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:12px;">
+      <div><label class="lbl">Your Agent Commission (AED)</label><input type="text" id="deal_agent_comm" placeholder="e.g. 40,000"/></div>
+      <div><label class="lbl">Referral Bonus Paid (AED)</label><input type="text" id="deal_referral" placeholder="e.g. 5,000"/></div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl">Company Revenue (AED) = Total Commission - Referral Bonus</label>
+      <input type="text" id="deal_company_rev" placeholder="Auto calculated" readonly style="background:var(--bg);color:var(--green);font-weight:600;"/>
     </div>
     <div style="margin-bottom:16px;">
       <label class="lbl">Notes</label>
@@ -3070,26 +3102,42 @@ function openDealModal(id){
 
 function closeDealModal(){ document.getElementById('dealCloseModal').classList.remove('open'); }
 
+function autoCalcDeal(){
+  const comm = parseFloat((document.getElementById('deal_commission').value||'').replace(/[^0-9.]/g,''))||0;
+  const pct = parseFloat(document.getElementById('deal_commission_pct').value)||0;
+  const val = parseFloat((document.getElementById('deal_value2')?.value||document.getElementById('deal_value')?.value||'').replace(/[^0-9.]/g,''))||0;
+  if(pct && val && !comm){ document.getElementById('deal_commission').value = Math.round(val*pct/100).toLocaleString('en-US'); }
+  const ref = parseFloat((document.getElementById('deal_referral').value||'').replace(/[^0-9.]/g,''))||0;
+  const totalComm = parseFloat((document.getElementById('deal_commission').value||'').replace(/[^0-9.]/g,''))||0;
+  if(totalComm){ document.getElementById('deal_company_rev').value = 'AED '+Math.round(totalComm - ref).toLocaleString('en-US'); }
+}
 function saveDeal(){
   const c = contacts.find(x=>parseInt(x.id)===parseInt(_dealContactId));
   if(!c) return;
+  const totalComm = parseFloat((document.getElementById('deal_commission').value||'').replace(/[^0-9.]/g,''))||0;
+  const ref = parseFloat((document.getElementById('deal_referral').value||'').replace(/[^0-9.]/g,''))||0;
+  const agentComm = parseFloat((document.getElementById('deal_agent_comm').value||'').replace(/[^0-9.]/g,''))||0;
   const deal = {
     developer: document.getElementById('deal_developer').value.trim(),
     project: document.getElementById('deal_project').value.trim(),
     unit: document.getElementById('deal_unit').value,
-    value: document.getElementById('deal_value').value.trim(),
+    value: (document.getElementById('deal_value2')?.value||document.getElementById('deal_value')?.value||'').trim(),
     commission: document.getElementById('deal_commission').value.trim(),
+    commissionAmt: totalComm,
+    agentCommission: agentComm,
+    referralBonus: ref,
+    companyRevenue: totalComm - ref,
     date: document.getElementById('deal_date').value,
     notes: document.getElementById('deal_notes').value.trim(),
     closedAt: new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
   };
   if(!c.deals) c.deals = [];
-  // Check if repeat client
   if(c.deals.length > 0) c.status = 'repeat';
   c.deals.push(deal);
   if(!c.notes) c.notes = [];
+  const f = n => n>0?'AED '+Math.round(n).toLocaleString('en-US'):'—';
   c.notes.push({
-    text: '🏆 Deal Closed — '+deal.developer+' '+deal.project+' '+deal.unit+(deal.value?' | AED '+deal.value:'')+(deal.commission?' | Commission: AED '+deal.commission:''),
+    text: '🏆 Deal — '+deal.developer+' '+deal.project+' '+deal.unit+(deal.value?' | '+deal.value:'')+(totalComm?' | Commission: '+f(totalComm):'')+(agentComm?' | Agent: '+f(agentComm):'')+(ref?' | Referral: '+f(ref):'')+(deal.companyRevenue?' | Co. Revenue: '+f(deal.companyRevenue):''),
     time: deal.closedAt
   });
   save(); closeDealModal(); renderContacts(); renderDashboard();
@@ -3260,57 +3308,40 @@ async function loadMarketData(){
   
   // Show petrol immediately (static - UAE govt updates quarterly)
   const petrolCards = Object.entries(petrolPrices).map(([grade,price])=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">⛽ ${grade}</div><div style="font-size:14px;font-weight:600;color:var(--orange);">AED ${price}</div><div style="font-size:10px;color:var(--text3);">May 2026</div></div>`).join('');
-  if(comEl) comEl.innerHTML = `<div id="goldCard" style="background:var(--bg2);border:1px solid #3a2a0a;border-radius:8px;padding:8px 12px;flex-shrink:0;min-width:155px;"><div style="font-size:10px;color:#fbbf24;font-weight:600;">🥇 GOLD/gram</div><div style="font-size:12px;color:var(--text3);">Loading...</div></div>${petrolCards}`;
+  if(comEl) comEl.innerHTML = `<div id="goldCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">Loading...</div></div>${petrolCards}`;
 
-  // Gold 24K/22K/18K per gram - Dubai retail rates
-  function showGoldRates(usdPerOz){
-    const aedPerOz = usdPerOz * 3.6725;
-    const g24 = aedPerOz / 31.1035;
-    const g22 = g24 * (22/24);
-    const g18 = g24 * (18/24);
-    const t = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    const gc = document.getElementById('goldCard');
-    if(gc) gc.innerHTML = `
-      <div style="font-size:10px;color:#fbbf24;font-weight:600;margin-bottom:4px;">🥇 GOLD/gram • ${t}</div>
-      <div style="font-size:13px;margin-bottom:2px;">24K: <b style="color:#fbbf24;">AED ${g24.toFixed(2)}</b></div>
-      <div style="font-size:12px;margin-bottom:2px;">22K: <b style="color:#f59e0b;">AED ${g22.toFixed(2)}</b></div>
-      <div style="font-size:12px;">18K: <b style="color:var(--orange);">AED ${g18.toFixed(2)}</b></div>
-      <div style="font-size:10px;color:var(--text3);margin-top:2px;">Spot: USD ${Math.round(usdPerOz).toLocaleString()}/oz</div>`;
-  }
-  // Current Dubai gold approx rates (May 2026) as fallback
-  const GOLD_FALLBACK_AED_24K = 541.25;
-  function showGoldFallback(live){
-    const g24=GOLD_FALLBACK_AED_24K, g22=g24*(22/24), g18=g24*(18/24);
-    const gc=document.getElementById('goldCard');
-    if(gc) gc.innerHTML = `
-      <div style="font-size:10px;color:#fbbf24;font-weight:600;margin-bottom:4px;">🥇 GOLD/gram${live?' • Live':' • Est.'}</div>
-      <div style="font-size:13px;margin-bottom:2px;">24K: <b style="color:#fbbf24;">AED ${g24.toFixed(2)}</b></div>
-      <div style="font-size:12px;margin-bottom:2px;">22K: <b style="color:#f59e0b;">AED ${g22.toFixed(2)}</b></div>
-      <div style="font-size:12px;">18K: <b style="color:var(--orange);">AED ${g18.toFixed(2)}</b></div>
-      <div style="font-size:10px;color:var(--text3);margin-top:2px;">Dubai retail approx</div>`;
-  }
-  showGoldFallback(false); // Show immediately
-
+  // Try multiple gold APIs
   try {
-    let usdPerOz = 0;
-    // Try metals.live
+    let goldUSD = 0;
+    // Use frankfurter API - reliable and free
     try {
-      const r = await fetch('https://api.metals.live/v1/spot/gold', {signal: AbortSignal.timeout(5000)});
+      const r = await fetch('https://api.frankfurter.app/latest?from=XAU&to=USD,AED', {signal: AbortSignal.timeout(5000)});
       const d = await r.json();
-      const val = Array.isArray(d) ? parseFloat(d[0]?.gold) : parseFloat(d?.gold);
-      if(val > 4000) usdPerOz = val; // Must be > 4000 for May 2026
-    } catch(e1){}
-    // Try frankfurter
-    if(!usdPerOz){
+      if(d.rates?.USD) {
+        goldUSD = d.rates.USD;
+        const goldAED = d.rates.AED || (goldUSD * 3.6725);
+        const goldCard = document.getElementById('goldCard');
+        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ${Math.round(goldAED).toLocaleString()}</div><div style="font-size:10px;color:var(--text3);">USD ${Math.round(goldUSD).toLocaleString()}</div>`;
+      }
+    } catch(e1){
+      // Fallback to metals-api
       try {
-        const r = await fetch('https://api.frankfurter.app/latest?from=XAU&to=USD', {signal: AbortSignal.timeout(5000)});
+        const r = await fetch('https://metals-api.com/api/latest?access_key=demo&base=XAU&symbols=USD', {signal: AbortSignal.timeout(4000)});
         const d = await r.json();
-        if(d.rates?.USD > 4000) usdPerOz = d.rates.USD;
-      } catch(e2){}
+        goldUSD = 1 / (d.rates?.USD || 0.000303);
+        const goldAED = goldUSD * 3.6725;
+        const goldCard = document.getElementById('goldCard');
+        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ${Math.round(goldAED).toLocaleString()}</div><div style="font-size:10px;color:var(--text3);">USD ${Math.round(goldUSD).toLocaleString()}</div>`;
+      } catch(e2){
+        // Static fallback - approximate current price
+        const goldCard = document.getElementById('goldCard');
+        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ~12,100</div><div style="font-size:10px;color:var(--text3);">USD ~3,295</div>`;
+      }
     }
-    if(usdPerOz > 4000){ showGoldRates(usdPerOz); }
-    else { showGoldFallback(false); } // APIs returning stale data, use Dubai fallback
-  } catch(e){ showGoldFallback(false); }
+  } catch(e) {
+    const goldCard = document.getElementById('goldCard');
+    if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">~AED 12,100</div><div style="font-size:10px;color:var(--text3);">~USD 3,295</div>`;
+  }
 
   // 3. News from multiple sources horizontally
   try {
@@ -4112,6 +4143,128 @@ function convertCurrency(){
   const d=result>=1?result.toLocaleString('en-US',{maximumFractionDigits:4}):result.toFixed(6);
   const el=document.getElementById('curr_val');
   if(el) el.textContent=d+' '+to;
+}
+</script>
+<!-- Commission Dashboard Modal -->
+<div class="modal-overlay" id="commissionDashModal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <div class="modal-title">💰 Commission & Revenue Dashboard</div>
+      <button class="modal-close" onclick="document.getElementById('commissionDashModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="commDashContent"></div>
+  </div>
+</div>
+
+<script>
+function openCommissionDash(){
+  const f = n => n>0?'AED '+Math.round(n).toLocaleString('en-US'):'AED 0';
+  let totalComm=0,totalAgent=0,totalRef=0,totalCoRev=0;
+  const deals = [];
+  contacts.forEach(c=>{
+    (c.deals||[]).forEach(d=>{
+      const comm = d.commissionAmt||parseFloat((d.commission||'0').replace(/[^0-9.]/g,''))||0;
+      const agent = d.agentCommission||0;
+      const ref = d.referralBonus||0;
+      const coRev = d.companyRevenue||(comm-ref);
+      totalComm+=comm; totalAgent+=agent; totalRef+=ref; totalCoRev+=coRev;
+      deals.push({name:c.name, developer:d.developer||'—', project:d.project||'—', unit:d.unit||'—', value:d.value||'—', comm, agent, ref, coRev, date:d.date||d.closedAt||'—', id:c.id, dealIdx:c.deals.indexOf(d)});
+    });
+  });
+
+  document.getElementById('commDashContent').innerHTML = `
+    <div class="stats-grid" style="margin-bottom:16px;">
+      <div class="stat-card"><div class="mort-result-lbl">Total Commission</div><div style="font-size:20px;font-weight:700;color:#fbbf24;">${f(totalComm)}</div></div>
+      <div class="stat-card"><div class="mort-result-lbl">Your Agent Comm</div><div style="font-size:20px;font-weight:700;color:var(--green);">${f(totalAgent)}</div></div>
+      <div class="stat-card"><div class="mort-result-lbl">Referral Bonus Paid</div><div style="font-size:20px;font-weight:700;color:var(--orange);">${f(totalRef)}</div></div>
+      <div class="stat-card"><div class="mort-result-lbl">Company Revenue</div><div style="font-size:20px;font-weight:700;color:var(--blue);">${f(totalCoRev)}</div></div>
+    </div>
+    ${deals.length===0?'<div class="empty">No deals closed yet</div>':
+    '<div class="tbl-wrap"><table><thead><tr><th>Client</th><th>Project</th><th>Unit</th><th>Deal Value</th><th>Commission</th><th>Agent Comm</th><th>Referral</th><th>Co. Revenue</th><th>Date</th><th></th></tr></thead><tbody>'+
+    deals.map((d,i)=>`<tr>
+      <td style="font-weight:500;color:var(--blue);">${d.name}</td>
+      <td style="font-size:12px;">${d.developer}<br><span style="color:var(--text3);">${d.project}</span></td>
+      <td style="font-size:12px;">${d.unit}</td>
+      <td style="font-size:12px;">${d.value?'AED '+d.value:'—'}</td>
+      <td style="color:#fbbf24;font-weight:600;">${d.comm>0?f(d.comm):'—'}</td>
+      <td style="color:var(--green);">${d.agent>0?f(d.agent):'—'}</td>
+      <td style="color:var(--orange);">${d.ref>0?f(d.ref):'—'}</td>
+      <td style="color:var(--blue);">${d.coRev>0?f(d.coRev):'—'}</td>
+      <td style="font-size:11px;color:var(--text3);">${d.date}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="editDeal(${d.id},${d.dealIdx})">✏️</button></td>
+    </tr>`).join('')+
+    '</tbody></table></div>'}`;
+
+  document.getElementById('commissionDashModal').classList.add('open');
+}
+
+function editDeal(contactId, dealIdx){
+  const c = contacts.find(x=>parseInt(x.id)===parseInt(contactId));
+  if(!c||!c.deals[dealIdx]) return;
+  const d = c.deals[dealIdx];
+  _dealContactId = contactId;
+  document.getElementById('deal_developer').value = d.developer||'';
+  document.getElementById('deal_project').value = d.project||'';
+  document.getElementById('deal_unit').value = d.unit||'';
+  if(document.getElementById('deal_value2')) document.getElementById('deal_value2').value = d.value||'';
+  document.getElementById('deal_commission').value = d.commission||'';
+  if(document.getElementById('deal_agent_comm')) document.getElementById('deal_agent_comm').value = d.agentCommission||'';
+  if(document.getElementById('deal_referral')) document.getElementById('deal_referral').value = d.referralBonus||'';
+  document.getElementById('deal_date').value = d.date||new Date().toISOString().slice(0,10);
+  document.getElementById('deal_notes').value = d.notes||'';
+  // Remove old deal and save new on saveDeal
+  c.deals.splice(dealIdx,1);
+  document.getElementById('commissionDashModal').classList.remove('open');
+  document.getElementById('dealCloseModal').classList.add('open');
+}
+
+function editContact(id){
+  const c = contacts.find(x=>parseInt(x.id)===parseInt(id));
+  if(!c) return;
+  // Pre-fill add contact modal with existing data
+  document.getElementById('ac_name').value = c.name||'';
+  document.getElementById('ac_phone').value = c.phone||'';
+  document.getElementById('ac_nat').value = c.nationality||'';
+  document.getElementById('ac_com').value = c.community||'';
+  document.getElementById('ac_source').value = c.source||'';
+  document.getElementById('ac_notes').value = '';
+  document.getElementById('ac_status').value = c.status||'pending';
+  document.getElementById('ac_priority').value = c.priority||'cold';
+  document.getElementById('ac_type').value = c.contactType||'client';
+  document.getElementById('ac_leadtype').value = c.leadType||'buyer';
+  if(document.getElementById('ac_budget')) document.getElementById('ac_budget').value = c.budget||'';
+  document.getElementById('ocrStatus').textContent = '';
+  // Mark as edit mode
+  document.getElementById('addContactModal').dataset.editId = id;
+  document.getElementById('addContactModal').querySelector('.modal-title').textContent = '✏️ Edit Contact';
+  document.getElementById('addContactModal').querySelector('.btn-green:last-child').textContent = '💾 Save Changes';
+  document.getElementById('addContactModal').querySelector('.btn-green:last-child').onclick = ()=>saveEditContact(id);
+  document.getElementById('addContactModal').classList.add('open');
+}
+
+function saveEditContact(id){
+  const c = contacts.find(x=>parseInt(x.id)===parseInt(id));
+  if(!c) return;
+  c.name = document.getElementById('ac_name').value.trim()||c.name;
+  c.phone = document.getElementById('ac_phone').value.trim()||c.phone;
+  c.nationality = document.getElementById('ac_nat').value.trim();
+  c.community = document.getElementById('ac_com').value.trim();
+  c.source = document.getElementById('ac_source').value.trim();
+  c.status = document.getElementById('ac_status').value;
+  c.priority = document.getElementById('ac_priority').value;
+  c.contactType = document.getElementById('ac_type').value;
+  c.leadType = document.getElementById('ac_leadtype').value;
+  if(document.getElementById('ac_budget')) c.budget = document.getElementById('ac_budget').value.trim();
+  const extraNote = document.getElementById('ac_notes').value.trim();
+  if(extraNote){ if(!c.notes) c.notes=[]; c.notes.push({text:'✏️ Edited: '+extraNote, time:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}); }
+  // Reset modal
+  document.getElementById('addContactModal').dataset.editId = '';
+  document.getElementById('addContactModal').querySelector('.modal-title').textContent = 'Add New Contact';
+  const saveBtn = document.getElementById('addContactModal').querySelector('.btn-green:last-child');
+  saveBtn.textContent = 'Save Contact';
+  saveBtn.onclick = saveAddContact;
+  save(); closeAddContact(); renderContacts(); renderDashboard();
+  toast('✅ Contact updated!');
 }
 </script>
 </body>
