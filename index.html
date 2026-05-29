@@ -13,6 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ─── SUPABASE + OFFLINE-FIRST SYNC ENGINE ─────────────────────────────
@@ -1016,6 +1017,7 @@ tr:hover td{background:#161616;}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-green btn-sm" onclick="openPaymentPlanModal()">+ Manual Plan</button>
+        <button class="btn btn-blue btn-sm" onclick="openPaymentPlanFromDeal()">↗ Pull from Deal Engine</button>
         <button class="btn btn-purple btn-sm" onclick="openSalesOfferImport()">📄 Upload / Paste Offer</button>
       </div>
     </div>
@@ -1030,6 +1032,23 @@ tr:hover td{background:#161616;}
     <div class="modal-header">
       <div class="modal-title" id="paymentPlanModalTitle">Off-Plan Payment Tracker</div>
       <button class="modal-close" onclick="closePaymentPlanModal()">✕</button>
+    </div>
+    <div class="card" style="background:var(--bg2);padding:12px;margin-bottom:12px;border-color:#1e4a7c;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <div>
+          <div class="card-title" style="margin-bottom:2px;">🔗 Link with Deal Engine</div>
+          <div style="font-size:11px;color:var(--text3);line-height:1.5;">Choose an existing off-plan/sold deal. CRM will pull buyer, project, unit and price automatically. If detection is wrong, edit manually before saving.</div>
+        </div>
+        <button class="btn btn-blue btn-sm" onclick="pullPaymentDataFromSelectedDeal(true)">Pull Deal Data</button>
+      </div>
+      <div class="row2" style="margin-bottom:8px;">
+        <div><label class="lbl">Linked Deal</label><select id="pay_dealId" onchange="pullPaymentDataFromSelectedDeal(false)"><option value="">-- Select Deal --</option></select></div>
+        <div><label class="lbl">Recommended / Manual Payment Plan</label><input type="text" id="pay_recommendedPlan" placeholder="e.g. 10,10,10,70 or 60/40 or 1% monthly"/></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="autoDetectPaymentScheduleFromCurrentForm()">⚡ Auto Detect Schedule</button>
+        <button class="btn btn-ghost btn-sm" onclick="addPaymentScheduleRow()">✍️ Edit / Add Manually</button>
+      </div>
     </div>
     <div class="row3" style="margin-bottom:10px;">
       <div><label class="lbl">Buyer Name</label><input type="text" id="pay_buyer" placeholder="Client name"/></div>
@@ -5702,23 +5721,116 @@ function renderPaymentTracker(){
     const sm=summarizePaymentPlan(plan); const next=sm.next;
     const spa=(plan.spaStatus||'Pending')==='Signed'?'good':'warn'; const oq=(plan.oqoodStatus||'Pending')==='Issued'?'good':'warn';
     return `<div class="payment-plan-card" onclick="openPaymentPlanModal('${plan.id}')">
-      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start;"><div><b>${escapeHtml(plan.buyer||'Unnamed Buyer')}</b><div style="font-size:11px;color:var(--text3);margin-top:3px;">${escapeHtml(plan.developer||'-')} • ${escapeHtml(plan.project||'-')} • Unit ${escapeHtml(plan.unit||'-')}</div></div><span class="smart-score ${sm.overdue?'low':sm.pct>=70?'good':'mid'}">${sm.pct}% paid</span></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:flex-start;"><div><b>${escapeHtml(plan.buyer||'Unnamed Buyer')}</b><div style="font-size:11px;color:var(--text3);margin-top:3px;">${escapeHtml(plan.developer||'-')} • ${escapeHtml(plan.project||'-')} • Unit ${escapeHtml(plan.unit||'-')} ${plan.dealId?'• Linked Deal':''}</div></div><span class="smart-score ${sm.overdue?'low':sm.pct>=70?'good':'mid'}">${sm.pct}% paid</span></div>
       <div class="payment-kpi-grid"><div class="payment-kpi"><small>Total</small><b>${payMoney(sm.total)}</b></div><div class="payment-kpi"><small>Paid</small><b>${payMoney(sm.paid)}</b></div><div class="payment-kpi"><small>Remaining</small><b>${payMoney(sm.remaining)}</b></div><div class="payment-kpi"><small>Next</small><b>${next?payMoney(next.amount):'Clear'}</b><span style="font-size:10px;color:var(--text3);">${next?escapeHtml(next.dueDate||'No date'):''}</span></div></div>
       <div class="payment-progress"><div class="payment-progress-fill" style="width:${sm.pct}%"></div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;"><span class="smart-chip ${spa}">SPA: ${escapeHtml(plan.spaStatus||'Pending')}</span><span class="smart-chip ${oq}">Oqood: ${escapeHtml(plan.oqoodStatus||'Pending')}</span><span class="smart-chip ${sm.overdue?'bad':'good'}">Overdue: ${payMoney(sm.overdue)}</span><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyPaymentReminder('${plan.id}')">Copy Reminder</button><button class="btn btn-green btn-sm" onclick="event.stopPropagation();markNextInstallmentPaid('${plan.id}')">Mark Next Paid</button></div>
     </div>`;
   }).join('');
 }
-function openPaymentPlanModal(id){
+
+function paymentDealLabel(d){
+  if(!d) return 'Deal';
+  const val=Number(d.sellingPrice||d.dealValue||d.selling||0);
+  return `${d.buyer||'Buyer'} — ${d.project||d.property||'Project'}${d.unit?' / Unit '+d.unit:''}${val?' — AED '+val.toLocaleString():''}`;
+}
+function getPaymentEligibleDeals(){
+  const arr=Array.isArray(dealEngines)?dealEngines:[];
+  return arr.filter(d=>d && (d.project||d.buyer||d.unit||d.sellingPrice)).sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0));
+}
+function refreshPaymentDealSelect(selectedId){
+  const sel=document.getElementById('pay_dealId'); if(!sel) return;
+  const deals=getPaymentEligibleDeals();
+  sel.innerHTML='<option value="">-- Select Deal --</option>'+deals.map(d=>`<option value="${escapeAttr(d.id)}" ${String(d.id)===String(selectedId)?'selected':''}>${escapeHtml(paymentDealLabel(d))}</option>`).join('');
+}
+function openPaymentPlanFromDeal(){
+  openPaymentPlanModal();
+  setTimeout(()=>{ refreshPaymentDealSelect(''); const sel=document.getElementById('pay_dealId'); if(sel) sel.focus(); },0);
+}
+function findPaymentPlanForDeal(dealId){
+  return (offplanPaymentPlans||[]).find(p=>String(p.dealId||'')===String(dealId||''));
+}
+function pullPaymentDataFromSelectedDeal(showToast){
+  const id=document.getElementById('pay_dealId')?.value||'';
+  if(!id){ if(showToast) alert('Select a deal first.'); return; }
+  const d=(dealEngines||[]).find(x=>String(x.id)===String(id));
+  if(!d){ if(showToast) alert('Deal not found.'); return; }
+  const existing=findPaymentPlanForDeal(id);
+  if(existing && !editingPaymentPlanId){
+    if(confirm('Payment tracker already exists for this deal. Open existing tracker instead?')){ openPaymentPlanModal(existing.id); return; }
+  }
+  const set=(k,v)=>{ const el=document.getElementById('pay_'+k); if(el && (showToast || !el.value)) el.value=v||''; };
+  set('buyer',d.buyer||''); set('developer',d.developer||''); set('project',d.project||''); set('unit',d.unit||'');
+  set('total',d.sellingPrice||d.dealValue||d.selling||'');
+  const raw=[d.paymentBreakdown,d.notes,d.property,d.trusteeStatus].filter(Boolean).join('\n');
+  const detectedPlan=detectPaymentPlanText(raw) || '';
+  set('planName', detectedPlan || d.paymentPlan || '');
+  set('recommendedPlan', detectedPlan || d.paymentPlan || '');
+  if(!document.getElementById('pay_notes')?.value){ set('notes', `Pulled from Deal Engine: ${paymentDealLabel(d)}`); }
+  if(!Array.isArray(window.__payScheduleDraft) || !window.__payScheduleDraft.length){
+    const built=buildScheduleFromPaymentText(detectedPlan || d.paymentPlan || '', d.sellingPrice||d.dealValue||d.selling||0, document.getElementById('pay_bookingDate')?.value||'');
+    if(built.length) window.__payScheduleDraft=built;
+  }
+  renderPaymentScheduleEditor();
+  if(showToast && typeof toast==='function') toast('Deal data pulled. Review schedule before saving.','success');
+}
+function detectPaymentPlanText(text){
+  text=String(text||'');
+  const m=text.match(/(\d{1,2}\s*\/\s*\d{1,2}(?:\s*\/\s*\d{1,2})?|\d+(?:\.\d+)?\s*%\s*(?:monthly|per month)|1\s*%\s*monthly|post\s*handover|payment\s*plan\s*[:\-]?\s*[^\n]{2,60})/i);
+  return m?m[0].replace(/^payment\s*plan\s*[:\-]?\s*/i,'').trim():'';
+}
+function addMonthsISO(dateStr, months){
+  const d=dateStr?new Date(dateStr):new Date();
+  if(isNaN(d)) return '';
+  d.setMonth(d.getMonth()+months);
+  return d.toISOString().slice(0,10);
+}
+function buildScheduleFromPaymentText(planText,totalPrice,bookingDate){
+  const total=payNum(totalPrice); const txt=String(planText||'').trim(); if(!txt) return [];
+  let pcts=[];
+  const slash=txt.match(/(\d{1,2}(?:\.\d+)?)\s*\/\s*(\d{1,2}(?:\.\d+)?)(?:\s*\/\s*(\d{1,2}(?:\.\d+)?))?/);
+  if(slash){ pcts=[Number(slash[1]), Number(slash[2])]; if(slash[3]) pcts.push(Number(slash[3])); }
+  else if(/1\s*%|monthly/i.test(txt)){
+    pcts=[10]; for(let i=0;i<30;i++) pcts.push(1); const used=pcts.reduce((a,b)=>a+b,0); if(used<100) pcts.push(100-used);
+  }else{
+    pcts=(txt.match(/\d+(?:\.\d+)?/g)||[]).map(Number).filter(x=>x>0&&x<=100);
+  }
+  if(!pcts.length) return [];
+  const sum=pcts.reduce((a,b)=>a+b,0);
+  if(sum<99 && sum>0) pcts.push(100-sum);
+  return pcts.map((pct,i)=>({
+    name:i===0?'Booking / Down Payment':(i===pcts.length-1 && pct>=20?'Handover Payment':'Installment '+i),
+    dueDate:addMonthsISO(bookingDate, i===0?0:i*3), percent:pct, amount:total?Math.round(total*pct/100):'',
+    status:i===0?'Paid':'Upcoming', paidDate:i===0?new Date().toISOString().slice(0,10):'', notes:i===0?'Auto-built from payment plan — review':''
+  }));
+}
+function autoDetectPaymentScheduleFromCurrentForm(){
+  const recommended=document.getElementById('pay_recommendedPlan')?.value || document.getElementById('pay_planName')?.value || '';
+  const total=document.getElementById('pay_total')?.value || '';
+  let rows=buildScheduleFromPaymentText(recommended,total,document.getElementById('pay_bookingDate')?.value||'');
+  if(!rows.length){
+    const dealId=document.getElementById('pay_dealId')?.value||'';
+    const d=(dealEngines||[]).find(x=>String(x.id)===String(dealId));
+    const txt=d?[d.paymentBreakdown,d.notes,d.property].filter(Boolean).join('\n'):'';
+    const detected=detectPaymentPlanText(txt);
+    if(detected){ const el=document.getElementById('pay_recommendedPlan'); if(el) el.value=detected; rows=buildScheduleFromPaymentText(detected,total,document.getElementById('pay_bookingDate')?.value||''); }
+  }
+  if(!rows.length){ alert('Could not auto-detect a clean payment plan. Add installments manually or enter recommended plan like 10,10,10,70.'); return; }
+  if(window.__payScheduleDraft?.length && !confirm('Replace current schedule with auto-detected schedule?')) return;
+  window.__payScheduleDraft=rows; renderPaymentScheduleEditor(); renderPaymentPreview();
+}
+function openPaymentPlanModal(id, linkedDealId){
   editingPaymentPlanId=id||null;
   const plan=id?(offplanPaymentPlans||[]).find(x=>x.id===id):null;
   const draft=extractedPaymentDraft && !id ? extractedPaymentDraft : null;
-  const p=plan||draft||{buyer:'',developer:'',project:'',unit:'',totalPrice:'',planName:'',bookingDate:'',spaStatus:'Pending',oqoodStatus:'Pending',commissionStatus:'Pending',notes:'',schedule:[]};
-  ['buyer','developer','project','unit','planName','bookingDate','spaStatus','oqoodStatus','commissionStatus','notes'].forEach(k=>{const el=document.getElementById('pay_'+k); if(el) el.value=p[k]||'';});
+  const p=plan||draft||{buyer:'',developer:'',project:'',unit:'',totalPrice:'',planName:'',recommendedPlan:'',bookingDate:'',spaStatus:'Pending',oqoodStatus:'Pending',commissionStatus:'Pending',notes:'',schedule:[],dealId:linkedDealId||''};
+  refreshPaymentDealSelect(p.dealId || linkedDealId || '');
+  ['buyer','developer','project','unit','planName','recommendedPlan','bookingDate','spaStatus','oqoodStatus','commissionStatus','notes'].forEach(k=>{const el=document.getElementById('pay_'+k); if(el) el.value=p[k]||'';});
   const total=document.getElementById('pay_total'); if(total) total.value=p.totalPrice||'';
   window.__payScheduleDraft=Array.isArray(p.schedule)?JSON.parse(JSON.stringify(p.schedule)):[];
   const title=document.getElementById('paymentPlanModalTitle'); if(title) title.textContent=id?'Edit Payment Tracker':'New Payment Tracker';
   const del=document.getElementById('deletePaymentPlanBtn'); if(del) del.style.display=id?'inline-flex':'none';
+  if(linkedDealId && !id) pullPaymentDataFromSelectedDeal(false);
   renderPaymentScheduleEditor();
   document.getElementById('paymentPlanModal')?.classList.add('open');
   extractedPaymentDraft=null;
@@ -5774,7 +5886,7 @@ function syncPaymentRowAmount(i){
   if(pct && amt && !payNum(amt.value)) amt.value=Math.round(total*pct/100);
 }
 function autoBuildScheduleFromPlan(){
-  const txt=prompt('Enter percentages separated by comma. Example: 10,10,10,10,20,40', '10,10,10,10,20,40'); if(!txt) return;
+  const suggested=document.getElementById('pay_recommendedPlan')?.value || document.getElementById('pay_planName')?.value || '10,10,10,10,20,40'; const txt=prompt('Enter percentages separated by comma. Example: 10,10,10,10,20,40', suggested); if(!txt) return;
   const total=payNum(document.getElementById('pay_total')?.value); const start=document.getElementById('pay_bookingDate')?.value || new Date().toISOString().slice(0,10);
   const base=new Date(start); const arr=txt.split(/[,;+]/).map(x=>payNum(x)).filter(Boolean);
   window.__payScheduleDraft=arr.map((pct,i)=>{const d=new Date(base); d.setMonth(base.getMonth()+i*3); return {name:i===0?'Booking':'Installment '+i,dueDate:d.toISOString().slice(0,10),percent:pct,amount:total?Math.round(total*pct/100):'',status:i===0?'Paid':'Upcoming',paidDate:i===0?new Date().toISOString().slice(0,10):'',notes:''};});
@@ -5785,9 +5897,9 @@ function savePaymentPlan(){
   const plan={
     id: editingPaymentPlanId || 'pay_'+Date.now(),
     buyer:document.getElementById('pay_buyer')?.value||'', developer:document.getElementById('pay_developer')?.value||'', project:document.getElementById('pay_project')?.value||'', unit:document.getElementById('pay_unit')?.value||'',
-    totalPrice:document.getElementById('pay_total')?.value||'', planName:document.getElementById('pay_planName')?.value||'', bookingDate:document.getElementById('pay_bookingDate')?.value||'',
+    totalPrice:document.getElementById('pay_total')?.value||'', planName:document.getElementById('pay_planName')?.value||'', recommendedPlan:document.getElementById('pay_recommendedPlan')?.value||'', bookingDate:document.getElementById('pay_bookingDate')?.value||'',
     spaStatus:document.getElementById('pay_spaStatus')?.value||'Pending', oqoodStatus:document.getElementById('pay_oqoodStatus')?.value||'Pending', commissionStatus:document.getElementById('pay_commissionStatus')?.value||'Pending', notes:document.getElementById('pay_notes')?.value||'',
-    schedule:rows, updatedAt:Date.now()
+    dealId:document.getElementById('pay_dealId')?.value||'', schedule:rows, updatedAt:Date.now()
   };
   if(!plan.buyer && !plan.project){ alert('Buyer or Project required.'); return; }
   if(!Array.isArray(offplanPaymentPlans)) offplanPaymentPlans=[];
