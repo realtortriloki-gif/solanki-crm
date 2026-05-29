@@ -50,7 +50,7 @@ window.saveToFirebase = async function(data) {
   const payload = {
     contacts: Array.isArray(data.contacts) ? data.contacts : [],
     projects: Array.isArray(data.projects) ? data.projects : [],
-    settings: { ...(data.settings || {}), __sync: syncMeta() },
+    settings: { ...(data.settings || {}), __sync: syncMeta(), __dealEnginesBackup: (Array.isArray(data.dealEngines) ? data.dealEngines : (typeof dealEngines !== 'undefined' ? dealEngines : [])) },
     dealEngines: Array.isArray(data.dealEngines) ? data.dealEngines : (typeof dealEngines !== 'undefined' ? dealEngines : [])
   };
 
@@ -70,6 +70,19 @@ window.saveToFirebase = async function(data) {
     }, { onConflict: 'id' });
     if(error){
       console.error('Supabase save error:', error);
+      const msg = String(error.message || error.details || error.hint || '');
+      if(msg.includes('dealEngines') || msg.includes('dealengines')){
+        const retry = await _sb.from('crm_data').upsert({
+          id: 'main', contacts: payload.contacts, projects: payload.projects, settings: payload.settings
+        }, { onConflict: 'id' });
+        if(!retry.error){
+          localStorage.setItem(CRM_LAST_SYNC_KEY, new Date().toISOString());
+          localStorage.setItem('crm_deal_engines', JSON.stringify(payload.dealEngines));
+          markPendingSync(false);
+          if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('synced', 'Synced via backup');
+          return { ok:true, backup:true };
+        }
+      }
       markPendingSync(true);
       if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('error', 'Cloud save failed');
       return { ok:false, error };
@@ -96,7 +109,7 @@ window.loadFromFirebase = async function() {
       contacts: data.contacts||[],
       projects: data.projects||[],
       settings: data.settings||{},
-      dealEngines: Array.isArray(data.dealEngines) ? data.dealEngines : []
+      dealEngines: Array.isArray(data.dealEngines) ? data.dealEngines : (Array.isArray(data.settings?.__dealEnginesBackup) ? data.settings.__dealEnginesBackup : [])
     };
   } catch(e) { console.error('Supabase load exception:', e); }
   return null;
@@ -307,24 +320,26 @@ tr:hover td{background:#161616;}
 .bulk-bar{display:flex;gap:8px;align-items:center;background:var(--bg2);border-radius:8px;padding:8px 12px;border:1px solid var(--border);margin-bottom:10px;}
 .bulk-bar span{font-size:12px;color:var(--text3);white-space:nowrap;}
 
-/* ── Deal Engine ─────────────────────────────────────────────────── */
-.deal-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:10px;transition:border-color .15s;cursor:pointer;}
+/* Deal Engine */
+.deal-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:10px;transition:border-color .15s;}
 .deal-card:hover{border-color:#3a3a3a;}
-.deal-stage-label{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-.ds-interested{background:#1a1a3a;color:var(--purple);}
+.deal-stage{display:inline-block;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
+.ds-interested{background:#1e1a3a;color:var(--purple);}
 .ds-offer{background:#1a2a0a;color:#86efac;}
 .ds-formf{background:#0a2a3a;color:var(--blue);}
-.ds-noc{background:#2a1a0a;color:var(--orange);}
+.ds-noc{background:#2a1f0a;color:var(--orange);}
 .ds-trustee{background:#1a0a2a;color:#c4b5fd;}
 .ds-transfer{background:#0a2a1a;color:var(--green);}
-.ds-closed{background:#1a3a1a;color:#4ade80;}
+.ds-commission{background:#2a220a;color:#fbbf24;}
+.ds-closed{background:#1e3a2f;color:#4ade80;}
 .deal-stage-btn.active{background:var(--bg4)!important;color:var(--text)!important;border-color:#3a3a3a!important;}
 .doc-check{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
-.doc-check input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--green);}
-.deal-timeline-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
-.deal-tl-dot{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:4px;}
-.det-tab-btn{flex:1;padding:7px 4px;font-size:12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;white-space:nowrap;}
-.det-tab-btn.active{background:var(--bg4);border-color:#3a3a3a;color:var(--text);}
+.doc-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);}
+.deal-mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:10px 0;}
+.deal-mini{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;}
+.deal-mini small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+.deal-mini b{font-size:13px;}
+
 </style>
 </head>
 <body>
@@ -670,10 +685,14 @@ tr:hover td{background:#161616;}
   <div id="projectsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;"></div>
 </div>
 
-<!-- SETTINGS -->
+
+<!-- DEAL ENGINE -->
 <div id="page-deals" class="page">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
-    <h2 style="font-size:18px;font-weight:600;">🏠 Deal Engine</h2>
+    <div>
+      <h2 style="font-size:18px;font-weight:600;">🏠 Deal Engine</h2>
+      <p style="font-size:12px;color:var(--text3);margin-top:4px;">Lead → Offer → Form F → NOC → Trustee → Transfer → Commission → Closed</p>
+    </div>
     <button class="btn btn-green" onclick="openNewDeal()">+ New Deal</button>
   </div>
   <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:1rem;-webkit-overflow-scrolling:touch;">
@@ -684,11 +703,67 @@ tr:hover td{background:#161616;}
     <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('noc',this)">🏛 NOC</button>
     <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('trustee',this)">🤝 Trustee</button>
     <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('transfer',this)">🔑 Transfer</button>
+    <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('commission',this)">💰 Commission</button>
     <button class="btn btn-ghost btn-sm deal-stage-btn" onclick="filterDeals('closed',this)">✅ Closed</button>
   </div>
   <div id="dealEngineList"></div>
 </div>
 
+<!-- Deal Modal -->
+<div class="modal-overlay" id="dealModal">
+  <div class="modal" style="max-width:760px;">
+    <div class="modal-header">
+      <div class="modal-title" id="dealModalTitle">New Deal</div>
+      <button class="modal-close" onclick="closeDealModal()">✕</button>
+    </div>
+    <div class="row2" style="margin-bottom:10px;">
+      <div><label class="lbl">Buyer Name</label><input type="text" id="d_buyer" placeholder="Buyer name"/></div>
+      <div><label class="lbl">Seller Name</label><input type="text" id="d_seller" placeholder="Seller name"/></div>
+    </div>
+    <div class="row3" style="margin-bottom:10px;">
+      <div><label class="lbl">Developer</label><input type="text" id="d_developer" placeholder="Emaar / DAMAC"/></div>
+      <div><label class="lbl">Project</label><input type="text" id="d_project" placeholder="Project / community"/></div>
+      <div><label class="lbl">Unit No.</label><input type="text" id="d_unit" placeholder="Unit"/></div>
+    </div>
+    <div style="margin-bottom:10px;"><label class="lbl">Property Details</label><input type="text" id="d_property" placeholder="4BR townhouse, BUA, plot, view..."/></div>
+    <div class="row3" style="margin-bottom:10px;">
+      <div><label class="lbl">Stage</label><select id="d_stage"><option value="interested">Interested</option><option value="offer">Offer</option><option value="formf">Form F</option><option value="noc">NOC</option><option value="trustee">Trustee</option><option value="transfer">Transfer</option><option value="commission">Commission</option><option value="closed">Closed</option></select></div>
+      <div><label class="lbl">Selling Price</label><input type="text" id="d_selling" placeholder="4250000" oninput="calculateDealCommission()"/></div>
+      <div><label class="lbl">Original Price</label><input type="text" id="d_original" placeholder="Optional"/></div>
+    </div>
+    <div class="row3" style="margin-bottom:10px;">
+      <div><label class="lbl">Gross Revenue %</label><input type="text" id="d_revPct" value="2" oninput="calculateDealCommission()"/></div>
+      <div><label class="lbl">Referral Bonus AED</label><input type="text" id="d_referral" value="0" oninput="calculateDealCommission()"/></div>
+      <div><label class="lbl">My Split %</label><input type="text" id="d_split" value="60" oninput="calculateDealCommission()"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:10px;">
+      <div><label class="lbl">Agent Bonus AED</label><input type="text" id="d_bonus" value="0" oninput="calculateDealCommission()"/></div>
+      <div><label class="lbl">Trustee Appointment</label><input type="text" id="d_trustee" placeholder="Date/time/status"/></div>
+    </div>
+    <div id="dealCalcPreview" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--text2);">Enter selling price to calculate commission.</div>
+    <div class="row2" style="margin-bottom:10px;">
+      <div><label class="lbl">Payment Breakdown</label><textarea id="d_payment" placeholder="Seller cheque, DLD, agency, trustee, adjustments..."></textarea></div>
+      <div><label class="lbl">Notes</label><textarea id="d_notes" placeholder="Deal notes, issues, next action..."></textarea></div>
+    </div>
+    <div class="card" style="background:var(--bg2);margin-bottom:12px;padding:12px;">
+      <div class="card-title">Document Checklist</div>
+      <div class="row2">
+        <label class="doc-check"><input type="checkbox" id="doc_passport"/> Passport</label>
+        <label class="doc-check"><input type="checkbox" id="doc_eid"/> Emirates ID</label>
+        <label class="doc-check"><input type="checkbox" id="doc_oqood"/> Oqood / Title Deed</label>
+        <label class="doc-check"><input type="checkbox" id="doc_formf"/> Form F / MOU</label>
+        <label class="doc-check"><input type="checkbox" id="doc_noc"/> NOC</label>
+        <label class="doc-check"><input type="checkbox" id="doc_cheques"/> Cheques Ready</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-green" style="flex:1;" onclick="saveDeal()">Save Deal</button>
+      <button class="btn btn-red" id="deleteDealBtn" style="display:none;" onclick="deleteDeal()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
 <div id="page-settings" class="page">
   <h2 style="font-size:18px;font-weight:600;margin-bottom:1.25rem;">Settings</h2>
   <div class="card">
@@ -1086,6 +1161,9 @@ let oFilter = 'all', fuFilter = 'all';
 let sourceBucketFilter = '';
 let previewContactId = null;
 let settings = { name:'Triloki Chaudhary', company:'Solanki Capital Properties LLC', tagline:'Your Trusted Property Advisor' };
+let dealEngines = [];
+let currentDealFilter = 'all';
+let editingDealId = null;
 
 // Female name DB
 const femaleNames = new Set(['fatima','sara','sarah','maryam','mariam','aisha','ayesha','noor','layla','leila','iqra','hana','zara','zainab','noura','noora','reem','hessa','latifa','shaikha','maitha','afra','shamsa','meera','mira','priya','pooja','sneha','anjali','kavya','divya','deepa','sunita','anita','rita','sita','geeta','uma','asha','usha','neha','rekha','seema','reena','meena','lina','nina','dina','rina','hind','ghada','randa','rana','rania','dalia','abeer','amira','amina','asma','asmaa','basma','farah','hala','hanan','hayat','hiba','jihan','jumana','khadija','lamya','lubna','lujain','manal','maha','mais','maya','mona','muna','najla','najwa','nahla','nasrin','rahma','raghad','rasha','rola','ruba','safaa','safa','salma','sama','samia','samira','shirin','suhair','tahani','wafa','widad','wisam','yusra','zahra','zainab','zeina','zena','zineb','alice','emma','olivia','sophia','isabella','mia','charlotte','amelia','lily','grace','anna','victoria','elizabeth','jennifer','jessica','ashley','emily','amanda','melissa','nicole','stephanie','rachel','lauren','brittany','megan','chelsea','britney','courtney','taylor','amber','alexis','kayla','brooke','vanessa','cassandra','diana','naomi','claire','luna','ella','chloe','avery','aria','scarlett','aurora','violet','layla','zoey','lillian','nora','riley','stella','zoe']);
@@ -1112,6 +1190,7 @@ function nav(p, btn){
   if(p==='followup') renderFU();
   if(p==='pipeline') renderPipeline();
   if(p==='projects') renderProjects();
+  if(p==='deals' && typeof renderDeals === 'function') renderDeals();
 }
 
 // ─── TOAST NOTIFICATION ──────────────────────────────────────────────
@@ -4164,6 +4243,105 @@ function ADV_markStaleCold(){
 </div>
 
 <script>
+
+// ─── DEAL ENGINE FUNCTIONS ───────────────────────────────────────────
+function moneyAED(v){ const n=Number(String(v||'').replace(/[^0-9.]/g,''))||0; return 'AED '+Math.round(n).toLocaleString('en-US'); }
+function numAED(v){ return Number(String(v||'').replace(/[^0-9.]/g,''))||0; }
+function dealStageClass(stage){ return 'ds-'+(stage||'interested'); }
+function dealStageLabel(stage){ return ({interested:'Interested',offer:'Offer',formf:'Form F',noc:'NOC',trustee:'Trustee',transfer:'Transfer',commission:'Commission',closed:'Closed'}[stage]||'Interested'); }
+function dealDocsProgress(d){ const docs=d.docs||{}; const keys=['passport','eid','oqood','formf','noc','cheques']; const done=keys.filter(k=>docs[k]).length; return {done,total:keys.length,pct:Math.round(done/keys.length*100)}; }
+function getDealCommissionFromFields(){
+  const dealValue=numAED(document.getElementById('d_selling')?.value);
+  const revenuePct=Number(document.getElementById('d_revPct')?.value||0);
+  const referral=numAED(document.getElementById('d_referral')?.value);
+  const splitPct=Number(document.getElementById('d_split')?.value||0);
+  const bonus=numAED(document.getElementById('d_bonus')?.value);
+  const gross=dealValue*revenuePct/100;
+  const netAfterReferral=Math.max(0,gross-referral);
+  const myCommission=netAfterReferral*splitPct/100;
+  const companyNet=netAfterReferral-myCommission;
+  const totalAgent=myCommission+bonus;
+  return {dealValue,revenuePct,referral,splitPct,bonus,gross,netAfterReferral,myCommission,companyNet,totalAgent};
+}
+function calculateDealCommission(){
+  const el=document.getElementById('dealCalcPreview'); if(!el) return;
+  const c=getDealCommissionFromFields();
+  if(!c.dealValue){ el.textContent='Enter selling price to calculate commission.'; return; }
+  el.innerHTML=`<div class="deal-mini-grid" style="margin:0;">
+    <div class="deal-mini"><small>Gross Revenue</small><b>${moneyAED(c.gross)}</b></div>
+    <div class="deal-mini"><small>After Referral</small><b>${moneyAED(c.netAfterReferral)}</b></div>
+    <div class="deal-mini"><small>My Commission</small><b style="color:var(--green)">${moneyAED(c.myCommission)}</b></div>
+    <div class="deal-mini"><small>Company Net</small><b style="color:var(--blue)">${moneyAED(c.companyNet)}</b></div>
+    <div class="deal-mini"><small>Total Agent Earning</small><b style="color:var(--orange)">${moneyAED(c.totalAgent)}</b></div>
+  </div>`;
+}
+function renderDeals(){
+  const el=document.getElementById('dealEngineList'); if(!el) return;
+  const arr=(dealEngines||[]).filter(d=>currentDealFilter==='all'||d.stage===currentDealFilter).sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0));
+  if(!arr.length){ el.innerHTML='<div class="empty">No deals yet. Click “New Deal” and create your first active deal.</div>'; return; }
+  el.innerHTML=arr.map(d=>{
+    const docs=dealDocsProgress(d); const c=d.commission||{};
+    return `<div class="deal-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:15px;font-weight:800;margin-bottom:4px;">${d.project||'Untitled Deal'} ${d.unit?('• '+d.unit):''}</div>
+          <div style="font-size:12px;color:var(--text3);">Buyer: <b style="color:var(--text2)">${d.buyer||'-'}</b> • Seller: <b style="color:var(--text2)">${d.seller||'-'}</b></div>
+        </div>
+        <span class="deal-stage ${dealStageClass(d.stage)}">${dealStageLabel(d.stage)}</span>
+      </div>
+      <div class="deal-mini-grid">
+        <div class="deal-mini"><small>Selling Price</small><b>${moneyAED(d.sellingPrice)}</b></div>
+        <div class="deal-mini"><small>My Commission</small><b style="color:var(--green)">${moneyAED(c.myCommission||0)}</b></div>
+        <div class="deal-mini"><small>Company Net</small><b style="color:var(--blue)">${moneyAED(c.companyNet||0)}</b></div>
+        <div class="deal-mini"><small>Documents</small><b>${docs.done}/${docs.total} (${docs.pct}%)</b></div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">${d.property||''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="editDeal('${d.id}')">Edit</button>
+        <button class="btn btn-blue btn-sm" onclick="copyDealSummary('${d.id}')">Copy Summary</button>
+        <button class="btn btn-green btn-sm" onclick="advanceDealStage('${d.id}')">Move Next</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function filterDeals(stage,btn){ currentDealFilter=stage; document.querySelectorAll('.deal-stage-btn').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); renderDeals(); }
+function openNewDeal(){ editingDealId=null; clearDealModal(); document.getElementById('dealModalTitle').textContent='New Deal'; document.getElementById('deleteDealBtn').style.display='none'; document.getElementById('dealModal').classList.add('open'); calculateDealCommission(); }
+function closeDealModal(){ document.getElementById('dealModal').classList.remove('open'); }
+function clearDealModal(){ ['buyer','seller','developer','project','unit','property','selling','original','payment','notes','trustee'].forEach(k=>{const e=document.getElementById('d_'+k); if(e) e.value='';}); document.getElementById('d_stage').value='interested'; document.getElementById('d_revPct').value='2'; document.getElementById('d_referral').value='0'; document.getElementById('d_split').value='60'; document.getElementById('d_bonus').value='0'; ['passport','eid','oqood','formf','noc','cheques'].forEach(k=>{const e=document.getElementById('doc_'+k); if(e) e.checked=false;}); }
+function editDeal(id){
+  const d=(dealEngines||[]).find(x=>x.id===id); if(!d) return; editingDealId=id; clearDealModal();
+  document.getElementById('dealModalTitle').textContent='Edit Deal'; document.getElementById('deleteDealBtn').style.display='inline-flex';
+  document.getElementById('d_buyer').value=d.buyer||''; document.getElementById('d_seller').value=d.seller||''; document.getElementById('d_developer').value=d.developer||''; document.getElementById('d_project').value=d.project||''; document.getElementById('d_unit').value=d.unit||''; document.getElementById('d_property').value=d.property||''; document.getElementById('d_stage').value=d.stage||'interested'; document.getElementById('d_selling').value=d.sellingPrice||''; document.getElementById('d_original').value=d.originalPrice||''; document.getElementById('d_revPct').value=d.revenuePct??2; document.getElementById('d_referral').value=d.referralBonus??0; document.getElementById('d_split').value=d.splitPct??60; document.getElementById('d_bonus').value=d.agentBonus??0; document.getElementById('d_payment').value=d.paymentBreakdown||''; document.getElementById('d_notes').value=d.notes||''; document.getElementById('d_trustee').value=d.trusteeStatus||'';
+  const docs=d.docs||{}; ['passport','eid','oqood','formf','noc','cheques'].forEach(k=>{const e=document.getElementById('doc_'+k); if(e) e.checked=!!docs[k];});
+  document.getElementById('dealModal').classList.add('open'); calculateDealCommission();
+}
+function saveDeal(){
+  const c=getDealCommissionFromFields();
+  const now=Date.now();
+  const old=editingDealId?(dealEngines||[]).find(d=>d.id===editingDealId):null;
+  const deal={
+    ...(old||{}), id: editingDealId || ('deal_'+now+'_'+Math.random().toString(36).slice(2,7)),
+    buyer:document.getElementById('d_buyer').value.trim(), seller:document.getElementById('d_seller').value.trim(), developer:document.getElementById('d_developer').value.trim(), project:document.getElementById('d_project').value.trim(), unit:document.getElementById('d_unit').value.trim(), property:document.getElementById('d_property').value.trim(), stage:document.getElementById('d_stage').value, sellingPrice:c.dealValue, originalPrice:numAED(document.getElementById('d_original').value), revenuePct:c.revenuePct, referralBonus:c.referral, splitPct:c.splitPct, agentBonus:c.bonus, paymentBreakdown:document.getElementById('d_payment').value.trim(), notes:document.getElementById('d_notes').value.trim(), trusteeStatus:document.getElementById('d_trustee').value.trim(), commission:c, docs:{passport:doc_passport.checked,eid:doc_eid.checked,oqood:doc_oqood.checked,formf:doc_formf.checked,noc:doc_noc.checked,cheques:doc_cheques.checked}, createdAt: old?.createdAt || now, updatedAt: now
+  };
+  if(!deal.project && !deal.buyer){ alert('Add at least project or buyer name.'); return; }
+  dealEngines = editingDealId ? dealEngines.map(d=>d.id===editingDealId?deal:d) : [deal,...(dealEngines||[])];
+  localStorage.setItem('crm_deal_engines', JSON.stringify(dealEngines));
+  save(); renderDeals(); closeDealModal(); if(typeof toast==='function') toast('Deal saved','success');
+}
+function deleteDeal(){ if(!editingDealId) return; if(!confirm('Delete this deal?')) return; dealEngines=(dealEngines||[]).filter(d=>d.id!==editingDealId); localStorage.setItem('crm_deal_engines',JSON.stringify(dealEngines)); save(); renderDeals(); closeDealModal(); if(typeof toast==='function') toast('Deal deleted','success'); }
+function advanceDealStage(id){ const order=['interested','offer','formf','noc','trustee','transfer','commission','closed']; const d=(dealEngines||[]).find(x=>x.id===id); if(!d) return; const i=order.indexOf(d.stage); d.stage=order[Math.min(order.length-1,Math.max(0,i)+1)]; d.updatedAt=Date.now(); localStorage.setItem('crm_deal_engines',JSON.stringify(dealEngines)); save(); renderDeals(); }
+function copyDealSummary(id){ const d=(dealEngines||[]).find(x=>x.id===id); if(!d) return; const docs=dealDocsProgress(d); const c=d.commission||{}; const text=`Deal Summary
+Project: ${d.project||'-'}
+Unit: ${d.unit||'-'}
+Buyer: ${d.buyer||'-'}
+Seller: ${d.seller||'-'}
+Stage: ${dealStageLabel(d.stage)}
+Selling Price: ${moneyAED(d.sellingPrice)}
+My Commission: ${moneyAED(c.myCommission||0)}
+Company Net: ${moneyAED(c.companyNet||0)}
+Documents: ${docs.done}/${docs.total}
+Notes: ${d.notes||'-'}`; navigator.clipboard?.writeText(text).then(()=>toast&&toast('Deal summary copied','success')).catch(()=>alert(text)); }
+
 const AREA_PRICES=[
   {area:'Downtown Dubai',price:'AED 3,100',type:'Apartment',trend:'↑ 11%'},
   {area:'Dubai Marina',price:'AED 2,200',type:'Apartment',trend:'↑ 8%'},
@@ -4308,449 +4486,5 @@ function convertCurrency(){
   if(el) el.textContent=d+' '+to;
 }
 </script>
-<!-- Deal Engine Modal -->
-<div class="modal-overlay" id="dealEngineModal">
-  <div class="modal" style="max-width:700px;">
-    <div class="modal-header">
-      <div class="modal-title" id="dealEngineModalTitle">🏠 New Deal</div>
-      <button class="modal-close" onclick="closeDealEngineModal()">✕</button>
-    </div>
-    <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;">
-      <button class="det-tab-btn active" id="det-details" onclick="setDETab('details')">📋 Details</button>
-      <button class="det-tab-btn" id="det-financial" onclick="setDETab('financial')">💰 Commission</button>
-      <button class="det-tab-btn" id="det-docs" onclick="setDETab('docs')">📁 Documents</button>
-      <button class="det-tab-btn" id="det-timeline" onclick="setDETab('timeline')">⏱ Timeline</button>
-    </div>
-
-    <!-- TAB: Details -->
-    <div id="deTab-details">
-      <div class="row2" style="gap:10px;margin-bottom:10px;">
-        <div><label class="lbl">Stage</label>
-          <select id="de_stage">
-            <option value="interested">🤝 Interested</option>
-            <option value="offer">📝 Offer Made</option>
-            <option value="formf">📋 Form F Signed</option>
-            <option value="noc">🏛 NOC Pending</option>
-            <option value="trustee">🤝 Trustee Appointment</option>
-            <option value="transfer">🔑 Transfer in Progress</option>
-            <option value="closed">✅ Closed</option>
-          </select>
-        </div>
-        <div><label class="lbl">Deal Date</label><input type="date" id="de_date"/></div>
-      </div>
-      <div class="row2" style="gap:10px;margin-bottom:10px;">
-        <div><label class="lbl">Buyer Name</label><input type="text" id="de_buyer" placeholder="e.g. Ahmed Al Mansoori"/></div>
-        <div><label class="lbl">Buyer Phone</label><input type="text" id="de_buyer_phone" placeholder="971501234567"/></div>
-      </div>
-      <div class="row2" style="gap:10px;margin-bottom:10px;">
-        <div><label class="lbl">Seller Name</label><input type="text" id="de_seller" placeholder="e.g. Emaar Properties"/></div>
-        <div><label class="lbl">Seller Phone</label><input type="text" id="de_seller_phone" placeholder="971501234567"/></div>
-      </div>
-      <div class="row2" style="gap:10px;margin-bottom:10px;">
-        <div><label class="lbl">Developer</label><input type="text" id="de_developer" placeholder="e.g. Emaar, Aldar, Sobha"/></div>
-        <div><label class="lbl">Project</label><input type="text" id="de_project" placeholder="e.g. Creek Harbour"/></div>
-      </div>
-      <div class="row2" style="gap:10px;margin-bottom:10px;">
-        <div><label class="lbl">Unit Number</label><input type="text" id="de_unit_no" placeholder="e.g. 2401, Villa 12"/></div>
-        <div><label class="lbl">Unit Type</label>
-          <select id="de_unit_type">
-            <option>Studio</option><option>1 BR</option><option>2 BR</option><option>3 BR</option>
-            <option>4+ BR</option><option>Villa</option><option>Townhouse</option><option>Penthouse</option>
-            <option>Plot</option><option>Commercial</option>
-          </select>
-        </div>
-      </div>
-      <div class="row2" style="gap:10px;margin-bottom:10px;">
-        <div><label class="lbl">Selling Price (AED)</label><input type="text" id="de_selling_price" placeholder="e.g. 1,800,000"/></div>
-        <div><label class="lbl">Original Price (AED)</label><input type="text" id="de_original_price" placeholder="e.g. 1,500,000"/></div>
-      </div>
-      <div style="margin-bottom:10px;">
-        <label class="lbl">Payment Breakdown</label>
-        <textarea id="de_payment" placeholder="e.g. 20% Down | 60% During Construction | 20% Handover" style="min-height:60px;"></textarea>
-      </div>
-      <div class="row2" style="gap:10px;margin-bottom:10px;">
-        <div><label class="lbl">NOC Status</label>
-          <select id="de_noc">
-            <option value="pending">⏳ Pending</option><option value="applied">📤 Applied</option>
-            <option value="received">✅ Received</option><option value="na">N/A</option>
-          </select>
-        </div>
-        <div><label class="lbl">Trustee Status</label>
-          <select id="de_trustee">
-            <option value="pending">⏳ Pending</option><option value="booked">📅 Booked</option>
-            <option value="done">✅ Completed</option><option value="na">N/A</option>
-          </select>
-        </div>
-      </div>
-      <div style="margin-bottom:10px;">
-        <label class="lbl">Notes</label>
-        <textarea id="de_notes" placeholder="Deal notes, important dates, special conditions..."></textarea>
-      </div>
-    </div>
-
-    <!-- TAB: Commission -->
-    <div id="deTab-financial" style="display:none;">
-      <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #1a3a28;">
-        <div style="font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:8px;">STEP 1 — DEAL VALUE & GROSS REVENUE</div>
-        <div class="row2" style="gap:8px;">
-          <div><label class="lbl">Deal Value (X)</label><input type="text" id="de_deal_value" placeholder="e.g. 1,800,000" oninput="calcDealEngine()"/></div>
-          <div><label class="lbl">Gross Revenue % (B)</label><input type="number" id="de_rev_pct" placeholder="e.g. 5" step="0.1" oninput="calcDealEngine()"/></div>
-        </div>
-        <div style="margin-top:8px;padding:8px;background:var(--bg);border-radius:7px;display:flex;justify-content:space-between;">
-          <span style="font-size:12px;color:var(--text3);">Gross Company Revenue (Y = X × B%)</span>
-          <span id="de_disp_gross" style="font-size:14px;font-weight:700;color:#fbbf24;">—</span>
-        </div>
-      </div>
-      <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #2a1f0a;">
-        <div style="font-size:11px;color:var(--orange);font-weight:700;margin-bottom:8px;">STEP 2 — REFERRAL DEDUCTION</div>
-        <div class="row2" style="gap:8px;">
-          <div><label class="lbl">Referral Bonus Paid (Z)</label><input type="text" id="de_referral" placeholder="e.g. 5,000 or 0" oninput="calcDealEngine()"/></div>
-          <div style="padding-top:20px;">
-            <div style="padding:8px;background:var(--bg);border-radius:7px;">
-              <div style="font-size:11px;color:var(--text3);">Net After Referral (Y - Z)</div>
-              <div id="de_disp_net_ref" style="font-size:14px;font-weight:700;color:var(--orange);">—</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #1a2a3a;">
-        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:8px;">STEP 3 — COMMISSION SPLIT</div>
-        <div class="row2" style="gap:8px;margin-bottom:8px;">
-          <div><label class="lbl">My Split % (S)</label><input type="number" id="de_split_pct" placeholder="e.g. 60" step="1" value="60" oninput="calcDealEngine()"/></div>
-          <div><label class="lbl">Agent Bonus from Developer (A)</label><input type="text" id="de_agent_bonus" placeholder="e.g. 2,000 or 0" oninput="calcDealEngine()"/></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div style="padding:8px;background:var(--bg);border-radius:7px;"><div style="font-size:11px;color:var(--text3);">My Commission (C)</div><div id="de_disp_my_comm" style="font-size:14px;font-weight:700;color:var(--blue);">—</div></div>
-          <div style="padding:8px;background:var(--bg);border-radius:7px;"><div style="font-size:11px;color:var(--text3);">Net Company Revenue</div><div id="de_disp_co_rev" style="font-size:14px;font-weight:700;color:var(--green);">—</div></div>
-        </div>
-      </div>
-      <div id="de_commission_summary" style="display:none;background:linear-gradient(135deg,#0a2a1a,#051510);border:1px solid #25D366;border-radius:10px;padding:14px;margin-bottom:10px;">
-        <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:10px;">📊 COMMISSION SUMMARY</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;" id="de_comm_rows"></div>
-        <div style="margin-top:12px;padding:10px;background:rgba(37,211,102,.1);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text2);">Total Agent Earnings (C + A)</span>
-          <span id="de_disp_total" style="font-size:18px;font-weight:800;color:#a78bfa;">—</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: Documents -->
-    <div id="deTab-docs" style="display:none;">
-      <div style="margin-bottom:10px;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">Required Documents Checklist</div>
-        <div id="de_docs_list">
-          <div class="doc-check"><input type="checkbox" id="doc_mou"/><label for="doc_mou">MOU / Agreement of Sale</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_formf"/><label for="doc_formf">Form F (DLD)</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_noc"/><label for="doc_noc">NOC from Developer</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_title"/><label for="doc_title">Title Deed</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_passport_buyer"/><label for="doc_passport_buyer">Buyer Passport Copy</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_passport_seller"/><label for="doc_passport_seller">Seller Passport Copy</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_visa_buyer"/><label for="doc_visa_buyer">Buyer Visa / Emirates ID</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_visa_seller"/><label for="doc_visa_seller">Seller Visa / Emirates ID</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_cheque_mgr"/><label for="doc_cheque_mgr">Manager's Cheque (Purchase Price)</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_cheque_dld"/><label for="doc_cheque_dld">DLD Fee Cheque (4%)</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_poa"/><label for="doc_poa">POA (if applicable)</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_mortgage"/><label for="doc_mortgage">Mortgage Pre-approval (if financed)</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_commission_signed"/><label for="doc_commission_signed">Commission Agreement Signed</label></div>
-          <div class="doc-check"><input type="checkbox" id="doc_transfer"/><label for="doc_transfer">Transfer Appointment Confirmation</label></div>
-        </div>
-      </div>
-      <div><label class="lbl">Document Links / Notes</label><textarea id="de_doc_notes" placeholder="Google Drive links, document notes..."></textarea></div>
-    </div>
-
-    <!-- TAB: Timeline -->
-    <div id="deTab-timeline" style="display:none;">
-      <div id="de_timeline_list" style="margin-bottom:12px;min-height:40px;"></div>
-      <div style="background:var(--bg2);border-radius:10px;padding:12px;border:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Add Timeline Event</div>
-        <div class="row2" style="gap:8px;margin-bottom:8px;">
-          <div><label class="lbl">Date</label><input type="date" id="de_tl_date"/></div>
-          <div><label class="lbl">Event</label>
-            <select id="de_tl_stage">
-              <option>Lead Received</option><option>Interest Confirmed</option><option>Offer Made</option>
-              <option>Offer Accepted</option><option>Form F Signed</option><option>NOC Applied</option>
-              <option>NOC Received</option><option>Trustee Booked</option><option>Transfer Done</option>
-              <option>Commission Received</option><option>Other</option>
-            </select>
-          </div>
-        </div>
-        <input type="text" id="de_tl_note" placeholder="Notes for this event..." style="margin-bottom:8px;"/>
-        <button class="btn btn-ghost btn-sm" onclick="addDETimeline()" style="width:100%;">+ Add Event</button>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:8px;margin-top:14px;">
-      <button class="btn btn-ghost" onclick="closeDealEngineModal()" style="flex:1;">Cancel</button>
-      <button class="btn btn-green" onclick="saveDealEngine()" style="flex:2;">💾 Save Deal</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ════════════════════════════════════════════════════════════════
-// DEAL ENGINE — Solanki Capital CRM
-// Syncs via Supabase crm_data table (dealEngines column)
-// SECURITY: Only publishable key in frontend. Enable RLS in Supabase!
-// ════════════════════════════════════════════════════════════════
-let dealEngines = JSON.parse(localStorage.getItem('crm_deal_engines')||'[]');
-let _deEditId = null;
-let _deTLEvents = [];
-let _deActiveStage = 'all';
-
-function saveDealEngines(){
-  localStorage.setItem('crm_deal_engines', JSON.stringify(dealEngines));
-  clearTimeout(window._deSaveTimer);
-  window._deSaveTimer = setTimeout(()=>{
-    try{
-      window.saveToFirebase({
-        contacts: typeof contacts!=='undefined'?contacts:[],
-        settings: typeof settings!=='undefined'?settings:{},
-        projects: typeof projects!=='undefined'?projects:[],
-        dealEngines
-      });
-    }catch(e){ console.error('Deal Engine sync error:',e); }
-  }, 1000);
-}
-
-function renderDeals(){
-  const el=document.getElementById('dealEngineList');
-  if(!el) return;
-  const list=_deActiveStage==='all'?dealEngines:dealEngines.filter(d=>d.stage===_deActiveStage);
-  if(!list.length){ el.innerHTML='<div class="empty">No deals found. Click "+ New Deal" to start.</div>'; return; }
-  const stageLabels={interested:'🤝 Interested',offer:'📝 Offer',formf:'📋 Form F',noc:'🏛 NOC',trustee:'🤝 Trustee',transfer:'🔑 Transfer',closed:'✅ Closed'};
-  const f=n=>n>0?'AED '+Math.round(n).toLocaleString('en-US'):'—';
-  el.innerHTML=list.map(d=>{
-    const docs=d.docs||{};
-    const docKeys=['mou','formf','noc','title','passport_buyer','passport_seller','visa_buyer','visa_seller','cheque_mgr','cheque_dld','poa','mortgage','commission_signed','transfer'];
-    const docsDone=docKeys.filter(k=>docs[k]).length;
-    const docPct=Math.round(docsDone/docKeys.length*100);
-    return `<div class="deal-card" onclick="editDealEngine('${d.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-        <div>
-          <div style="font-size:15px;font-weight:700;">${d.developer||'—'} — ${d.project||'—'}</div>
-          <div style="font-size:12px;color:var(--text3);">Unit ${d.unitNo||'—'} · ${d.unitType||'—'} · ${d.date||'—'}</div>
-        </div>
-        <span class="deal-stage-label ds-${d.stage||'interested'}">${stageLabels[d.stage]||d.stage}</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px;">
-        <div style="background:var(--bg2);border-radius:7px;padding:8px;">
-          <div style="font-size:10px;color:var(--text3);">Selling Price</div>
-          <div style="font-size:13px;font-weight:700;color:#fbbf24;">${d.sellingPrice?'AED '+parseInt((d.sellingPrice||'0').replace(/[^0-9]/g,'')).toLocaleString():'—'}</div>
-        </div>
-        <div style="background:var(--bg2);border-radius:7px;padding:8px;">
-          <div style="font-size:10px;color:var(--text3);">My Commission</div>
-          <div style="font-size:13px;font-weight:700;color:var(--blue);">${d.commission?.myComm?f(d.commission.myComm):'—'}</div>
-        </div>
-        <div style="background:var(--bg2);border-radius:7px;padding:8px;">
-          <div style="font-size:10px;color:var(--text3);">Buyer</div>
-          <div style="font-size:13px;font-weight:600;">${d.buyer||'—'}</div>
-        </div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span style="font-size:11px;color:var(--text3);">📁 Docs ${docsDone}/${docKeys.length}</span>
-          <div style="width:80px;height:4px;background:var(--bg2);border-radius:2px;">
-            <div style="width:${docPct}%;height:4px;background:${docPct>=80?'var(--green)':docPct>=40?'var(--orange)':'var(--red)'};border-radius:2px;"></div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:var(--text3);">
-          NOC: <span style="color:${d.nocStatus==='received'?'var(--green)':d.nocStatus==='applied'?'var(--orange)':'var(--red)'};">${d.nocStatus||'pending'}</span>
-          · Trustee: <span style="color:${d.trusteeStatus==='done'?'var(--green)':d.trusteeStatus==='booked'?'var(--orange)':'var(--red)'};">${d.trusteeStatus||'pending'}</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function filterDeals(stage,btn){
-  _deActiveStage=stage;
-  document.querySelectorAll('.deal-stage-btn').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  renderDeals();
-}
-
-function openNewDeal(){
-  _deEditId=null; _deTLEvents=[];
-  const textIds=['de_buyer','de_buyer_phone','de_seller','de_seller_phone','de_developer','de_project','de_unit_no','de_selling_price','de_original_price','de_payment','de_notes','de_doc_notes','de_deal_value','de_referral','de_agent_bonus','de_tl_note'];
-  textIds.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['de_disp_gross','de_disp_net_ref','de_disp_my_comm','de_disp_co_rev','de_disp_total'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
-  document.getElementById('de_stage').value='interested';
-  document.getElementById('de_unit_type').value='1 BR';
-  document.getElementById('de_noc').value='pending';
-  document.getElementById('de_trustee').value='pending';
-  document.getElementById('de_split_pct').value='60';
-  document.getElementById('de_rev_pct').value='';
-  document.getElementById('de_date').value=new Date().toISOString().slice(0,10);
-  document.getElementById('de_tl_date').value=new Date().toISOString().slice(0,10);
-  document.getElementById('de_commission_summary').style.display='none';
-  ['mou','formf','noc','title','passport_buyer','passport_seller','visa_buyer','visa_seller','cheque_mgr','cheque_dld','poa','mortgage','commission_signed','transfer'].forEach(k=>{const el=document.getElementById('doc_'+k);if(el)el.checked=false;});
-  renderDETimeline();
-  document.getElementById('dealEngineModalTitle').textContent='🏠 New Deal';
-  setDETab('details');
-  document.getElementById('dealEngineModal').classList.add('open');
-}
-
-function editDealEngine(id){
-  const d=dealEngines.find(x=>x.id===id);
-  if(!d) return;
-  _deEditId=id; _deTLEvents=[...(d.timeline||[])];
-  document.getElementById('de_stage').value=d.stage||'interested';
-  document.getElementById('de_date').value=d.date||'';
-  document.getElementById('de_buyer').value=d.buyer||'';
-  document.getElementById('de_buyer_phone').value=d.buyerPhone||'';
-  document.getElementById('de_seller').value=d.seller||'';
-  document.getElementById('de_seller_phone').value=d.sellerPhone||'';
-  document.getElementById('de_developer').value=d.developer||'';
-  document.getElementById('de_project').value=d.project||'';
-  document.getElementById('de_unit_no').value=d.unitNo||'';
-  document.getElementById('de_unit_type').value=d.unitType||'1 BR';
-  document.getElementById('de_selling_price').value=d.sellingPrice||'';
-  document.getElementById('de_original_price').value=d.originalPrice||'';
-  document.getElementById('de_payment').value=d.payment||'';
-  document.getElementById('de_noc').value=d.nocStatus||'pending';
-  document.getElementById('de_trustee').value=d.trusteeStatus||'pending';
-  document.getElementById('de_notes').value=d.notes||'';
-  if(d.commission){
-    document.getElementById('de_deal_value').value=d.commission.dealValue||'';
-    document.getElementById('de_rev_pct').value=d.commission.revPct||'';
-    document.getElementById('de_referral').value=d.commission.referral||'';
-    document.getElementById('de_split_pct').value=d.commission.splitPct||60;
-    document.getElementById('de_agent_bonus').value=d.commission.agentBonus||'';
-    calcDealEngine();
-  }
-  const docs=d.docs||{};
-  ['mou','formf','noc','title','passport_buyer','passport_seller','visa_buyer','visa_seller','cheque_mgr','cheque_dld','poa','mortgage','commission_signed','transfer'].forEach(k=>{const el=document.getElementById('doc_'+k);if(el)el.checked=!!docs[k];});
-  document.getElementById('de_doc_notes').value=d.docNotes||'';
-  renderDETimeline();
-  document.getElementById('dealEngineModalTitle').textContent='🏠 Edit — '+d.developer;
-  setDETab('details');
-  document.getElementById('dealEngineModal').classList.add('open');
-}
-
-function closeDealEngineModal(){ document.getElementById('dealEngineModal').classList.remove('open'); }
-
-function setDETab(tab){
-  ['details','financial','docs','timeline'].forEach(t=>{
-    const el=document.getElementById('deTab-'+t);
-    const btn=document.getElementById('det-'+t);
-    if(el) el.style.display=t===tab?'block':'none';
-    if(btn) btn.classList.toggle('active',t===tab);
-  });
-  if(tab==='timeline') renderDETimeline();
-}
-
-function calcDealEngine(){
-  const pn2=id=>parseFloat((document.getElementById(id)?.value||'').replace(/[^0-9.]/g,''))||0;
-  const X=pn2('de_deal_value');
-  const B=parseFloat(document.getElementById('de_rev_pct')?.value)||0;
-  const Y=X&&B?X*B/100:0;
-  const Z=pn2('de_referral');
-  const netRef=Math.max(0,Y-Z);
-  const S=parseFloat(document.getElementById('de_split_pct')?.value)||60;
-  const C=netRef*S/100;
-  const coRev=netRef-C;
-  const A=pn2('de_agent_bonus');
-  const total=C+A;
-  const f=n=>n>0?'AED '+Math.round(n).toLocaleString('en-US'):'—';
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set('de_disp_gross',f(Y));
-  set('de_disp_net_ref',f(netRef));
-  set('de_disp_my_comm',f(C));
-  set('de_disp_co_rev',f(coRev));
-  set('de_disp_total',total>0?f(total):'—');
-  if(X>0){
-    document.getElementById('de_commission_summary').style.display='block';
-    document.getElementById('de_comm_rows').innerHTML=`
-      <div style="color:var(--text3);">Deal Value (X)</div><div style="font-weight:700;">${f(X)}</div>
-      <div style="color:#fbbf24;">Gross Revenue (Y=X×${B}%)</div><div style="font-weight:700;color:#fbbf24;">${f(Y)}</div>
-      <div style="color:var(--orange);">Referral Bonus (Z)</div><div style="color:var(--orange);">- ${Z?f(Z):'0'}</div>
-      <div style="color:var(--text2);">Net After Referral</div><div style="font-weight:600;">${f(netRef)}</div>
-      <div style="color:var(--blue);">My Comm (C=Net×${S}%)</div><div style="font-weight:700;color:var(--blue);">${f(C)}</div>
-      <div style="color:var(--green);">Net Company Revenue</div><div style="font-weight:700;color:var(--green);">${f(coRev)}</div>
-      <div style="color:#a78bfa;">Agent Bonus (A)</div><div style="color:#a78bfa;">${A?f(A):'—'}</div>`;
-    window._deCalc={X,B,Y,Z,netRef,S,C,coRev,A,total};
-  }
-}
-
-function addDETimeline(){
-  const date=document.getElementById('de_tl_date').value;
-  const stage=document.getElementById('de_tl_stage').value;
-  const note=document.getElementById('de_tl_note').value.trim();
-  if(!date||!stage) return;
-  _deTLEvents.push({date,stage,note,ts:Date.now()});
-  _deTLEvents.sort((a,b)=>b.date>a.date?1:-1);
-  document.getElementById('de_tl_note').value='';
-  renderDETimeline();
-}
-
-function renderDETimeline(){
-  const el=document.getElementById('de_timeline_list');
-  if(!el) return;
-  if(!_deTLEvents.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px 0;">No events yet</div>';return;}
-  el.innerHTML=_deTLEvents.map(e=>`
-    <div class="deal-timeline-item">
-      <div class="deal-tl-dot"></div>
-      <div><div style="font-size:12px;font-weight:600;">${e.stage}</div>
-      <div style="font-size:11px;color:var(--text3);">${e.date}${e.note?' · '+e.note:''}</div></div>
-    </div>`).join('');
-}
-
-function saveDealEngine(){
-  calcDealEngine();
-  const dc=window._deCalc||{};
-  const docKeys=['mou','formf','noc','title','passport_buyer','passport_seller','visa_buyer','visa_seller','cheque_mgr','cheque_dld','poa','mortgage','commission_signed','transfer'];
-  const docs={};
-  docKeys.forEach(k=>{const el=document.getElementById('doc_'+k);if(el)docs[k]=el.checked;});
-  const deal={
-    id: _deEditId||('de_'+Date.now()),
-    stage: document.getElementById('de_stage').value,
-    date: document.getElementById('de_date').value,
-    buyer: document.getElementById('de_buyer').value.trim(),
-    buyerPhone: document.getElementById('de_buyer_phone').value.trim(),
-    seller: document.getElementById('de_seller').value.trim(),
-    sellerPhone: document.getElementById('de_seller_phone').value.trim(),
-    developer: document.getElementById('de_developer').value.trim(),
-    project: document.getElementById('de_project').value.trim(),
-    unitNo: document.getElementById('de_unit_no').value.trim(),
-    unitType: document.getElementById('de_unit_type').value,
-    sellingPrice: document.getElementById('de_selling_price').value.trim(),
-    originalPrice: document.getElementById('de_original_price').value.trim(),
-    payment: document.getElementById('de_payment').value.trim(),
-    nocStatus: document.getElementById('de_noc').value,
-    trusteeStatus: document.getElementById('de_trustee').value,
-    notes: document.getElementById('de_notes').value.trim(),
-    commission:{
-      dealValue: document.getElementById('de_deal_value').value.trim(),
-      revPct: document.getElementById('de_rev_pct').value,
-      referral: document.getElementById('de_referral').value.trim(),
-      splitPct: document.getElementById('de_split_pct').value,
-      agentBonus: document.getElementById('de_agent_bonus').value.trim(),
-      grossRevenue: dc.Y||0,
-      netAfterReferral: dc.netRef||0,
-      myComm: dc.C||0,
-      coRevenue: dc.coRev||0,
-      totalAgentEarning: dc.total||0
-    },
-    docs,
-    docNotes: document.getElementById('de_doc_notes').value.trim(),
-    timeline: _deTLEvents,
-    updatedAt: Date.now()
-  };
-  if(_deEditId){ const idx=dealEngines.findIndex(x=>x.id===_deEditId); if(idx>=0) dealEngines[idx]=deal; }
-  else { dealEngines.unshift(deal); }
-  saveDealEngines();
-  closeDealEngineModal();
-  renderDeals();
-  if(typeof toast==='function') toast('✅ Deal saved!');
-}
-
-// Hook nav to render deals page
-const _origNav2=typeof nav==='function'?nav:null;
-if(_origNav2){ nav=function(page,btn){ _origNav2(page,btn); if(page==='deals') renderDeals(); }; }
-
-// Auto-refresh market every 15 min
-if(!window._mktRefreshSet){ window._mktRefreshSet=true; setInterval(()=>{ if(typeof loadMarketData==='function') loadMarketData(); },15*60*1000); }
-</script>
-
 </body>
 </html>
