@@ -923,24 +923,7 @@ tr:hover td{background:#161616;}
       <div><label class="lbl">Phone *</label><input type="text" id="ac_phone" placeholder="971501234567"/></div>
     </div>
     <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Nationality</label>
-<select id="ac_nat">
-<option value="">-- Select Nationality --</option>
-<option>Indian</option><option>Pakistani</option><option>British</option><option>American</option>
-<option>Emirati</option><option>Saudi Arabian</option><option>Qatari</option><option>Kuwaiti</option>
-<option>Bahraini</option><option>Omani</option><option>Jordanian</option><option>Lebanese</option>
-<option>Egyptian</option><option>Syrian</option><option>Iraqi</option><option>Yemeni</option>
-<option>Iranian</option><option>Turkish</option><option>Azerbaijani</option><option>Afghan</option>
-<option>Bangladeshi</option><option>Sri Lankan</option><option>Nepali</option><option>Filipino</option>
-<option>Indonesian</option><option>Malaysian</option><option>Chinese</option><option>Japanese</option>
-<option>Korean</option><option>Russian</option><option>Ukrainian</option><option>Kazakhstani</option>
-<option>German</option><option>French</option><option>Italian</option><option>Spanish</option>
-<option>Portuguese</option><option>Dutch</option><option>Belgian</option><option>Swiss</option>
-<option>Australian</option><option>Canadian</option><option>South African</option><option>Nigerian</option>
-<option>Kenyan</option><option>Ghanaian</option><option>Ethiopian</option><option>Moroccan</option>
-<option>Tunisian</option><option>Algerian</option><option>Libyan</option><option>Sudanese</option>
-<option>Other</option>
-</select></div>
+      <div><label class="lbl">Nationality</label><input type="text" id="ac_nat" placeholder="e.g. Pakistani"/></div>
       <div><label class="lbl">Community</label><input type="text" id="ac_com" placeholder="e.g. District One"/></div>
     </div>
     <div class="row2" style="margin-bottom:12px;">
@@ -1399,10 +1382,7 @@ function renderDashboard(){
   const interested=contacts.filter(c=>c.status==='interested').length;
   const closed=contacts.filter(c=>c.status==='closed'||c.status==='repeat').length;
   const totalDeals=contacts.reduce((a,c)=>a+(c.deals||[]).length,0);
-  const totalCommission=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(d.commissionAmt||parseFloat((d.commission||'0').replace(/[^0-9.]/g,''))||0),a),0);
-  const totalAgentComm=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(d.agentCommission||0),a),0);
-  const totalReferral=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(d.referralBonus||0),a),0);
-  const totalCompanyRev=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(d.companyRevenue||0),a),0);
+  const totalCommission=contacts.reduce((a,c)=>(c.deals||[]).reduce((b,d)=>b+(parseFloat((d.commission||'0').replace(/[^0-9.]/g,''))||0),a),0);
   const hot=contacts.filter(c=>c.priority==='hot').length;
   const today=new Date().toISOString().slice(0,10);
   const overdueOrToday=contacts.filter(c=>c.callbackDate&&c.callbackDate<=today&&c.status!=='closed').length;
@@ -1426,7 +1406,7 @@ function renderDashboard(){
     <div class="stat-card" onclick="navToContacts('closed')" style="cursor:pointer;" title="View closed deals">
       <div class="stat-val" style="color:var(--green);">${totalDeals}</div><div class="stat-lbl">Deals Closed</div>
     </div>
-    <div class="stat-card" style="cursor:pointer;" onclick="openCommissionDash()">
+    <div class="stat-card" style="cursor:default;">
       <div class="stat-val" style="color:#fbbf24;font-size:18px;">AED ${totalCommission>0?totalCommission.toLocaleString('en-US',{maximumFractionDigits:0}):'0'}</div><div class="stat-lbl">Total Commission</div>
     </div>
   `;
@@ -3014,52 +2994,96 @@ function clearAllData(){ if(!confirm('Delete all data? This cannot be undone!'))
 
 <!-- Deal Close Modal -->
 <div class="modal-overlay" id="dealCloseModal">
-  <div class="modal" style="max-width:500px;">
+  <div class="modal" style="max-width:540px;">
     <div class="modal-header">
       <div class="modal-title">🏆 Deal Closed — Enter Details</div>
       <button class="modal-close" onclick="closeDealModal()">✕</button>
     </div>
-    <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Developer</label><input type="text" id="deal_developer" placeholder="e.g. Emaar, Sobha, DAMAC"/></div>
-      <div><label class="lbl">Project</label><input type="text" id="deal_project" placeholder="e.g. Sobha Hartland 2"/></div>
+    <div class="row2" style="margin-bottom:10px;">
+      <div><label class="lbl">Developer</label><input type="text" id="deal_developer" placeholder="e.g. Emaar, Aldar"/></div>
+      <div><label class="lbl">Project</label><input type="text" id="deal_project" placeholder="e.g. Creek Harbour"/></div>
     </div>
-    <div class="row2" style="margin-bottom:12px;">
+    <div class="row2" style="margin-bottom:10px;">
       <div><label class="lbl">Unit Type</label>
         <select id="deal_unit">
-          <option value="">Select type</option>
-          <option>Studio</option>
-          <option>1 BR</option>
-          <option>2 BR</option>
-          <option>3 BR</option>
-          <option>4+ BR</option>
-          <option>Villa</option>
-          <option>Townhouse</option>
-          <option>Penthouse</option>
-          <option>Plot</option>
-          <option>Commercial</option>
+          <option value="">Select</option><option>Studio</option><option>1 BR</option><option>2 BR</option>
+          <option>3 BR</option><option>4+ BR</option><option>Villa</option><option>Townhouse</option>
+          <option>Penthouse</option><option>Plot</option><option>Commercial</option>
         </select>
       </div>
-      <div><label class="lbl">Deal Value (AED)</label><input type="text" id="deal_value" placeholder="e.g. 2,500,000"/></div>
-    </div>
-    <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Deal Value (AED)</label><input type="text" id="deal_value2" placeholder="e.g. 2,500,000"/></div>
       <div><label class="lbl">Date of Closing</label><input type="date" id="deal_date"/></div>
     </div>
-    <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Total Commission (AED)</label><input type="text" id="deal_commission" placeholder="e.g. 62,500" oninput="autoCalcDeal()"/></div>
-      <div><label class="lbl">Commission % of deal</label><input type="number" id="deal_commission_pct" placeholder="e.g. 2.5" step="0.1" oninput="autoCalcDeal()"/></div>
+
+    <!-- Row 1: Deal Value + Dev Commission % -->
+    <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #1a3a28;">
+      <div style="font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:8px;">STEP 1 — DEAL & GROSS REVENUE</div>
+      <div class="row2" style="gap:8px;">
+        <div>
+          <label class="lbl">Deal Value — X (AED)</label>
+          <input type="text" id="deal_value" placeholder="e.g. 1,563,224" oninput="calcDeal()"/>
+        </div>
+        <div>
+          <label class="lbl">Dev Commission % — B</label>
+          <input type="number" id="deal_dev_pct" placeholder="e.g. 5" step="0.1" oninput="calcDeal()"/>
+        </div>
+      </div>
+      <div style="margin-top:8px;padding:8px;background:var(--bg);border-radius:7px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--text3);">Gross Company Revenue (Y = X × B%)</span>
+        <span id="disp_gross" style="font-size:15px;font-weight:700;color:#fbbf24;">—</span>
+      </div>
     </div>
-    <div class="row2" style="margin-bottom:12px;">
-      <div><label class="lbl">Your Agent Commission (AED)</label><input type="text" id="deal_agent_comm" placeholder="e.g. 40,000"/></div>
-      <div><label class="lbl">Referral Bonus Paid (AED)</label><input type="text" id="deal_referral" placeholder="e.g. 5,000"/></div>
+
+    <!-- Row 2: Referral Bonus -->
+    <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #2a1f0a;">
+      <div style="font-size:11px;color:var(--orange);font-weight:700;margin-bottom:8px;">STEP 2 — REFERRAL BONUS</div>
+      <div class="row2" style="gap:8px;">
+        <div>
+          <label class="lbl">Referral Bonus Paid — Z (AED)</label>
+          <input type="text" id="deal_referral" placeholder="e.g. 5,000 or 0" oninput="calcDeal()"/>
+        </div>
+        <div style="padding-top:20px;">
+          <div style="padding:8px;background:var(--bg);border-radius:7px;">
+            <div style="font-size:11px;color:var(--text3);">Net After Referral (Y - Z)</div>
+            <div id="disp_net_ref" style="font-size:15px;font-weight:700;color:var(--orange);">—</div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div style="margin-bottom:12px;">
-      <label class="lbl">Company Revenue (AED) = Total Commission - Referral Bonus</label>
-      <input type="text" id="deal_company_rev" placeholder="Auto calculated" readonly style="background:var(--bg);color:var(--green);font-weight:600;"/>
+
+    <!-- Row 3: Agent Commission -->
+    <div style="background:var(--bg2);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid #1a2a3a;">
+      <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:8px;">STEP 3 — AGENT COMMISSION SPLIT</div>
+      <div class="row2" style="gap:8px;margin-bottom:8px;">
+        <div>
+          <label class="lbl">Agent Commission Rate %</label>
+          <input type="number" id="deal_my_pct" placeholder="e.g. 60" step="1" oninput="calcDeal()" value="60"/>
+        </div>
+        <div>
+          <label class="lbl">Agent Bonus from Developer — A (AED)</label>
+          <input type="text" id="deal_agent_bonus" placeholder="e.g. 2,000 or 0" oninput="calcDeal()"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="padding:8px;background:var(--bg);border-radius:7px;">
+          <div style="font-size:11px;color:var(--text3);">Net Agent Commission — C</div>
+          <div id="disp_agent_comm" style="font-size:15px;font-weight:700;color:var(--blue);">—</div>
+        </div>
+        <div style="padding:8px;background:var(--bg);border-radius:7px;">
+          <div style="font-size:11px;color:var(--text3);">Total Agent Earning (C + A)</div>
+          <div id="disp_agent_total" style="font-size:15px;font-weight:700;color:#a78bfa;">—</div>
+        </div>
+      </div>
     </div>
-    <div style="margin-bottom:16px;">
+
+    <!-- Final Summary -->
+    <div id="deal_summary" style="display:none;background:linear-gradient(135deg,#0a2a1a,#051510);border:1px solid #25D366;border-radius:10px;padding:14px;margin-bottom:10px;">
+      <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:10px;">📊 FINAL SUMMARY</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;" id="deal_summary_rows"></div>
+    </div>
+
+    <div style="margin-bottom:10px;">
       <label class="lbl">Notes</label>
-      <textarea id="deal_notes" placeholder="Any additional notes..." style="min-height:60px;"></textarea>
+      <textarea id="deal_notes" placeholder="Any additional notes..." style="min-height:50px;"></textarea>
     </div>
     <button class="btn btn-green" style="width:100%;" onclick="saveDeal()">💾 Save Deal</button>
   </div>
@@ -3090,54 +3114,115 @@ let _dealContactId = null;
 function openDealModal(id){
   _dealContactId = id;
   const c = contacts.find(x=>parseInt(x.id)===parseInt(id));
-  document.getElementById('deal_developer').value = c?.deals?.length ? '' : '';
+  document.getElementById('deal_developer').value = '';
   document.getElementById('deal_project').value = c?.community||'';
   document.getElementById('deal_unit').value = '';
   document.getElementById('deal_value').value = c?.budget||'';
-  document.getElementById('deal_commission').value = '';
+  document.getElementById('deal_dev_pct').value = '';
+  document.getElementById('deal_referral').value = '0';
+  document.getElementById('deal_my_pct').value = '60';
+  document.getElementById('deal_agent_bonus').value = '0';
   document.getElementById('deal_date').value = new Date().toISOString().slice(0,10);
   document.getElementById('deal_notes').value = '';
+  document.getElementById('deal_summary').style.display = 'none';
+  ['disp_gross','disp_net_ref','disp_agent_comm','disp_agent_total'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
   document.getElementById('dealCloseModal').classList.add('open');
 }
 
 function closeDealModal(){ document.getElementById('dealCloseModal').classList.remove('open'); }
 
-function autoCalcDeal(){
-  const comm = parseFloat((document.getElementById('deal_commission').value||'').replace(/[^0-9.]/g,''))||0;
-  const pct = parseFloat(document.getElementById('deal_commission_pct').value)||0;
-  const val = parseFloat((document.getElementById('deal_value2')?.value||document.getElementById('deal_value')?.value||'').replace(/[^0-9.]/g,''))||0;
-  if(pct && val && !comm){ document.getElementById('deal_commission').value = Math.round(val*pct/100).toLocaleString('en-US'); }
-  const ref = parseFloat((document.getElementById('deal_referral').value||'').replace(/[^0-9.]/g,''))||0;
-  const totalComm = parseFloat((document.getElementById('deal_commission').value||'').replace(/[^0-9.]/g,''))||0;
-  if(totalComm){ document.getElementById('deal_company_rev').value = 'AED '+Math.round(totalComm - ref).toLocaleString('en-US'); }
+function pn(id){ return parseFloat((document.getElementById(id)?.value||'').replace(/[^0-9.]/g,''))||0; }
+
+function calcDeal(){
+  const X = pn('deal_value');                          // Deal Value
+  const B = parseFloat(document.getElementById('deal_dev_pct')?.value)||0; // Dev Comm %
+  const Y = X && B ? X * B / 100 : 0;                 // Gross Company Revenue
+  const Z = pn('deal_referral');                        // Referral Bonus
+  const netRef = Math.max(0, Y - Z);                   // Net After Referral
+  const agentPct = parseFloat(document.getElementById('deal_my_pct')?.value)||60;
+  const C = netRef * agentPct / 100;                   // Net Agent Commission
+  const netCoRev = netRef * (1 - agentPct/100);        // Net Company Revenue
+  const A = pn('deal_agent_bonus');                     // Agent Bonus
+  const totalAgent = C + A;                            // Total Agent Earning
+
+  const f = n => n>0 ? 'AED '+Math.round(n).toLocaleString('en-US') : '—';
+
+  const setEl = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  setEl('disp_gross', Y ? f(Y) : '—');
+  setEl('disp_net_ref', netRef ? f(netRef) : '—');
+  setEl('disp_agent_comm', C ? f(C) : '—');
+  setEl('disp_agent_total', totalAgent ? f(totalAgent) : '—');
+
+  if(X || Y){
+    document.getElementById('deal_summary').style.display = 'block';
+    document.getElementById('deal_summary_rows').innerHTML = `
+      <div style="color:var(--text3);">Deal Value (X)</div>
+      <div style="font-weight:700;">${f(X)}</div>
+
+      <div style="color:#fbbf24;">Gross Co. Revenue (Y = X × ${B}%)</div>
+      <div style="font-weight:700;color:#fbbf24;">${f(Y)}</div>
+
+      <div style="color:var(--orange);">Referral Bonus (Z)</div>
+      <div style="font-weight:600;color:var(--orange);">- ${Z?f(Z):'0'}</div>
+
+      <div style="color:var(--text2);">Net After Referral (Y - Z)</div>
+      <div style="font-weight:600;">${f(netRef)}</div>
+
+      <div style="color:var(--blue);">Agent Comm Rate</div>
+      <div style="font-weight:600;color:var(--blue);">${agentPct}%</div>
+
+      <div style="color:var(--blue);">Net Agent Comm (C)</div>
+      <div style="font-weight:700;color:var(--blue);">${f(C)}</div>
+
+      <div style="color:var(--green);">Net Co. Revenue</div>
+      <div style="font-weight:700;color:var(--green);">${f(netCoRev)}</div>
+
+      <div style="color:#a78bfa;">Agent Bonus (A)</div>
+      <div style="font-weight:600;color:#a78bfa;">${A?f(A):'—'}</div>
+
+      <div style="color:#a78bfa;font-weight:700;border-top:1px solid #1a4a2a;padding-top:6px;margin-top:4px;">Total Agent Earning (C+A)</div>
+      <div style="font-weight:800;color:#a78bfa;font-size:16px;border-top:1px solid #1a4a2a;padding-top:6px;margin-top:4px;">${f(totalAgent)}</div>`;
+  }
+
+  // Store for save
+  window._dealCalc = {X, B, Y, Z, netRef, agentPct, C, netCoRev, A, totalAgent};
 }
+
 function saveDeal(){
   const c = contacts.find(x=>parseInt(x.id)===parseInt(_dealContactId));
   if(!c) return;
-  const totalComm = parseFloat((document.getElementById('deal_commission').value||'').replace(/[^0-9.]/g,''))||0;
-  const ref = parseFloat((document.getElementById('deal_referral').value||'').replace(/[^0-9.]/g,''))||0;
-  const agentComm = parseFloat((document.getElementById('deal_agent_comm').value||'').replace(/[^0-9.]/g,''))||0;
+  calcDeal();
+  const dc = window._dealCalc || {};
+  const f = n => n>0?'AED '+Math.round(n).toLocaleString('en-US'):'';
+
   const deal = {
     developer: document.getElementById('deal_developer').value.trim(),
     project: document.getElementById('deal_project').value.trim(),
     unit: document.getElementById('deal_unit').value,
-    value: (document.getElementById('deal_value2')?.value||document.getElementById('deal_value')?.value||'').trim(),
-    commission: document.getElementById('deal_commission').value.trim(),
-    commissionAmt: totalComm,
-    agentCommission: agentComm,
-    referralBonus: ref,
-    companyRevenue: totalComm - ref,
+    value: dc.X?Math.round(dc.X).toLocaleString('en-US'):'',
+    dealValue: dc.X||0,
+    devCommPct: dc.B||0,
+    commission: dc.Y?Math.round(dc.Y).toLocaleString('en-US'):'',
+    commissionAmt: dc.Y||0,
+    grossRevenue: dc.Y||0,
+    referralBonus: dc.Z||0,
+    netAfterReferral: dc.netRef||0,
+    agentCommPct: dc.agentPct||60,
+    agentCommission: dc.C||0,
+    companyRevenue: dc.netCoRev||0,
+    agentBonus: dc.A||0,
+    totalAgentEarning: dc.totalAgent||0,
     date: document.getElementById('deal_date').value,
     notes: document.getElementById('deal_notes').value.trim(),
     closedAt: new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
   };
+
   if(!c.deals) c.deals = [];
   if(c.deals.length > 0) c.status = 'repeat';
   c.deals.push(deal);
   if(!c.notes) c.notes = [];
-  const f = n => n>0?'AED '+Math.round(n).toLocaleString('en-US'):'—';
   c.notes.push({
-    text: '🏆 Deal — '+deal.developer+' '+deal.project+' '+deal.unit+(deal.value?' | '+deal.value:'')+(totalComm?' | Commission: '+f(totalComm):'')+(agentComm?' | Agent: '+f(agentComm):'')+(ref?' | Referral: '+f(ref):'')+(deal.companyRevenue?' | Co. Revenue: '+f(deal.companyRevenue):''),
+    text: `🏆 ${deal.developer} ${deal.project} ${deal.unit}${dc.X?' | Deal: '+f(dc.X):''}${dc.Y?' | Gross: '+f(dc.Y):''}${dc.C?' | My Comm: '+f(dc.C):''}${dc.netCoRev?' | Co.Rev: '+f(dc.netCoRev):''}${dc.totalAgent?' | Total Earned: '+f(dc.totalAgent):''}`,
     time: deal.closedAt
   });
   save(); closeDealModal(); renderContacts(); renderDashboard();
@@ -4143,128 +4228,6 @@ function convertCurrency(){
   const d=result>=1?result.toLocaleString('en-US',{maximumFractionDigits:4}):result.toFixed(6);
   const el=document.getElementById('curr_val');
   if(el) el.textContent=d+' '+to;
-}
-</script>
-<!-- Commission Dashboard Modal -->
-<div class="modal-overlay" id="commissionDashModal">
-  <div class="modal" style="max-width:600px;">
-    <div class="modal-header">
-      <div class="modal-title">💰 Commission & Revenue Dashboard</div>
-      <button class="modal-close" onclick="document.getElementById('commissionDashModal').classList.remove('open')">✕</button>
-    </div>
-    <div id="commDashContent"></div>
-  </div>
-</div>
-
-<script>
-function openCommissionDash(){
-  const f = n => n>0?'AED '+Math.round(n).toLocaleString('en-US'):'AED 0';
-  let totalComm=0,totalAgent=0,totalRef=0,totalCoRev=0;
-  const deals = [];
-  contacts.forEach(c=>{
-    (c.deals||[]).forEach(d=>{
-      const comm = d.commissionAmt||parseFloat((d.commission||'0').replace(/[^0-9.]/g,''))||0;
-      const agent = d.agentCommission||0;
-      const ref = d.referralBonus||0;
-      const coRev = d.companyRevenue||(comm-ref);
-      totalComm+=comm; totalAgent+=agent; totalRef+=ref; totalCoRev+=coRev;
-      deals.push({name:c.name, developer:d.developer||'—', project:d.project||'—', unit:d.unit||'—', value:d.value||'—', comm, agent, ref, coRev, date:d.date||d.closedAt||'—', id:c.id, dealIdx:c.deals.indexOf(d)});
-    });
-  });
-
-  document.getElementById('commDashContent').innerHTML = `
-    <div class="stats-grid" style="margin-bottom:16px;">
-      <div class="stat-card"><div class="mort-result-lbl">Total Commission</div><div style="font-size:20px;font-weight:700;color:#fbbf24;">${f(totalComm)}</div></div>
-      <div class="stat-card"><div class="mort-result-lbl">Your Agent Comm</div><div style="font-size:20px;font-weight:700;color:var(--green);">${f(totalAgent)}</div></div>
-      <div class="stat-card"><div class="mort-result-lbl">Referral Bonus Paid</div><div style="font-size:20px;font-weight:700;color:var(--orange);">${f(totalRef)}</div></div>
-      <div class="stat-card"><div class="mort-result-lbl">Company Revenue</div><div style="font-size:20px;font-weight:700;color:var(--blue);">${f(totalCoRev)}</div></div>
-    </div>
-    ${deals.length===0?'<div class="empty">No deals closed yet</div>':
-    '<div class="tbl-wrap"><table><thead><tr><th>Client</th><th>Project</th><th>Unit</th><th>Deal Value</th><th>Commission</th><th>Agent Comm</th><th>Referral</th><th>Co. Revenue</th><th>Date</th><th></th></tr></thead><tbody>'+
-    deals.map((d,i)=>`<tr>
-      <td style="font-weight:500;color:var(--blue);">${d.name}</td>
-      <td style="font-size:12px;">${d.developer}<br><span style="color:var(--text3);">${d.project}</span></td>
-      <td style="font-size:12px;">${d.unit}</td>
-      <td style="font-size:12px;">${d.value?'AED '+d.value:'—'}</td>
-      <td style="color:#fbbf24;font-weight:600;">${d.comm>0?f(d.comm):'—'}</td>
-      <td style="color:var(--green);">${d.agent>0?f(d.agent):'—'}</td>
-      <td style="color:var(--orange);">${d.ref>0?f(d.ref):'—'}</td>
-      <td style="color:var(--blue);">${d.coRev>0?f(d.coRev):'—'}</td>
-      <td style="font-size:11px;color:var(--text3);">${d.date}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="editDeal(${d.id},${d.dealIdx})">✏️</button></td>
-    </tr>`).join('')+
-    '</tbody></table></div>'}`;
-
-  document.getElementById('commissionDashModal').classList.add('open');
-}
-
-function editDeal(contactId, dealIdx){
-  const c = contacts.find(x=>parseInt(x.id)===parseInt(contactId));
-  if(!c||!c.deals[dealIdx]) return;
-  const d = c.deals[dealIdx];
-  _dealContactId = contactId;
-  document.getElementById('deal_developer').value = d.developer||'';
-  document.getElementById('deal_project').value = d.project||'';
-  document.getElementById('deal_unit').value = d.unit||'';
-  if(document.getElementById('deal_value2')) document.getElementById('deal_value2').value = d.value||'';
-  document.getElementById('deal_commission').value = d.commission||'';
-  if(document.getElementById('deal_agent_comm')) document.getElementById('deal_agent_comm').value = d.agentCommission||'';
-  if(document.getElementById('deal_referral')) document.getElementById('deal_referral').value = d.referralBonus||'';
-  document.getElementById('deal_date').value = d.date||new Date().toISOString().slice(0,10);
-  document.getElementById('deal_notes').value = d.notes||'';
-  // Remove old deal and save new on saveDeal
-  c.deals.splice(dealIdx,1);
-  document.getElementById('commissionDashModal').classList.remove('open');
-  document.getElementById('dealCloseModal').classList.add('open');
-}
-
-function editContact(id){
-  const c = contacts.find(x=>parseInt(x.id)===parseInt(id));
-  if(!c) return;
-  // Pre-fill add contact modal with existing data
-  document.getElementById('ac_name').value = c.name||'';
-  document.getElementById('ac_phone').value = c.phone||'';
-  document.getElementById('ac_nat').value = c.nationality||'';
-  document.getElementById('ac_com').value = c.community||'';
-  document.getElementById('ac_source').value = c.source||'';
-  document.getElementById('ac_notes').value = '';
-  document.getElementById('ac_status').value = c.status||'pending';
-  document.getElementById('ac_priority').value = c.priority||'cold';
-  document.getElementById('ac_type').value = c.contactType||'client';
-  document.getElementById('ac_leadtype').value = c.leadType||'buyer';
-  if(document.getElementById('ac_budget')) document.getElementById('ac_budget').value = c.budget||'';
-  document.getElementById('ocrStatus').textContent = '';
-  // Mark as edit mode
-  document.getElementById('addContactModal').dataset.editId = id;
-  document.getElementById('addContactModal').querySelector('.modal-title').textContent = '✏️ Edit Contact';
-  document.getElementById('addContactModal').querySelector('.btn-green:last-child').textContent = '💾 Save Changes';
-  document.getElementById('addContactModal').querySelector('.btn-green:last-child').onclick = ()=>saveEditContact(id);
-  document.getElementById('addContactModal').classList.add('open');
-}
-
-function saveEditContact(id){
-  const c = contacts.find(x=>parseInt(x.id)===parseInt(id));
-  if(!c) return;
-  c.name = document.getElementById('ac_name').value.trim()||c.name;
-  c.phone = document.getElementById('ac_phone').value.trim()||c.phone;
-  c.nationality = document.getElementById('ac_nat').value.trim();
-  c.community = document.getElementById('ac_com').value.trim();
-  c.source = document.getElementById('ac_source').value.trim();
-  c.status = document.getElementById('ac_status').value;
-  c.priority = document.getElementById('ac_priority').value;
-  c.contactType = document.getElementById('ac_type').value;
-  c.leadType = document.getElementById('ac_leadtype').value;
-  if(document.getElementById('ac_budget')) c.budget = document.getElementById('ac_budget').value.trim();
-  const extraNote = document.getElementById('ac_notes').value.trim();
-  if(extraNote){ if(!c.notes) c.notes=[]; c.notes.push({text:'✏️ Edited: '+extraNote, time:new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}); }
-  // Reset modal
-  document.getElementById('addContactModal').dataset.editId = '';
-  document.getElementById('addContactModal').querySelector('.modal-title').textContent = 'Add New Contact';
-  const saveBtn = document.getElementById('addContactModal').querySelector('.btn-green:last-child');
-  saveBtn.textContent = 'Save Contact';
-  saveBtn.onclick = saveAddContact;
-  save(); closeAddContact(); renderContacts(); renderDashboard();
-  toast('✅ Contact updated!');
 }
 </script>
 </body>
