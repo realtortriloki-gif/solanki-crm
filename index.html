@@ -50,7 +50,7 @@ window.saveToFirebase = async function(data) {
   const payload = {
     contacts: Array.isArray(data.contacts) ? data.contacts : [],
     projects: Array.isArray(data.projects) ? data.projects : [],
-    settings: { ...(data.settings || {}), __sync: syncMeta(), __dealEnginesBackup: (Array.isArray(data.dealEngines) ? data.dealEngines : (typeof dealEngines !== 'undefined' ? dealEngines : [])) },
+    settings: { ...(data.settings || {}), __sync: syncMeta(), __dealEnginesBackup: (Array.isArray(data.dealEngines) ? data.dealEngines : (typeof dealEngines !== 'undefined' ? dealEngines : [])), __offplanBackup: { bookings: (typeof offplanBookings !== 'undefined' ? offplanBookings : []), inventory: (typeof offplanInventory !== 'undefined' ? offplanInventory : []) }, __areaPriceBackup: (Array.isArray(data.areaPriceRows) ? data.areaPriceRows : (typeof areaPriceRows !== 'undefined' ? areaPriceRows : [])) },
     dealEngines: Array.isArray(data.dealEngines) ? data.dealEngines : (typeof dealEngines !== 'undefined' ? dealEngines : [])
   };
 
@@ -320,6 +320,37 @@ tr:hover td{background:#161616;}
 .bulk-bar{display:flex;gap:8px;align-items:center;background:var(--bg2);border-radius:8px;padding:8px 12px;border:1px solid var(--border);margin-bottom:10px;}
 .bulk-bar span{font-size:12px;color:var(--text3);white-space:nowrap;}
 
+
+/* Off-Plan Hub + Market Pulse */
+.market-pulse-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px;}
+.market-pulse-card{background:linear-gradient(145deg,#151515,#101010);border:1px solid var(--border);border-radius:12px;padding:12px;position:relative;overflow:hidden;}
+.market-pulse-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(37,211,102,.12),transparent 45%);pointer-events:none;}
+.market-pulse-card small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.market-pulse-card b{display:block;font-size:16px;color:var(--text);}
+.market-pulse-card span{font-size:10px;color:var(--text3);}
+.market-status-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);border-radius:999px;padding:5px 9px;font-size:11px;font-weight:700;}
+.offplan-hero{background:linear-gradient(135deg,#101827,#111 55%,#1a1306);border:1px solid #24364f;border-radius:14px;padding:16px;margin-bottom:1rem;}
+.offplan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+.offplan-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:12px;}
+.match-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;}
+.inventory-row{display:grid;grid-template-columns:1.2fr .8fr .8fr .8fr .8fr auto;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px;margin-bottom:8px;}
+@media(max-width:768px){.inventory-row{grid-template-columns:1fr 1fr}.inventory-row .btn{grid-column:1/-1;justify-content:center}.market-pulse-grid{grid-template-columns:1fr 1fr}.bottom-nav button{font-size:9px}}
+
+
+/* Area Price Intelligence */
+.area-intel-hero{background:linear-gradient(135deg,#0f172a,#111 55%,#061a11);border:1px solid #1e4a7c;border-radius:14px;padding:16px;margin-bottom:1rem;}
+.area-intel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px;}
+.area-intel-card{background:linear-gradient(145deg,#171717,#101010);border:1px solid var(--border);border-radius:12px;padding:12px;position:relative;overflow:hidden;}
+.area-intel-card small{display:block;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.area-intel-card b{font-size:18px;color:var(--text);display:block;}
+.area-intel-row{display:grid;grid-template-columns:1.4fr .8fr .8fr .7fr .8fr .9fr;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:9px;margin-bottom:7px;}
+.area-pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800;border:1px solid var(--border);}
+.area-pill.green{background:#0a2a1a;color:#4ade80;border-color:#1a4a2a;}
+.area-pill.yellow{background:#2a220a;color:#fbbf24;border-color:#4a3a0a;}
+.area-pill.red{background:#3a1515;color:#f87171;border-color:#5a2020;}
+.area-intel-table-head{display:grid;grid-template-columns:1.4fr .8fr .8fr .7fr .8fr .9fr;gap:8px;padding:0 9px 6px;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.5px;}
+@media(max-width:768px){.area-intel-row,.area-intel-table-head{grid-template-columns:1fr 1fr}.area-intel-table-head{display:none}.area-intel-row .btn{grid-column:1/-1;justify-content:center}}
+
 /* Deal Engine */
 .deal-card{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:10px;transition:border-color .15s;}
 .deal-card:hover{border-color:#3a3a3a;}
@@ -354,6 +385,8 @@ tr:hover td{background:#161616;}
   <button class="nav-item" onclick="nav('followup',this)"><span class="nav-icon">🔔</span> Follow-up</button>
   <button class="nav-item" onclick="nav('pipeline',this)"><span class="nav-icon">🏆</span> Pipeline</button>
   <button class="nav-item" onclick="nav('projects',this)"><span class="nav-icon">🏗️</span> Projects</button>
+  <button class="nav-item" onclick="nav('offplan',this)"><span class="nav-icon">🚀</span> Off-Plan Hub</button>
+  <button class="nav-item" onclick="nav('areaprices',this)"><span class="nav-icon">📍</span> Area Prices</button>
   <button class="nav-item" onclick="nav('deals',this)"><span class="nav-icon">🏠</span> Deal Engine</button>
   <button class="nav-item" onclick="nav('settings',this)"><span class="nav-icon">⚙️</span> Settings</button>
   <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
@@ -385,6 +418,12 @@ tr:hover td{background:#161616;}
   </button>
   <button onclick="nav('projects',this);syncBottomNav('projects')" id="bnav-projects">
     <span class="bnav-icon">🏗️</span><span>Projects</span>
+  </button>
+  <button onclick="nav('offplan',this);syncBottomNav('offplan')" id="bnav-offplan">
+    <span class="bnav-icon">🚀</span><span>Offplan</span>
+  </button>
+  <button onclick="nav('areaprices',this);syncBottomNav('areaprices')" id="bnav-areaprices">
+    <span class="bnav-icon">📍</span><span>Areas</span>
   </button>
   <button onclick="nav('deals',this);syncBottomNav('deals')" id="bnav-deals">
     <span class="bnav-icon">🏠</span><span>Deals</span>
@@ -444,9 +483,21 @@ tr:hover td{background:#161616;}
 
   <!-- Market Updates -->
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div class="card-title" style="margin-bottom:0;">🌍 Market Updates</div>
-      <button class="btn btn-ghost btn-sm" onclick="loadMarketData()">↻ Refresh</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap;">
+      <div>
+        <div class="card-title" style="margin-bottom:3px;">🌍 Live Market Command Center</div>
+        <div style="font-size:11px;color:var(--text3);">Auto refresh every 15 minutes • shows source + cache status</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span id="marketRefreshStatus" class="market-status-pill">⏳ Loading</span>
+        <button class="btn btn-ghost btn-sm" onclick="loadMarketData(true)">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="market-pulse-grid" id="marketPulseGrid">
+      <div class="market-pulse-card"><small>Dubai Market</small><b>Loading...</b><span>Transactions / sentiment</span></div>
+      <div class="market-pulse-card"><small>Mortgage</small><b>4.5% est.</b><span>Manual bank check required</span></div>
+      <div class="market-pulse-card"><small>Gold</small><b>Loading...</b><span>per oz / source shown below</span></div>
+      <div class="market-pulse-card"><small>Refresh</small><b id="marketCountdown">15:00</b><span id="marketLastUpdated">Waiting for first update</span></div>
     </div>
 
     <!-- Currency Rates -->
@@ -486,6 +537,17 @@ tr:hover td{background:#161616;}
       </div>
     </div>
   </div>
+  <div class="card" id="dashAreaPriceIntel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <div>
+        <div class="card-title" style="margin-bottom:3px;">📍 Dubai Area Price / sqft Intelligence</div>
+        <div style="font-size:11px;color:var(--text3);">Know current area averages before pitching, valuing or comparing a unit.</div>
+      </div>
+      <button class="btn btn-blue btn-sm" onclick="nav('areaprices', this);syncBottomNav('areaprices')">Open Area Prices</button>
+    </div>
+    <div id="dashAreaPriceRows"></div>
+  </div>
+
 </div>
 
 <!-- CONTACTS -->
@@ -685,6 +747,113 @@ tr:hover td{background:#161616;}
   <div id="projectsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;"></div>
 </div>
 
+
+
+<!-- OFF-PLAN HUB -->
+<div id="page-offplan" class="page">
+  <div class="offplan-hero">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">🚀 Off-Plan Hub</h2>
+        <p style="font-size:12px;color:var(--text2);line-height:1.6;">Requirement matcher, booking tracker, inventory shortlist and installment reminders for off-plan sales.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-green" onclick="addOffplanBooking()">+ Booking</button>
+        <button class="btn btn-blue" onclick="addInventoryUnit()">+ Unit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="offplan-grid">
+    <div class="offplan-card">
+      <div class="card-title">🎯 Client Requirement Matcher</div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Budget AED</label><input type="text" id="op_budget" placeholder="e.g. 1600000" oninput="renderRequirementMatches()"/></div>
+        <div><label class="lbl">Bedrooms</label><select id="op_beds" onchange="renderRequirementMatches()"><option value="">Any</option><option>Studio</option><option>1BR</option><option>2BR</option><option>3BR</option><option>4BR</option><option>Villa</option></select></div>
+      </div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Area / Developer</label><input type="text" id="op_area" placeholder="Emaar, JVC, Dubai Islands..." oninput="renderRequirementMatches()"/></div>
+        <div><label class="lbl">Handover</label><input type="text" id="op_handover" placeholder="2027 / Q2 2028" oninput="renderRequirementMatches()"/></div>
+      </div>
+      <div id="opMatches"></div>
+    </div>
+
+    <div class="offplan-card">
+      <div class="card-title">📅 Booking Pipeline</div>
+      <div id="opBookingStats" class="market-pulse-grid"></div>
+      <div id="opBookingsList"></div>
+    </div>
+  </div>
+
+  <div class="offplan-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <div class="card-title" style="margin-bottom:0;">🏢 Unit Inventory Shortlist</div>
+      <input type="search" id="opInvSearch" placeholder="Search project, area, developer..." oninput="renderOffplanInventory()" style="max-width:280px;"/>
+    </div>
+    <div id="opInventoryList"></div>
+  </div>
+
+  <div class="offplan-card">
+    <div class="card-title">⏰ Installment / SPA / Oqood Reminders</div>
+    <div id="opReminderList"></div>
+  </div>
+</div>
+
+
+<!-- AREA PRICE INTELLIGENCE -->
+<div id="page-areaprices" class="page">
+  <div class="area-intel-hero">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">📍 Area Price / Sqft Intelligence</h2>
+        <p style="font-size:12px;color:var(--text2);line-height:1.6;">Area-wise AED/sqft tracker, instant unit valuation and over/underpriced deal detector.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-green" onclick="addAreaPriceRow()">+ Add / Update Area</button>
+        <button class="btn btn-ghost" onclick="copyAreaMarketSnapshot()">📋 Copy Snapshot</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="area-intel-grid" id="areaIntelStats"></div>
+
+  <div class="row2">
+    <div class="card">
+      <div class="card-title">⚖️ Unit Price Checker</div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Area</label><select id="areaCheckArea" onchange="calculateAreaDealCheck()"></select></div>
+        <div><label class="lbl">Property Type</label><select id="areaCheckType" onchange="calculateAreaDealCheck()"><option>Apartment</option><option>Villa</option><option>Townhouse</option><option>Plot</option><option>Any</option></select></div>
+      </div>
+      <div class="row2" style="margin-bottom:10px;">
+        <div><label class="lbl">Unit Size sqft</label><input type="text" id="areaCheckSize" placeholder="e.g. 1200" oninput="calculateAreaDealCheck()"/></div>
+        <div><label class="lbl">Asking Price AED</label><input type="text" id="areaCheckPrice" placeholder="e.g. 2200000" oninput="calculateAreaDealCheck()"/></div>
+      </div>
+      <div id="areaDealCheckResult" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;color:var(--text2);line-height:1.8;">Enter area, size and asking price.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔎 Search Area Price</div>
+      <input type="search" id="areaPriceSearch" placeholder="Search Dubai Hills, JVC, Business Bay..." oninput="renderAreaPricesPage()" style="margin-bottom:10px;"/>
+      <div class="row2" style="margin-bottom:10px;">
+        <select id="areaPriceTypeFilter" onchange="renderAreaPricesPage()"><option value="">All Types</option><option>Apartment</option><option>Villa</option><option>Townhouse</option><option>Plot</option><option>Villa/Apt</option><option>Apt/Villa</option></select>
+        <select id="areaPriceSort" onchange="renderAreaPricesPage()"><option value="priceDesc">Highest Price</option><option value="priceAsc">Lowest Price</option><option value="trendDesc">Highest Trend</option><option value="areaAsc">Area A-Z</option></select>
+      </div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.6;">Use this before sending options to clients. Update numbers manually from DXB Interact / developer market reports. Every row stores source and updated date.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <div>
+        <div class="card-title" style="margin-bottom:3px;">🏙️ Area-wise AED / sqft</div>
+        <div id="areaPriceMeta" style="font-size:11px;color:var(--text3);"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="resetAreaPriceDefaults()">Reset Default List</button>
+    </div>
+    <div class="area-intel-table-head"><div>Area</div><div>Price/sqft</div><div>Type</div><div>Trend</div><div>Source</div><div>Action</div></div>
+    <div id="areaPriceList"></div>
+  </div>
+</div>
 
 <!-- DEAL ENGINE -->
 <div id="page-deals" class="page">
@@ -1164,6 +1333,11 @@ let settings = { name:'Triloki Chaudhary', company:'Solanki Capital Properties L
 let dealEngines = [];
 let currentDealFilter = 'all';
 let editingDealId = null;
+let offplanBookings = [];
+let offplanInventory = [];
+let editingOffplanBookingId = null;
+let areaPriceRows = [];
+let currentAreaPriceFilter = '';
 
 // Female name DB
 const femaleNames = new Set(['fatima','sara','sarah','maryam','mariam','aisha','ayesha','noor','layla','leila','iqra','hana','zara','zainab','noura','noora','reem','hessa','latifa','shaikha','maitha','afra','shamsa','meera','mira','priya','pooja','sneha','anjali','kavya','divya','deepa','sunita','anita','rita','sita','geeta','uma','asha','usha','neha','rekha','seema','reena','meena','lina','nina','dina','rina','hind','ghada','randa','rana','rania','dalia','abeer','amira','amina','asma','asmaa','basma','farah','hala','hanan','hayat','hiba','jihan','jumana','khadija','lamya','lubna','lujain','manal','maha','mais','maya','mona','muna','najla','najwa','nahla','nasrin','rahma','raghad','rasha','rola','ruba','safaa','safa','salma','sama','samia','samira','shirin','suhair','tahani','wafa','widad','wisam','yusra','zahra','zainab','zeina','zena','zineb','alice','emma','olivia','sophia','isabella','mia','charlotte','amelia','lily','grace','anna','victoria','elizabeth','jennifer','jessica','ashley','emily','amanda','melissa','nicole','stephanie','rachel','lauren','brittany','megan','chelsea','britney','courtney','taylor','amber','alexis','kayla','brooke','vanessa','cassandra','diana','naomi','claire','luna','ella','chloe','avery','aria','scarlett','aurora','violet','layla','zoey','lillian','nora','riley','stella','zoe']);
@@ -1191,6 +1365,8 @@ function nav(p, btn){
   if(p==='pipeline') renderPipeline();
   if(p==='projects') renderProjects();
   if(p==='deals' && typeof renderDeals === 'function') renderDeals();
+  if(p==='offplan' && typeof renderOffplanHub === 'function') renderOffplanHub();
+  if(p==='areaprices' && typeof renderAreaPricesPage === 'function') renderAreaPricesPage();
 }
 
 // ─── TOAST NOTIFICATION ──────────────────────────────────────────────
@@ -1289,6 +1465,9 @@ function persistLocalCRM(){
   localStorage.setItem('sccrm_settings', JSON.stringify(settings));
   localStorage.setItem('sccrm_projects', JSON.stringify(projects));
   if(typeof dealEngines !== 'undefined') localStorage.setItem('crm_deal_engines', JSON.stringify(dealEngines));
+  if(typeof offplanBookings !== 'undefined') localStorage.setItem('crm_offplan_bookings', JSON.stringify(offplanBookings));
+  if(typeof offplanInventory !== 'undefined') localStorage.setItem('crm_offplan_inventory', JSON.stringify(offplanInventory));
+  if(typeof areaPriceRows !== 'undefined') localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows));
 }
 function applySettingsToInputs(){
   const n=document.getElementById('agentName'), c=document.getElementById('agentCompany'), t=document.getElementById('agentTagline');
@@ -1299,12 +1478,19 @@ function applySettingsToInputs(){
 function refreshActiveCRMViews(){
   try{
     if(typeof renderDashboard === 'function') renderDashboard();
+    if(typeof seedAreaPricesIfEmpty === 'function') seedAreaPricesIfEmpty();
+    if(typeof renderDashboardAreaIntel === 'function') renderDashboardAreaIntel();
+    if(typeof seedOffplanIfEmpty === 'function') seedOffplanIfEmpty();
+    if(typeof startMarketAutoRefresh === 'function') startMarketAutoRefresh();
     if(document.getElementById('page-contacts')?.classList.contains('active') && typeof renderContacts === 'function') renderContacts();
     if(document.getElementById('page-outreach')?.classList.contains('active') && typeof renderOutreach === 'function') renderOutreach();
     if(document.getElementById('page-followup')?.classList.contains('active') && typeof renderFU === 'function') renderFU();
     if(document.getElementById('page-pipeline')?.classList.contains('active') && typeof renderPipeline === 'function') renderPipeline();
     if(document.getElementById('page-projects')?.classList.contains('active') && typeof renderProjects === 'function') renderProjects();
     if(document.getElementById('page-deals')?.classList.contains('active') && typeof renderDeals === 'function') renderDeals();
+    if(document.getElementById('page-offplan')?.classList.contains('active') && typeof renderOffplanHub === 'function') renderOffplanHub();
+    if(document.getElementById('page-areaprices')?.classList.contains('active') && typeof renderAreaPricesPage === 'function') renderAreaPricesPage();
+    if(document.getElementById('dashAreaPriceIntel') && typeof renderDashboardAreaIntel === 'function') renderDashboardAreaIntel();
   }catch(e){ console.warn('View refresh failed:', e); }
 }
 window.updateSyncBadge = function(forceState, forceText){
@@ -1337,13 +1523,15 @@ function save(){
     const oldProjects = readLocalArray('sccrm_projects');
     contacts = stampChangedRecords(contacts, oldContacts, 'c');
     projects = stampChangedRecords(projects, oldProjects, 'p');
+    if(typeof areaPriceRows !== 'undefined') settings = { ...(settings||{}), __areaPriceBackup: areaPriceRows };
+    if(typeof offplanBookings !== 'undefined' || typeof offplanInventory !== 'undefined') settings = { ...(settings||{}), __offplanBackup: { bookings: (typeof offplanBookings !== 'undefined' ? offplanBookings : []), inventory: (typeof offplanInventory !== 'undefined' ? offplanInventory : []) } };
     settings = { ...(settings||{}), __sync: { deviceId: window.CRM_DEVICE_ID, updatedAt: Date.now(), version: 'offline-pwa-v10' } };
     persistLocalCRM();
     localStorage.setItem('sccrm_pending_sync', '1');
   }catch(e){ console.error('Local save failed:', e); }
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(()=>{
-    try{ window.saveToFirebase({contacts, settings, projects, dealEngines: typeof dealEngines !== 'undefined' ? dealEngines : []}); }catch(e){ console.error(e); }
+    try{ window.saveToFirebase({contacts, settings, projects, dealEngines: typeof dealEngines !== 'undefined' ? dealEngines : [], areaPriceRows: typeof areaPriceRows !== 'undefined' ? areaPriceRows : []}); }catch(e){ console.error(e); }
   }, 1200);
   if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
 }
@@ -1354,6 +1542,9 @@ function load(){
     const s=localStorage.getItem('sccrm_settings'); if(s){ settings=JSON.parse(s); applySettingsToInputs(); }
     const p=localStorage.getItem('sccrm_projects'); if(p) projects=JSON.parse(p);
     const de=localStorage.getItem('crm_deal_engines'); if(de && typeof dealEngines !== 'undefined') dealEngines=JSON.parse(de);
+    const ob=localStorage.getItem('crm_offplan_bookings'); if(ob && typeof offplanBookings !== 'undefined') offplanBookings=JSON.parse(ob);
+    const oi=localStorage.getItem('crm_offplan_inventory'); if(oi && typeof offplanInventory !== 'undefined') offplanInventory=JSON.parse(oi);
+    const ap=localStorage.getItem('crm_area_price_rows'); if(ap && typeof areaPriceRows !== 'undefined') areaPriceRows=JSON.parse(ap);
   }catch(e){ console.error('Local load failed:', e); }
   if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
 }
@@ -1374,14 +1565,19 @@ async function loadFromCloud(){
       projects = merged.projects;
       settings = merged.settings;
       if(typeof dealEngines !== 'undefined') dealEngines = merged.dealEngines || [];
+      if(settings && settings.__offplanBackup){
+        if(Array.isArray(settings.__offplanBackup.bookings)) offplanBookings = settings.__offplanBackup.bookings;
+        if(Array.isArray(settings.__offplanBackup.inventory)) offplanInventory = settings.__offplanBackup.inventory;
+      }
+      if(settings && Array.isArray(settings.__areaPriceBackup)) areaPriceRows = settings.__areaPriceBackup;
       persistLocalCRM();
       applySettingsToInputs();
       _remoteApplying = false;
       refreshActiveCRMViews();
       if(document.getElementById('page-deals')?.classList.contains('active') && typeof renderDeals==='function') renderDeals();
-      await window.saveToFirebase({contacts, settings, projects, dealEngines: typeof dealEngines !== 'undefined' ? dealEngines : []});
+      await window.saveToFirebase({contacts, settings, projects, dealEngines: typeof dealEngines !== 'undefined' ? dealEngines : [], areaPriceRows: typeof areaPriceRows !== 'undefined' ? areaPriceRows : []});
     }else{
-      await window.saveToFirebase({contacts, settings, projects, dealEngines: typeof dealEngines !== 'undefined' ? dealEngines : []});
+      await window.saveToFirebase({contacts, settings, projects, dealEngines: typeof dealEngines !== 'undefined' ? dealEngines : [], areaPriceRows: typeof areaPriceRows !== 'undefined' ? areaPriceRows : []});
     }
     if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge('synced', 'Synced');
   } catch(e){
@@ -1410,6 +1606,11 @@ window.handleRemoteCRMUpdate = function(row){
     projects = merged.projects;
     settings = merged.settings;
     if(typeof dealEngines !== 'undefined') dealEngines = merged.dealEngines || [];
+    if(settings && settings.__offplanBackup){
+      if(Array.isArray(settings.__offplanBackup.bookings)) offplanBookings = settings.__offplanBackup.bookings;
+      if(Array.isArray(settings.__offplanBackup.inventory)) offplanInventory = settings.__offplanBackup.inventory;
+    }
+    if(settings && Array.isArray(settings.__areaPriceBackup)) areaPriceRows = settings.__areaPriceBackup;
     persistLocalCRM();
     applySettingsToInputs();
     _remoteApplying = false;
@@ -1574,7 +1775,7 @@ function renderDashboard(){
   // Lazy load market data once
   if(!_marketLoaded && typeof loadMarketData === 'function'){
     _marketLoaded=true;
-    setTimeout(()=>loadMarketData(), 800);
+    setTimeout(()=>startMarketAutoRefresh(), 800);
   }
 
   // Pipeline chart
@@ -3528,98 +3729,119 @@ async function loadNewsTicker(){
 }
 
 // ─── MARKET DATA ─────────────────────────────────────────────────────
-async function loadMarketData(){
-  // 1. Currency rates
-  try {
-    const res = await fetch('https://open.er-api.com/v6/latest/AED');
-    const data = await res.json();
-    const pairs = {INR:'🇮🇳 INR', USD:'🇺🇸 USD', GBP:'🇬🇧 GBP', EUR:'🇪🇺 EUR', PKR:'🇵🇰 PKR', SAR:'🇸🇦 SAR', QAR:'🇶🇦 QAR', KWD:'🇰🇼 KWD', BHD:'🇧🇭 BHD', OMR:'🇴🇲 OMR'};
+async function loadMarketData(forceRefresh){
+  const now = Date.now();
+  const cacheKey = 'sccrm_market_cache_v3';
+  const statusEl = document.getElementById('marketRefreshStatus');
+  const lastEl = document.getElementById('marketLastUpdated');
+  const pulseEl = document.getElementById('marketPulseGrid');
+  const setStatus = (txt, state)=>{
+    if(!statusEl) return;
+    statusEl.textContent = txt;
+    statusEl.style.borderColor = state==='ok' ? '#2d5c45' : state==='warn' ? '#3a2a0a' : '#5a2020';
+    statusEl.style.color = state==='ok' ? '#4ade80' : state==='warn' ? '#fbbf24' : '#f87171';
+  };
+  const renderCache = (cache, label)=>{
+    if(!cache) return false;
+    const updated = cache.updatedAt ? new Date(cache.updatedAt) : new Date();
+    if(lastEl) lastEl.textContent = 'Updated: ' + updated.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    if(statusEl) setStatus(label || '✅ Cached data', label && label.includes('Live') ? 'ok' : 'warn');
+    const fx = cache.fx || {};
     const ratesEl = document.getElementById('currencyRates');
-    if(ratesEl && data.rates) ratesEl.innerHTML = Object.entries(pairs).map(([code, label])=>{
-      const rate = data.rates[code];
-      return rate ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:110px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">${label}</div><div style="font-size:14px;font-weight:600;color:var(--blue);">1 AED = ${rate.toFixed(2)}</div></div>` : '';
-    }).join('');
-  } catch(e) {
-    const el = document.getElementById('currencyRates');
-    if(el) el.innerHTML = '<div style="color:var(--text3);font-size:12px;">Unable to load</div>';
-  }
-
-  // 2. Commodity prices (Gold & Petrol UAE)
-  const petrolPrices = {'Special 95':'2.89','Super 98':'3.02','Diesel':'2.77','E-Plus 91':'2.77'};
-  const comEl = document.getElementById('commodityPrices');
-  
-  // Show petrol immediately (static - UAE govt updates quarterly)
-  const petrolCards = Object.entries(petrolPrices).map(([grade,price])=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">⛽ ${grade}</div><div style="font-size:14px;font-weight:600;color:var(--orange);">AED ${price}</div><div style="font-size:10px;color:var(--text3);">May 2026</div></div>`).join('');
-  if(comEl) comEl.innerHTML = `<div id="goldCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">Loading...</div></div>${petrolCards}`;
-
-  // Try multiple gold APIs
-  try {
-    let goldUSD = 0;
-    // Use frankfurter API - reliable and free
-    try {
-      const r = await fetch('https://api.frankfurter.app/latest?from=XAU&to=USD,AED', {signal: AbortSignal.timeout(5000)});
-      const d = await r.json();
-      if(d.rates?.USD) {
-        goldUSD = d.rates.USD;
-        const goldAED = d.rates.AED || (goldUSD * 3.6725);
-        const goldCard = document.getElementById('goldCard');
-        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ${Math.round(goldAED).toLocaleString()}</div><div style="font-size:10px;color:var(--text3);">USD ${Math.round(goldUSD).toLocaleString()}</div>`;
-      }
-    } catch(e1){
-      // Fallback to metals-api
-      try {
-        const r = await fetch('https://metals-api.com/api/latest?access_key=demo&base=XAU&symbols=USD', {signal: AbortSignal.timeout(4000)});
-        const d = await r.json();
-        goldUSD = 1 / (d.rates?.USD || 0.000303);
-        const goldAED = goldUSD * 3.6725;
-        const goldCard = document.getElementById('goldCard');
-        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ${Math.round(goldAED).toLocaleString()}</div><div style="font-size:10px;color:var(--text3);">USD ${Math.round(goldUSD).toLocaleString()}</div>`;
-      } catch(e2){
-        // Static fallback - approximate current price
-        const goldCard = document.getElementById('goldCard');
-        if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">AED ~12,100</div><div style="font-size:10px;color:var(--text3);">USD ~3,295</div>`;
-      }
+    const pairs = {INR:'🇮🇳 INR', USD:'🇺🇸 USD', GBP:'🇬🇧 GBP', EUR:'🇪🇺 EUR', PKR:'🇵🇰 PKR', SAR:'🇸🇦 SAR', QAR:'🇶🇦 QAR', KWD:'🇰🇼 KWD', BHD:'🇧🇭 BHD', OMR:'🇴🇲 OMR'};
+    if(ratesEl) ratesEl.innerHTML = Object.entries(pairs).map(([code, lab])=> fx[code] ? `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;min-width:112px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">${lab}</div><div style="font-size:14px;font-weight:700;color:var(--blue);">1 AED = ${Number(fx[code]).toFixed(code==='INR'||code==='PKR'?2:4)}</div><div style="font-size:10px;color:var(--text3);">${cache.fxSource||'Exchange API'}</div></div>` : '').join('');
+    const comEl = document.getElementById('commodityPrices');
+    const gold = cache.gold || {};
+    const fuel = cache.fuel || {'Special 95':'2.89','Super 98':'3.02','Diesel':'2.77','E-Plus 91':'2.77'};
+    const goldCard = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">🥇 Gold spot</div><div style="font-size:14px;font-weight:700;color:#fbbf24;">${gold.aed ? 'AED '+Math.round(gold.aed).toLocaleString() : 'Live unavailable'}</div><div style="font-size:10px;color:var(--text3);">${gold.usd ? 'USD '+Math.round(gold.usd).toLocaleString()+' / oz' : 'Open source API failed'}</div></div>`;
+    const fuelCards = Object.entries(fuel).map(([grade,price])=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex-shrink:0;"><div style="font-size:11px;color:var(--text3);">⛽ ${grade}</div><div style="font-size:14px;font-weight:700;color:var(--orange);">AED ${price}</div><div style="font-size:10px;color:var(--text3);">Manual monthly UAE fuel update</div></div>`).join('');
+    if(comEl) comEl.innerHTML = goldCard + fuelCards;
+    if(pulseEl){
+      pulseEl.innerHTML = `
+        <div class="market-pulse-card"><small>Dubai Property Pulse</small><b>${cache.newsCount||0} fresh headlines</b><span>RSS refresh / verify DLD manually</span></div>
+        <div class="market-pulse-card"><small>AED → INR</small><b>${fx.INR?Number(fx.INR).toFixed(2):'--'}</b><span>${cache.fxSource||'Exchange API'}</span></div>
+        <div class="market-pulse-card"><small>Gold Spot</small><b>${gold.aed?'AED '+Math.round(gold.aed).toLocaleString():'Unavailable'}</b><span>${gold.source||'API/cached'} per oz</span></div>
+        <div class="market-pulse-card"><small>Next Refresh</small><b id="marketCountdown">15:00</b><span>${updated.toLocaleString()}</span></div>`;
     }
-  } catch(e) {
-    const goldCard = document.getElementById('goldCard');
-    if(goldCard) goldCard.innerHTML = `<div style="font-size:11px;color:var(--text3);">🥇 Gold (per oz)</div><div style="font-size:14px;font-weight:600;color:#fbbf24;">~AED 12,100</div><div style="font-size:10px;color:var(--text3);">~USD 3,295</div>`;
-  }
-
-  // 3. News from multiple sources horizontally
-  try {
-    let allNews=[];
-    try{
-      const r=await fetch('https://corsproxy.io/?'+encodeURIComponent('https://news.google.com/rss/search?q=Dubai+property+real+estate&hl=en&gl=AE&ceid=AE:en'),{signal:AbortSignal.timeout(7000)});
-      const raw=await r.json(); const x=raw.contents||'';
-      if(x.includes('<item>')){
-        const xml=new DOMParser().parseFromString(x,'text/xml');
-        [...xml.querySelectorAll('item')].slice(0,8).forEach(i=>{
-          const title=(i.querySelector('title')?.textContent||'').replace(/ - Google News$/,'').replace(/ - [^-]*$/,'');
-          const link=i.querySelector('link')?.textContent||'#';
-          const pubDate=i.querySelector('pubDate')?.textContent||'';
-          if(title&&title.length>10) allNews.push({title,link,pubDate});
-        });
-      }
-    }catch(err){}
-
     const newsEl = document.getElementById('dubaiNews');
-    if(newsEl && allNews.length > 0){
-      newsEl.innerHTML = allNews.slice(0,8).map(item=>`
-        <a href="${item.link}" target="_blank" style="display:block;min-width:220px;max-width:220px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;flex-shrink:0;">
+    const news = cache.news || [];
+    if(newsEl){
+      newsEl.innerHTML = news.length ? news.slice(0,10).map(item=>`
+        <a href="${item.link}" target="_blank" style="display:block;min-width:230px;max-width:230px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;flex-shrink:0;">
           <div style="font-size:12px;color:var(--blue);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${item.title}</div>
-          <div style="font-size:10px;color:var(--text3);">${new Date(item.pubDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
-        </a>`).join('');
-    } else if(newsEl){
-      newsEl.innerHTML = `
-        <a href="https://www.khaleejtimes.com/uae" target="_blank" style="display:block;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;text-align:center;"><div style="font-size:13px;color:var(--blue);">🗞 Khaleej Times</div></a>
-        <a href="https://www.arabianbusiness.com/property" target="_blank" style="display:block;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;text-align:center;"><div style="font-size:13px;color:var(--blue);">📰 Arabian Business</div></a>
-        <a href="https://gulfnews.com/business/property" target="_blank" style="display:block;min-width:160px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-decoration:none;text-align:center;"><div style="font-size:13px;color:var(--blue);">📰 Gulf News</div></a>
-      `;
+          <div style="font-size:10px;color:var(--text3);">${item.pubDate ? new Date(item.pubDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : 'Live news'}</div>
+        </a>`).join('') : `<div style="color:var(--text3);font-size:12px;">News API unavailable. Use quick links below for verification.</div>`;
     }
-  } catch(e) {
-    const newsEl = document.getElementById('dubaiNews');
-    if(newsEl) newsEl.innerHTML = '<a href="https://www.khaleejtimes.com" target="_blank" class="btn btn-ghost btn-sm">Open Khaleej Times →</a>';
+    return true;
+  };
+
+  let cached = null;
+  try{ cached = JSON.parse(localStorage.getItem(cacheKey)||'null'); }catch(e){}
+  if(!forceRefresh && cached && (now - Number(cached.updatedAt||0) < 15*60*1000)){
+    renderCache(cached, '✅ Cached <15 min');
+    startMarketCountdown(Number(cached.updatedAt||now));
+    return;
   }
+
+  setStatus('↻ Updating live data', 'warn');
+  if(cached) renderCache(cached, '↻ Updating...');
+
+  const cache = { updatedAt: now, fx:{}, fxSource:'open.er-api.com', gold:{}, fuel:{'Special 95':'2.89','Super 98':'3.02','Diesel':'2.77','E-Plus 91':'2.77'}, news:[], newsCount:0 };
+  let liveOk = false;
+
+  try{
+    const res = await fetch('https://open.er-api.com/v6/latest/AED', {signal: AbortSignal.timeout(7000)});
+    const data = await res.json();
+    if(data && data.rates){ cache.fx = data.rates; liveOk = true; }
+  }catch(e){ if(cached?.fx) cache.fx = cached.fx; }
+
+  // Gold: free browser APIs are unreliable/CORS-limited. Never invent a number silently.
+  try{
+    const r = await fetch('https://api.metals.live/v1/spot/gold', {signal: AbortSignal.timeout(5000)});
+    const d = await r.json();
+    let usd = Array.isArray(d) ? Number((d.find(x=>x.gold)?.gold) || (d[0] && Object.values(d[0])[0])) : 0;
+    if(usd && usd > 1000){ cache.gold = {usd, aed: usd*3.6725, source:'metals.live'}; liveOk = true; }
+  }catch(e){
+    if(cached?.gold?.usd) cache.gold = cached.gold;
+  }
+
+  try{
+    const r=await fetch('https://corsproxy.io/?'+encodeURIComponent('https://news.google.com/rss/search?q=Dubai+property+real+estate+off+plan&hl=en&gl=AE&ceid=AE:en'),{signal:AbortSignal.timeout(8000)});
+    const raw=await r.json(); const x=raw.contents||'';
+    if(x.includes('<item>')){
+      const xml=new DOMParser().parseFromString(x,'text/xml');
+      cache.news = [...xml.querySelectorAll('item')].slice(0,10).map(i=>({
+        title:(i.querySelector('title')?.textContent||'').replace(/ - Google News$/,'').replace(/ - [^-]*$/,''),
+        link:i.querySelector('link')?.textContent||'#',
+        pubDate:i.querySelector('pubDate')?.textContent||''
+      })).filter(i=>i.title.length>10);
+      cache.newsCount = cache.news.length;
+      if(cache.news.length) liveOk = true;
+    }
+  }catch(e){ if(cached?.news) { cache.news = cached.news; cache.newsCount = cached.newsCount||cached.news.length; } }
+
+  localStorage.setItem(cacheKey, JSON.stringify(cache));
+  renderCache(cache, liveOk ? '✅ Live updated' : '⚠ Cached fallback');
+  startMarketCountdown(cache.updatedAt);
+}
+
+function startMarketCountdown(updatedAt){
+  clearInterval(window.__marketCountdownTimer);
+  const tick=()=>{
+    const el=document.getElementById('marketCountdown'); if(!el) return;
+    const next = Number(updatedAt||Date.now()) + 15*60*1000;
+    const left = Math.max(0, next - Date.now());
+    const m = String(Math.floor(left/60000)).padStart(2,'0');
+    const s = String(Math.floor((left%60000)/1000)).padStart(2,'0');
+    el.textContent = m+':'+s;
+  };
+  tick(); window.__marketCountdownTimer=setInterval(tick,1000);
+}
+function startMarketAutoRefresh(){
+  if(window.__marketAutoRefreshStarted) return;
+  window.__marketAutoRefreshStarted = true;
+  loadMarketData(false);
+  setInterval(()=>loadMarketData(true), 15*60*1000);
 }
 
 
@@ -4107,6 +4329,8 @@ function ADV_markStaleCold(){
     if(typeof loadFromCloud === 'function') await loadFromCloud();
     if(typeof startCRMRealtime === 'function') startCRMRealtime();
     if(typeof renderDashboard === 'function') renderDashboard();
+    if(typeof seedOffplanIfEmpty === 'function') seedOffplanIfEmpty();
+    if(typeof startMarketAutoRefresh === 'function') startMarketAutoRefresh();
     const dashDate = document.getElementById('dash-date');
     if(dashDate){
       dashDate.textContent = new Date().toLocaleDateString('en-GB',{
@@ -4342,6 +4566,97 @@ Company Net: ${moneyAED(c.companyNet||0)}
 Documents: ${docs.done}/${docs.total}
 Notes: ${d.notes||'-'}`; navigator.clipboard?.writeText(text).then(()=>toast&&toast('Deal summary copied','success')).catch(()=>alert(text)); }
 
+
+// ─── OFF-PLAN HUB ───────────────────────────────────────────────────
+function seedOffplanIfEmpty(){
+  if(!Array.isArray(offplanInventory)) offplanInventory=[];
+  if(!offplanInventory.length){
+    offplanInventory=[
+      {id:'inv_'+Date.now()+'_1',developer:'Emaar',project:'Emaar South / Valley',area:'Emaar South',unitType:'3BR Townhouse',beds:'3BR',price:2300000,size:2100,handover:'2028',paymentPlan:'80/20',status:'Available',updatedAt:Date.now()},
+      {id:'inv_'+Date.now()+'_2',developer:'Sobha',project:'Sobha Hartland 2',area:'MBR City',unitType:'1BR Apartment',beds:'1BR',price:1600000,size:750,handover:'2028',paymentPlan:'60/40',status:'Available',updatedAt:Date.now()},
+      {id:'inv_'+Date.now()+'_3',developer:'Danube',project:'JVC / Arjan',area:'JVC',unitType:'Studio / 1BR',beds:'1BR',price:850000,size:430,handover:'2029',paymentPlan:'1% Monthly',status:'Shortlist',updatedAt:Date.now()}
+    ];
+    localStorage.setItem('crm_offplan_inventory', JSON.stringify(offplanInventory));
+  }
+}
+function renderOffplanHub(){ seedOffplanIfEmpty(); renderRequirementMatches(); renderOffplanBookings(); renderOffplanInventory(); renderOffplanReminders(); }
+function opMoney(v){ return 'AED '+Math.round(Number(v)||0).toLocaleString('en-US'); }
+function renderRequirementMatches(){
+  seedOffplanIfEmpty();
+  const budget = Number(String(document.getElementById('op_budget')?.value||'').replace(/[^0-9.]/g,'')) || 0;
+  const beds = (document.getElementById('op_beds')?.value||'').toLowerCase();
+  const area = (document.getElementById('op_area')?.value||'').toLowerCase();
+  const handover = (document.getElementById('op_handover')?.value||'').toLowerCase();
+  const matches = (offplanInventory||[]).map(u=>{
+    let score=50;
+    if(budget && Number(u.price)<=budget) score+=25; else if(budget) score-=20;
+    if(beds && String(u.beds||u.unitType||'').toLowerCase().includes(beds)) score+=20;
+    if(area && (String(u.area+' '+u.developer+' '+u.project).toLowerCase().includes(area))) score+=20;
+    if(handover && String(u.handover||'').toLowerCase().includes(handover)) score+=10;
+    return {...u,score:Math.max(0,Math.min(100,score))};
+  }).sort((a,b)=>b.score-a.score).slice(0,5);
+  const el=document.getElementById('opMatches'); if(!el) return;
+  el.innerHTML = matches.length ? matches.map(u=>`<div class="match-card">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><div><b>${u.project||'-'}</b><div style="font-size:11px;color:var(--text3);">${u.developer||'-'} • ${u.area||'-'} • ${u.unitType||u.beds||'-'}</div></div><span class="tag ${u.score>=80?'tag-hot':u.score>=60?'tag-warm':'tag-cold'}">${u.score}% match</span></div>
+    <div style="font-size:12px;color:var(--text2);margin-top:8px;">${opMoney(u.price)} • ${u.size||'-'} sqft • ${u.paymentPlan||'-'} • Handover ${u.handover||'-'}</div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="copyInventoryUnit('${u.id}')">Copy for WhatsApp</button>
+  </div>`).join('') : '<div class="empty" style="padding:1rem;">Add inventory units to start matching.</div>';
+}
+function addInventoryUnit(){
+  const project=prompt('Project name?'); if(!project) return;
+  const developer=prompt('Developer?', 'Emaar / Sobha / DAMAC / Danube')||'';
+  const area=prompt('Area?', '')||'';
+  const unitType=prompt('Unit type?', '1BR Apartment')||'';
+  const price=Number((prompt('Price AED?', '1500000')||'').replace(/[^0-9.]/g,''))||0;
+  const size=Number((prompt('Size sqft?', '750')||'').replace(/[^0-9.]/g,''))||0;
+  const handover=prompt('Handover?', 'Q4 2028')||'';
+  const paymentPlan=prompt('Payment plan?', '60/40')||'';
+  offplanInventory=[{id:'inv_'+Date.now(),developer,project,area,unitType,beds:unitType,price,size,handover,paymentPlan,status:'Available',updatedAt:Date.now()},...(offplanInventory||[])];
+  localStorage.setItem('crm_offplan_inventory',JSON.stringify(offplanInventory)); save(); renderOffplanHub();
+}
+function renderOffplanInventory(){
+  seedOffplanIfEmpty();
+  const q=(document.getElementById('opInvSearch')?.value||'').toLowerCase();
+  const arr=(offplanInventory||[]).filter(u=>!q || String(Object.values(u).join(' ')).toLowerCase().includes(q));
+  const el=document.getElementById('opInventoryList'); if(!el) return;
+  el.innerHTML = arr.length ? arr.map(u=>`<div class="inventory-row">
+    <div><b>${u.project||'-'}</b><div style="font-size:11px;color:var(--text3);">${u.developer||'-'} • ${u.area||'-'}</div></div>
+    <div style="font-size:12px;">${u.unitType||u.beds||'-'}</div>
+    <div style="font-size:12px;color:var(--green);font-weight:700;">${opMoney(u.price)}</div>
+    <div style="font-size:12px;">${u.paymentPlan||'-'}</div>
+    <div style="font-size:12px;">${u.handover||'-'}</div>
+    <button class="btn btn-ghost btn-sm" onclick="copyInventoryUnit('${u.id}')">Copy</button>
+  </div>`).join('') : '<div class="empty">No inventory found.</div>';
+}
+function copyInventoryUnit(id){
+  const u=(offplanInventory||[]).find(x=>x.id===id); if(!u) return;
+  const text=`Off-Plan Option\nProject: ${u.project}\nDeveloper: ${u.developer}\nArea: ${u.area}\nUnit: ${u.unitType}\nPrice: ${opMoney(u.price)}\nSize: ${u.size||'-'} sqft\nPayment Plan: ${u.paymentPlan||'-'}\nHandover: ${u.handover||'-'}`;
+  navigator.clipboard?.writeText(text).then(()=>toast&&toast('Unit copied','success')).catch(()=>alert(text));
+}
+function addOffplanBooking(){
+  const client=prompt('Client name?'); if(!client) return;
+  const project=prompt('Project booked / shortlisted?', '')||'';
+  const stage=prompt('Stage? EOI / Booking / SPA / Oqood / Installment / Commission', 'EOI')||'EOI';
+  const amount=Number((prompt('Booking / deal value AED?', '0')||'').replace(/[^0-9.]/g,''))||0;
+  const dueDate=prompt('Next due date? YYYY-MM-DD', '')||'';
+  offplanBookings=[{id:'opb_'+Date.now(),client,project,stage,amount,dueDate,updatedAt:Date.now()},...(offplanBookings||[])];
+  localStorage.setItem('crm_offplan_bookings',JSON.stringify(offplanBookings)); save(); renderOffplanHub();
+}
+function renderOffplanBookings(){
+  const el=document.getElementById('opBookingsList'); const st=document.getElementById('opBookingStats'); if(!el||!st) return;
+  const arr=offplanBookings||[];
+  const total=arr.length, spa=arr.filter(x=>/spa|oqood|commission|installment/i.test(x.stage||'')).length;
+  const value=arr.reduce((s,x)=>s+(Number(x.amount)||0),0);
+  st.innerHTML=`<div class="market-pulse-card"><small>Bookings</small><b>${total}</b><span>Active off-plan files</span></div><div class="market-pulse-card"><small>Post Booking</small><b>${spa}</b><span>SPA/Oqood/Installments</span></div><div class="market-pulse-card"><small>Pipeline Value</small><b>${opMoney(value)}</b><span>Manual values</span></div>`;
+  el.innerHTML=arr.length?arr.slice(0,8).map(b=>`<div class="match-card"><div style="display:flex;justify-content:space-between;gap:8px;"><div><b>${b.client}</b><div style="font-size:11px;color:var(--text3);">${b.project||'-'} • ${b.stage||'-'}</div></div><span class="tag tag-warm">${b.dueDate||'No due date'}</span></div><div style="font-size:12px;color:var(--text2);margin-top:6px;">Value: ${opMoney(b.amount)}</div></div>`).join(''):'<div style="color:var(--text3);font-size:12px;">No bookings yet.</div>';
+}
+function renderOffplanReminders(){
+  const el=document.getElementById('opReminderList'); if(!el) return;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const arr=(offplanBookings||[]).filter(b=>b.dueDate).map(b=>({...b,days:Math.ceil((new Date(b.dueDate)-today)/86400000)})).sort((a,b)=>a.days-b.days);
+  el.innerHTML=arr.length?arr.slice(0,10).map(b=>`<div class="match-card"><b>${b.client}</b> <span style="color:${b.days<0?'var(--red)':b.days<=7?'var(--orange)':'var(--green)'};font-weight:700;">${b.days<0?Math.abs(b.days)+' days overdue':b.days+' days left'}</span><div style="font-size:11px;color:var(--text3);">${b.project||'-'} • ${b.stage||'-'} • Due ${b.dueDate}</div></div>`).join(''):'<div style="color:var(--text3);font-size:12px;">No installment/SPA/Oqood reminders added.</div>';
+}
+
 const AREA_PRICES=[
   {area:'Downtown Dubai',price:'AED 3,100',type:'Apartment',trend:'↑ 11%'},
   {area:'Dubai Marina',price:'AED 2,200',type:'Apartment',trend:'↑ 8%'},
@@ -4388,6 +4703,124 @@ function showAreaPopup(){
 }
 function nextAreaPopup(){const p=document.getElementById('areaPricePopup');p.classList.add('hide');clearTimeout(_areaTimer);setTimeout(()=>{_areaIdx=(_areaIdx+1)%AREA_PRICES.length;showAreaPopup();},300);}
 function pauseAreaPopup(){_areaPaused=true;clearTimeout(_areaTimer);const p=document.getElementById('areaPricePopup');p.classList.add('hide');setTimeout(()=>{p.style.display='none';},400);setTimeout(()=>{_areaPaused=false;showAreaPopup();},30000);}
+
+
+// ─── AREA PRICE / SQFT INTELLIGENCE ─────────────────────────────────
+function areaParsePrice(v){ return Number(String(v||'').replace(/[^0-9.]/g,'')) || 0; }
+function areaFormatPrice(v){ return 'AED '+Math.round(Number(v)||0).toLocaleString('en-US')+'/sqft'; }
+function areaTrendNum(v){ const m=String(v||'').match(/-?\d+(\.\d+)?/); return m ? Number(m[0]) : 0; }
+function areaDefaultRows(){
+  const src = (typeof AREA_PRICES !== 'undefined' && Array.isArray(AREA_PRICES)) ? AREA_PRICES : [];
+  return src.map((x,i)=>({
+    id:'area_'+String(x.area||'area').toLowerCase().replace(/[^a-z0-9]+/g,'_'),
+    area:x.area||'',
+    price:areaParsePrice(x.price),
+    type:x.type||'Apartment',
+    trend:x.trend||'',
+    source:'Manual / DXB Interact',
+    updatedAt:Date.now()-i*1000
+  })).filter(x=>x.area && x.price);
+}
+function seedAreaPricesIfEmpty(){
+  if(!Array.isArray(areaPriceRows)) areaPriceRows=[];
+  if(!areaPriceRows.length){
+    const local=localStorage.getItem('crm_area_price_rows');
+    if(local){ try{ areaPriceRows=JSON.parse(local)||[]; }catch(e){} }
+  }
+  if(!areaPriceRows.length) areaPriceRows=areaDefaultRows();
+  localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows));
+}
+function getFilteredAreaPriceRows(){
+  seedAreaPricesIfEmpty();
+  const q=(document.getElementById('areaPriceSearch')?.value||'').toLowerCase();
+  const type=(document.getElementById('areaPriceTypeFilter')?.value||'').toLowerCase();
+  const sort=(document.getElementById('areaPriceSort')?.value||'priceDesc');
+  let arr=[...(areaPriceRows||[])].filter(r=>!q || String([r.area,r.type,r.source].join(' ')).toLowerCase().includes(q));
+  if(type) arr=arr.filter(r=>String(r.type||'').toLowerCase().includes(type));
+  arr.sort((a,b)=>{
+    if(sort==='priceAsc') return Number(a.price||0)-Number(b.price||0);
+    if(sort==='trendDesc') return areaTrendNum(b.trend)-areaTrendNum(a.trend);
+    if(sort==='areaAsc') return String(a.area||'').localeCompare(String(b.area||''));
+    return Number(b.price||0)-Number(a.price||0);
+  });
+  return arr;
+}
+function renderDashboardAreaIntel(){
+  seedAreaPricesIfEmpty();
+  const el=document.getElementById('dashAreaPriceRows'); if(!el) return;
+  const top=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price||0)-Number(a.price||0)).slice(0,6);
+  el.innerHTML = '<div class="area-intel-grid">'+top.map(r=>`<div class="area-intel-card"><small>${r.type||'-'}</small><b>${r.area}</b><span>${areaFormatPrice(r.price)} • ${r.trend||'trend n/a'}</span></div>`).join('')+'</div>';
+}
+function populateAreaCheckerOptions(){
+  const sel=document.getElementById('areaCheckArea'); if(!sel) return;
+  const current=sel.value;
+  sel.innerHTML=(areaPriceRows||[]).sort((a,b)=>String(a.area).localeCompare(String(b.area))).map(r=>`<option value="${r.id}">${r.area} — ${areaFormatPrice(r.price)}</option>`).join('');
+  if(current && [...sel.options].some(o=>o.value===current)) sel.value=current;
+}
+function renderAreaPricesPage(){
+  seedAreaPricesIfEmpty();
+  populateAreaCheckerOptions();
+  const arr=getFilteredAreaPriceRows();
+  const stats=document.getElementById('areaIntelStats');
+  if(stats){
+    const prices=(areaPriceRows||[]).map(r=>Number(r.price)||0).filter(Boolean);
+    const avg=prices.length?prices.reduce((a,b)=>a+b,0)/prices.length:0;
+    const hi=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price)-Number(a.price))[0];
+    const low=[...(areaPriceRows||[])].sort((a,b)=>Number(a.price)-Number(b.price))[0];
+    stats.innerHTML=`<div class="area-intel-card"><small>Tracked Areas</small><b>${areaPriceRows.length}</b><span>Manual + cached database</span></div><div class="area-intel-card"><small>Average Price</small><b>${areaFormatPrice(avg)}</b><span>Across tracked areas</span></div><div class="area-intel-card"><small>Highest</small><b>${hi?hi.area:'-'}</b><span>${hi?areaFormatPrice(hi.price):'-'}</span></div><div class="area-intel-card"><small>Most Affordable</small><b>${low?low.area:'-'}</b><span>${low?areaFormatPrice(low.price):'-'}</span></div>`;
+  }
+  const list=document.getElementById('areaPriceList');
+  if(list){
+    list.innerHTML=arr.length?arr.map(r=>`<div class="area-intel-row"><div><b>${r.area}</b><div style="font-size:10px;color:var(--text3);">Updated ${new Date(Number(r.updatedAt)||Date.now()).toLocaleDateString('en-GB')}</div></div><div style="color:var(--green);font-weight:800;">${areaFormatPrice(r.price)}</div><div>${r.type||'-'}</div><div><span class="area-pill ${areaTrendNum(r.trend)>=10?'green':areaTrendNum(r.trend)>=4?'yellow':'red'}">${r.trend||'n/a'}</span></div><div style="font-size:11px;color:var(--text3);">${r.source||'Manual'}</div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="copyAreaRow('${r.id}')">Copy</button><button class="btn btn-blue btn-sm" onclick="editAreaPriceRow('${r.id}')">Edit</button></div></div>`).join(''):'<div class="empty">No area found.</div>';
+  }
+  const meta=document.getElementById('areaPriceMeta'); if(meta) meta.textContent=`Showing ${arr.length} of ${areaPriceRows.length} areas • Source is manual/cached unless connected to a paid official API.`;
+  calculateAreaDealCheck();
+  renderDashboardAreaIntel();
+}
+function calculateAreaDealCheck(){
+  const el=document.getElementById('areaDealCheckResult'); if(!el) return;
+  seedAreaPricesIfEmpty();
+  const id=document.getElementById('areaCheckArea')?.value;
+  const row=(areaPriceRows||[]).find(r=>r.id===id) || areaPriceRows[0];
+  const size=areaParsePrice(document.getElementById('areaCheckSize')?.value);
+  const ask=areaParsePrice(document.getElementById('areaCheckPrice')?.value);
+  if(!row || !size || !ask){ el.innerHTML='Enter area, size and asking price.'; return; }
+  const unitPsf=ask/size, avg=Number(row.price)||0, diffPct=avg?((unitPsf-avg)/avg*100):0;
+  const cls=diffPct<=-7?'green':diffPct<=7?'yellow':'red';
+  const verdict=diffPct<=-7?'🟢 Potential undervalued opportunity':diffPct<=7?'🟡 Near market average':'🔴 Above area average — justify premium';
+  const fairLow=avg*size*0.95, fairHigh=avg*size*1.05;
+  el.innerHTML=`<div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px;">${verdict}</div><div>Area avg: <b>${areaFormatPrice(avg)}</b></div><div>Unit asking: <b>${areaFormatPrice(unitPsf)}</b></div><div>Difference: <span class="area-pill ${cls}">${diffPct>0?'+':''}${diffPct.toFixed(1)}%</span></div><div>Indicative fair range: <b>AED ${Math.round(fairLow).toLocaleString('en-US')} – AED ${Math.round(fairHigh).toLocaleString('en-US')}</b></div>`;
+}
+function addAreaPriceRow(){ editAreaPriceRow(null); }
+function editAreaPriceRow(id){
+  seedAreaPricesIfEmpty();
+  const old=id?(areaPriceRows||[]).find(r=>r.id===id):null;
+  const area=prompt('Area name?', old?.area||''); if(!area) return;
+  const price=areaParsePrice(prompt('Current AED per sqft?', old?.price||'')); if(!price) return;
+  const type=prompt('Property type?', old?.type||'Apartment')||'Apartment';
+  const trend=prompt('Trend / note? e.g. ↑ 8% YoY', old?.trend||'')||'';
+  const source=prompt('Source? e.g. DXB Interact, Property Monitor, Manual update', old?.source||'Manual / DXB Interact')||'Manual';
+  const row={id: old?.id || 'area_'+Date.now(), area, price, type, trend, source, updatedAt:Date.now()};
+  if(old) areaPriceRows=areaPriceRows.map(r=>r.id===old.id?row:r); else areaPriceRows=[row,...(areaPriceRows||[])];
+  localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows));
+  save(); renderAreaPricesPage(); toast('Area price saved','success');
+}
+function resetAreaPriceDefaults(){
+  if(!confirm('Reset area price list to default sample list? Your custom area prices will be replaced.')) return;
+  areaPriceRows=areaDefaultRows(); localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows)); save(); renderAreaPricesPage();
+}
+function copyAreaRow(id){
+  const r=(areaPriceRows||[]).find(x=>x.id===id); if(!r) return;
+  const text=`${r.area} market reference\nAverage price: ${areaFormatPrice(r.price)}\nType: ${r.type||'-'}\nTrend: ${r.trend||'-'}\nSource: ${r.source||'Manual'}\nUpdated: ${new Date(Number(r.updatedAt)||Date.now()).toLocaleDateString('en-GB')}`;
+  navigator.clipboard?.writeText(text).then(()=>toast('Area price copied','success')).catch(()=>alert(text));
+}
+function copyAreaMarketSnapshot(){
+  seedAreaPricesIfEmpty();
+  const rows=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price)-Number(a.price)).slice(0,10);
+  const text='Dubai Area Price / sqft Snapshot\n'+rows.map(r=>`${r.area}: ${areaFormatPrice(r.price)} (${r.type||'-'}, ${r.trend||'trend n/a'})`).join('\n')+'\n\nNote: verify live values from official/paid source before final client advice.';
+  navigator.clipboard?.writeText(text).then(()=>toast('Market snapshot copied','success')).catch(()=>alert(text));
+}
+
 setTimeout(()=>showAreaPopup(),3000);
 
 function switchCalcTab(tab){
