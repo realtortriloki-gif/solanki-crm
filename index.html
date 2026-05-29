@@ -1121,6 +1121,50 @@ tr:hover td{background:#161616;}
     </div>
   </div>
 
+  <div class="card" id="dxbCachedRefreshCenter">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <div>
+        <div class="card-title" style="margin-bottom:3px;">🔄 DXB Interact Cached Refresh</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;">Recommended workflow: refresh once a week, review extracted rows, then update Area Prices. Direct browser fetch may be blocked by CORS, so paste/copy fallback is included.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="window.open('https://dxbinteract.com/','_blank')">↗ Open DXB</button>
+        <button class="btn btn-blue btn-sm" onclick="refreshDXBInteractCache()">↻ Try Pull</button>
+        <button class="btn btn-green btn-sm" onclick="applyDXBTextToAreaPrices()">⚡ Apply Cached Data</button>
+      </div>
+    </div>
+    <div class="row2" style="margin-bottom:10px;">
+      <div><label class="lbl">DXB Interact URL / Report Page</label><input type="text" id="dxbRefreshUrl" value="https://dxbinteract.com/" placeholder="https://dxbinteract.com/..."/></div>
+      <div><label class="lbl">Cache Period Label</label><input type="text" id="dxbRefreshPeriod" value="Weekly DXB refresh" placeholder="Week 22 / Last 30 days / 2025 Report"/></div>
+    </div>
+    <label class="lbl">Paste DXB copied table/report text (fallback if direct pull is blocked)</label>
+    <textarea id="dxbRefreshText" style="min-height:120px;font-size:12px;" placeholder="Paste copied DXB table text here. Supported patterns: Area + AED/sqft, or CSV: area,property_type,price_per_sqft,transactions,period"></textarea>
+    <div id="dxbRefreshStatus" style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6;">Status: not refreshed yet. Direct website pull is beta; pasted/exported data is more reliable.</div>
+  </div>
+
+  <div class="card" id="weeklyMarketDataCenter">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <div>
+        <div class="card-title" style="margin-bottom:3px;">📥 Weekly Market Data Center</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;">Upload or paste weekly transaction data. CRM will calculate area-wise AED/sqft, transactions, confidence and update the Area Prices list.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-blue btn-sm" onclick="downloadWeeklyMarketTemplate()">⬇ Template CSV</button>
+        <button class="btn btn-green btn-sm" onclick="processWeeklyMarketData()">⚡ Calculate & Update Areas</button>
+      </div>
+    </div>
+    <div class="row3" style="margin-bottom:10px;">
+      <div><label class="lbl">Data period</label><input type="text" id="weeklyMarketPeriod" value="Last 30 days" placeholder="Last 30 days / Week 22 / Q2 2026"/></div>
+      <div><label class="lbl">Source</label><input type="text" id="weeklyMarketSource" value="DXB Interact / DLD weekly export" placeholder="DXB Interact / DLD / Property Monitor"/></div>
+      <div><label class="lbl">Upload CSV</label><input type="file" id="weeklyMarketCsvFile" accept=".csv,.txt" onchange="readWeeklyMarketCsvFile(event)"/></div>
+    </div>
+    <label class="lbl">Paste CSV / transaction rows</label>
+    <textarea id="weeklyMarketCsvText" style="min-height:110px;font-size:12px;" placeholder="area,property_type,size_sqft,price_aed,date
+Dubai Hills Estate,Apartment,1200,2400000,2026-05-20
+JVC,Apartment,850,950000,2026-05-21"></textarea>
+    <div id="weeklyMarketImportStatus" style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6;">Expected columns: area, property_type, size_sqft, price_aed, date. Extra columns are ignored.</div>
+  </div>
+
   <div class="area-intel-grid" id="areaIntelStats"></div>
 
   <div class="row2">
@@ -1787,6 +1831,7 @@ let editingPaymentPlanId = null;
 let extractedPaymentDraft = null;
 let editingOffplanBookingId = null;
 let areaPriceRows = [];
+let weeklyMarketTxRows = [];
 let currentAreaPriceFilter = '';
 
 // Female name DB
@@ -1976,6 +2021,7 @@ function persistLocalCRM(){
   if(typeof offplanInventory !== 'undefined') localStorage.setItem('crm_offplan_inventory', JSON.stringify(offplanInventory));
   if(typeof offplanPaymentPlans !== 'undefined') localStorage.setItem('crm_offplan_payment_plans', JSON.stringify(offplanPaymentPlans));
   if(typeof areaPriceRows !== 'undefined') localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows));
+  if(typeof weeklyMarketTxRows !== 'undefined') localStorage.setItem('crm_weekly_market_transactions', JSON.stringify(weeklyMarketTxRows));
 }
 function applySettingsToInputs(){
   const n=document.getElementById('agentName'), c=document.getElementById('agentCompany'), t=document.getElementById('agentTagline');
@@ -2032,6 +2078,7 @@ function save(){
     contacts = stampChangedRecords(contacts, oldContacts, 'c');
     projects = stampChangedRecords(projects, oldProjects, 'p');
     if(typeof areaPriceRows !== 'undefined') settings = { ...(settings||{}), __areaPriceBackup: areaPriceRows };
+    if(typeof weeklyMarketTxRows !== 'undefined') settings = { ...(settings||{}), __weeklyMarketTxBackup: weeklyMarketTxRows };
     if(typeof offplanBookings !== 'undefined' || typeof offplanInventory !== 'undefined') settings = { ...(settings||{}), __offplanBackup: { bookings: (typeof offplanBookings !== 'undefined' ? offplanBookings : []), inventory: (typeof offplanInventory !== 'undefined' ? offplanInventory : []), payments: (typeof offplanPaymentPlans !== 'undefined' ? offplanPaymentPlans : []) } };
     settings = { ...(settings||{}), __sync: { deviceId: window.CRM_DEVICE_ID, updatedAt: Date.now(), version: 'offline-pwa-v10' } };
     persistLocalCRM();
@@ -2054,6 +2101,7 @@ function load(){
     const oi=localStorage.getItem('crm_offplan_inventory'); if(oi && typeof offplanInventory !== 'undefined') offplanInventory=JSON.parse(oi);
     const opp=localStorage.getItem('crm_offplan_payment_plans'); if(opp && typeof offplanPaymentPlans !== 'undefined') offplanPaymentPlans=JSON.parse(opp);
     const ap=localStorage.getItem('crm_area_price_rows'); if(ap && typeof areaPriceRows !== 'undefined') areaPriceRows=JSON.parse(ap);
+    const wtx=localStorage.getItem('crm_weekly_market_transactions'); if(wtx && typeof weeklyMarketTxRows !== 'undefined') weeklyMarketTxRows=JSON.parse(wtx);
   }catch(e){ console.error('Local load failed:', e); }
   if(typeof window.updateSyncBadge === 'function') window.updateSyncBadge();
 }
@@ -2080,6 +2128,8 @@ async function loadFromCloud(){
         if(Array.isArray(settings.__offplanBackup.payments)) offplanPaymentPlans = settings.__offplanBackup.payments;
       }
       if(settings && Array.isArray(settings.__areaPriceBackup)) areaPriceRows = settings.__areaPriceBackup;
+    if(settings && Array.isArray(settings.__weeklyMarketTxBackup)) weeklyMarketTxRows = settings.__weeklyMarketTxBackup;
+      if(settings && Array.isArray(settings.__weeklyMarketTxBackup)) weeklyMarketTxRows = settings.__weeklyMarketTxBackup;
       persistLocalCRM();
       applySettingsToInputs();
       _remoteApplying = false;
@@ -6177,7 +6227,7 @@ function renderAreaPricesPage(){
   }
   const list=document.getElementById('areaPriceList');
   if(list){
-    list.innerHTML=arr.length?arr.map(r=>`<div class="area-intel-row area-clickable" onclick="openAreaPriceDetails('${r.id}')"><div><b>${r.area}</b><div style="font-size:10px;color:var(--text3);">Updated ${new Date(Number(r.updatedAt)||Date.now()).toLocaleString('en-GB')}</div></div><div style="color:var(--green);font-weight:800;">${areaFormatPrice(r.price)}</div><div>${r.type||'-'}</div><div><span class="area-pill ${areaTrendNum(r.trend)>=10?'green':areaTrendNum(r.trend)>=4?'yellow':'red'}">${r.trend||'n/a'}</span></div><div><span class="area-confidence ${areaConfidenceClass(r)}">${areaConfidenceLabel(r)}</span><div style="font-size:10px;color:var(--text3);margin-top:3px;">${Number(r.transactions)||0} tx • ${r.period||'Period n/a'}</div></div><div style="font-size:11px;color:var(--text3);">${r.source||'Manual'}</div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyAreaRow('${r.id}')">Copy</button><button class="btn btn-blue btn-sm" onclick="event.stopPropagation();editAreaPriceRow('${r.id}')">Edit</button></div></div>`).join(''):'<div class="empty">No area found.</div>';
+    list.innerHTML=arr.length?arr.map(r=>`<div class="area-intel-row area-clickable" onclick="openAreaPriceDetails('${r.id}')"><div><b>${r.area}</b><div style="font-size:10px;color:var(--text3);">Updated ${new Date(Number(r.updatedAt)||Date.now()).toLocaleString('en-GB')}</div></div><div style="color:var(--green);font-weight:800;">${areaFormatPrice(r.price)}</div><div>${r.type||'-'}</div><div><span class="area-pill ${areaTrendNum(r.trend)>=10?'green':areaTrendNum(r.trend)>=4?'yellow':'red'}">${r.trend||'n/a'}</span></div><div><span class="area-confidence ${areaConfidenceClass(r)}">${areaConfidenceLabel(r)}</span><div style="font-size:10px;color:var(--text3);margin-top:3px;">${areaTransactionsDisplay(r)} tx • ${r.period||'Period n/a'}</div></div><div style="font-size:11px;color:var(--text3);">${r.source||'Manual'}</div><div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyAreaRow('${r.id}')">Copy</button><button class="btn btn-blue btn-sm" onclick="event.stopPropagation();editAreaPriceRow('${r.id}')">Edit</button></div></div>`).join(''):'<div class="empty">No area found.</div>';
   }
   const meta=document.getElementById('areaPriceMeta'); if(meta) meta.textContent=`Showing ${arr.length} of ${areaPriceRows.length} areas • Every row displays source, period, transactions and confidence.`;
   calculateAreaDealCheck();
@@ -6214,7 +6264,7 @@ function openAreaPriceDetails(id){
     <div class="area-detail-grid">
       <div class="area-detail-mini"><small>Average AED / sqft</small><b>${areaFormatPrice(avg)}</b></div>
       <div class="area-detail-mini"><small>Confidence</small><b><span class="area-confidence ${areaConfidenceClass(r)}">${areaConfidenceLabel(r)}</span></b></div>
-      <div class="area-detail-mini"><small>Transactions</small><b>${Number(r.transactions)||0}</b></div>
+      <div class="area-detail-mini"><small>Transactions</small><b>${areaTransactionsDisplay(r)}</b></div>
       <div class="area-detail-mini"><small>Period / Filter</small><b>${r.period||'Not set'}</b></div>
       <div class="area-detail-mini"><small>Trend</small><b>${r.trend||'n/a'}</b></div>
       <div class="area-detail-mini"><small>Property Type</small><b>${r.type||'-'}</b></div>
@@ -6261,15 +6311,264 @@ function resetAreaPriceDefaults(){
 }
 function copyAreaRow(id){
   const r=(areaPriceRows||[]).find(x=>x.id===id); if(!r) return;
-  const text=`${r.area} market reference\nAverage price: ${areaFormatPrice(r.price)}\nType/filter: ${r.type||'-'}\nPeriod: ${r.period||'-'}\nTransactions: ${Number(r.transactions)||0}\nConfidence: ${areaConfidenceLabel(r)}\nTrend: ${r.trend||'-'}\nSource: ${r.source||'Manual'}\nUpdated: ${new Date(Number(r.updatedAt)||Date.now()).toLocaleString('en-GB')}\nNote: Verify final client advice from DXB Interact/DLD.`;
+  const text=`${r.area} market reference\nAverage price: ${areaFormatPrice(r.price)}\nType/filter: ${r.type||'-'}\nPeriod: ${r.period||'-'}\nTransactions: ${areaTransactionsDisplay(r)}\nConfidence: ${areaConfidenceLabel(r)}\nTrend: ${r.trend||'-'}\nSource: ${r.source||'Manual'}\nUpdated: ${new Date(Number(r.updatedAt)||Date.now()).toLocaleString('en-GB')}\nNote: Verify final client advice from DXB Interact/DLD.`;
   navigator.clipboard?.writeText(text).then(()=>toast('Area price copied','success')).catch(()=>alert(text));
 }
 function copyAreaMarketSnapshot(){
   seedAreaPricesIfEmpty();
   const rows=[...(areaPriceRows||[])].sort((a,b)=>Number(b.price)-Number(a.price)).slice(0,10);
-  const text='Dubai Area Price / sqft Snapshot\n'+rows.map(r=>`${r.area}: ${areaFormatPrice(r.price)} (${r.type||'-'}, ${r.period||'period n/a'}, ${Number(r.transactions)||0} tx, ${areaConfidenceLabel(r)})`).join('\n')+'\n\nNote: verify live values from DXB Interact/DLD before final client advice.';
+  const text='Dubai Area Price / sqft Snapshot\n'+rows.map(r=>`${r.area}: ${areaFormatPrice(r.price)} (${r.type||'-'}, ${r.period||'period n/a'}, ${areaTransactionsDisplay(r)} tx, ${areaConfidenceLabel(r)})`).join('\n')+'\n\nNote: verify live values from DXB Interact/DLD before final client advice.';
   navigator.clipboard?.writeText(text).then(()=>toast('Market snapshot copied','success')).catch(()=>alert(text));
 }
+
+
+// ─── WEEKLY MARKET DATA CENTER ───────────────────────────────────────
+function wmdEscape(v){ return String(v??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function wmdNum(v){ return Number(String(v??'').replace(/[^0-9.\-]/g,'')) || 0; }
+function wmdKey(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''); }
+function parseCsvLine(line){
+  const out=[]; let cur='', q=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i], nx=line[i+1];
+    if(ch==='"' && q && nx==='"'){ cur+='"'; i++; continue; }
+    if(ch==='"'){ q=!q; continue; }
+    if(ch===',' && !q){ out.push(cur.trim()); cur=''; continue; }
+    cur+=ch;
+  }
+  out.push(cur.trim()); return out;
+}
+function parseWeeklyMarketCsv(text){
+  const lines=String(text||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  if(lines.length<2) return [];
+  const headers=parseCsvLine(lines[0]).map(h=>wmdKey(h));
+  const idx=(names)=>names.map(n=>headers.indexOf(n)).find(i=>i>=0);
+  const areaI=idx(['area','community','location','master_community']);
+  const typeI=idx(['property_type','type','propertytype','property']);
+  const sizeI=idx(['size_sqft','size','area_sqft','built_up_area','bua','sqft']);
+  const priceI=idx(['price_aed','price','amount','sale_price','transaction_value','value']);
+  const dateI=idx(['date','transaction_date','sold_date']);
+  if(areaI===undefined || sizeI===undefined || priceI===undefined) throw new Error('Missing required columns: area, size_sqft, price_aed');
+  const rows=[];
+  for(let n=1;n<lines.length;n++){
+    const cols=parseCsvLine(lines[n]);
+    const area=(cols[areaI]||'').trim();
+    const type=(typeI!==undefined?(cols[typeI]||'Apartment'):'Apartment').trim()||'Apartment';
+    const size=wmdNum(cols[sizeI]);
+    const price=wmdNum(cols[priceI]);
+    const date=dateI!==undefined?(cols[dateI]||''):'';
+    if(!area || !size || !price) continue;
+    rows.push({area,type,size,price,date,psf:price/size, importedAt:Date.now()});
+  }
+  return rows;
+}
+function median(nums){ const a=[...nums].filter(n=>Number.isFinite(n)).sort((x,y)=>x-y); if(!a.length) return 0; const m=Math.floor(a.length/2); return a.length%2?a[m]:(a[m-1]+a[m])/2; }
+function readWeeklyMarketCsvFile(ev){
+  const f=ev.target.files && ev.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ document.getElementById('weeklyMarketCsvText').value = reader.result || ''; document.getElementById('weeklyMarketImportStatus').textContent = 'CSV loaded. Click Calculate & Update Areas.'; };
+  reader.readAsText(f);
+}
+function processWeeklyMarketData(){
+  try{
+    const txt=document.getElementById('weeklyMarketCsvText')?.value||'';
+    const period=document.getElementById('weeklyMarketPeriod')?.value||'Weekly update';
+    const source=document.getElementById('weeklyMarketSource')?.value||'Manual weekly import';
+    const rows=parseWeeklyMarketCsv(txt);
+    if(!rows.length){ toast('No valid transaction rows found','error'); return; }
+    weeklyMarketTxRows = [...rows, ...(Array.isArray(weeklyMarketTxRows)?weeklyMarketTxRows:[])].slice(0,5000);
+    const groups=new Map();
+    rows.forEach(r=>{
+      const key=wmdKey(r.area)+'__'+wmdKey(r.type||'Apartment');
+      if(!groups.has(key)) groups.set(key,{area:r.area,type:r.type||'Apartment', rows:[]});
+      groups.get(key).rows.push(r);
+    });
+    seedAreaPricesIfEmpty();
+    const existing=new Map((areaPriceRows||[]).map(r=>[wmdKey(r.area)+'__'+wmdKey(r.type||'Apartment'), r]));
+    const updated=[];
+    groups.forEach(g=>{
+      const psfs=g.rows.map(r=>r.psf).filter(Boolean);
+      const med=Math.round(median(psfs));
+      const avg=Math.round(psfs.reduce((a,b)=>a+b,0)/psfs.length);
+      const tx=g.rows.length;
+      const key=wmdKey(g.area)+'__'+wmdKey(g.type||'Apartment');
+      const old=existing.get(key) || (areaPriceRows||[]).find(r=>wmdKey(r.area)===wmdKey(g.area));
+      const oldPrice=Number(old?.price)||0;
+      const trend=oldPrice ? ((med-oldPrice)/oldPrice*100) : 0;
+      const row={
+        ...(old||{}),
+        id: old?.id || ('area_'+wmdKey(g.area)+'_'+wmdKey(g.type||'apartment')),
+        area:g.area,
+        price:med,
+        avgPrice:avg,
+        type:g.type||'Apartment',
+        trend: oldPrice ? `${trend>=0?'↑':'↓'} ${Math.abs(trend).toFixed(1)}% vs previous` : 'New weekly import',
+        period,
+        transactions:tx,
+        confidence:areaConfidenceFromTransactions(tx),
+        source,
+        sourceUrl: old?.sourceUrl || '',
+        updatedAt:Date.now(),
+        importMethod:'weekly_transaction_csv'
+      };
+      updated.push(row);
+    });
+    const byId=new Map((areaPriceRows||[]).map(r=>[r.id,r]));
+    updated.forEach(r=>byId.set(r.id,r));
+    areaPriceRows=[...byId.values()];
+    localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows));
+    localStorage.setItem('crm_weekly_market_transactions', JSON.stringify(weeklyMarketTxRows));
+    settings={...(settings||{}), __areaPriceBackup: areaPriceRows, __weeklyMarketTxBackup: weeklyMarketTxRows};
+    save(); renderAreaPricesPage(); renderDashboardAreaIntel();
+    const status=document.getElementById('weeklyMarketImportStatus');
+    if(status) status.innerHTML=`✅ Imported <b>${rows.length}</b> transactions. Updated <b>${updated.length}</b> area/type averages using median AED/sqft. Confidence is based on transaction count.`;
+    toast('Weekly market data updated','success');
+  }catch(e){
+    console.error(e);
+    const status=document.getElementById('weeklyMarketImportStatus'); if(status) status.textContent='Import failed: '+e.message;
+    toast('Market import failed','error');
+  }
+}
+function downloadWeeklyMarketTemplate(){
+  const csv='area,property_type,size_sqft,price_aed,date\nDubai Hills Estate,Apartment,1200,2400000,2026-05-20\nJVC,Apartment,850,950000,2026-05-21\nBusiness Bay,Apartment,1000,2000000,2026-05-22\n';
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='dubai_weekly_transactions_template.csv'; a.click(); URL.revokeObjectURL(url);
+}
+// Patch display: manual/reference transaction count should show N/A, not 0.
+function areaTransactionsDisplay(row){ const tx=Number(row?.transactions)||0; return tx>0 ? `${tx}` : 'N/A'; }
+
+
+
+// ─── DXB INTERACT CACHED REFRESH CENTER ──────────────────────────────
+function dxbStatus(html, ok){
+  const el=document.getElementById('dxbRefreshStatus');
+  if(el) el.innerHTML = html;
+  if(typeof toast==='function') toast(ok ? 'DXB cache step completed' : 'DXB refresh needs review', ok?'success':'error');
+}
+function dxbParseAreaMetrics(text){
+  const raw=String(text||'');
+  const rows=[];
+  const seen=new Set();
+  const add=(area,type,price,tx,period)=>{
+    area=String(area||'').replace(/[#•📍🏠🏢]/g,'').trim();
+    if(!area || area.length<3 || /^(area|project|price|volume|value|median|apartments|villas)$/i.test(area)) return;
+    price=Number(String(price||'').replace(/[^0-9.]/g,''));
+    tx=Number(String(tx||'').replace(/[^0-9.]/g,''))||0;
+    if(!price || price<100 || price>20000) return;
+    const key=(area+'__'+(type||'Apartment')).toLowerCase();
+    if(seen.has(key)) return;
+    seen.add(key);
+    rows.push({area, type:type||'Apartment', price:Math.round(price), transactions:tx, period:period||''});
+  };
+  // CSV/TSV style rows: area,property_type,price_per_sqft,transactions,period
+  raw.split(/\r?\n/).forEach(line=>{
+    const parts=line.split(/[	,;|]+/).map(x=>x.trim()).filter(Boolean);
+    if(parts.length>=2){
+      const area=parts[0];
+      const type=/villa|town|plot|commercial|apartment/i.test(parts[1])?parts[1]:'Apartment';
+      const pricePart=parts.find(p=>/\d[\d,\.]*\s*(aed)?\s*(\/|per)?\s*sqft/i.test(p)) || parts.find(p=>/^\d[\d,\.]*$/.test(p));
+      const txPart=parts.find(p=>/tx|transaction/i.test(p));
+      if(pricePart && !/^area$/i.test(area)) add(area,type,pricePart,txPart||0,'');
+    }
+  });
+  // Common text pattern: Area ... 2,724 AED per sqft / AED 2,724/sqft
+  const patterns=[
+    /([A-Z][A-Za-z0-9 '&.\-]+?)\s+(?:AED\s*)?([0-9]{3,5}(?:,[0-9]{3})?)\s*(?:AED)?\s*(?:per\s*sqft|\/sqft)/gi,
+    /([A-Z][A-Za-z0-9 '&.\-]+?)\s+([0-9]{3,5}(?:,[0-9]{3})?)\s*AED\s*per\s*sqft/gi
+  ];
+  patterns.forEach(re=>{ let m; while((m=re.exec(raw))){ add(m[1], 'Apartment', m[2], 0, ''); } });
+  // Card style copied text can be: area 
+ value AED 
+ price AED per sqft
+  const lines=raw.split(/
+?
+/).map(l=>l.trim()).filter(Boolean);
+  for(let i=0;i<lines.length;i++){
+    const a=lines[i];
+    const b=lines[i+1]||'';
+    const c=lines[i+2]||'';
+    const pm=(b+' '+c).match(/([0-9]{3,5}(?:,[0-9]{3})?)\s*AED\s*per\s*sqft/i);
+    if(pm) add(a,'Apartment',pm[1],0,'');
+  }
+  return rows;
+}
+async function refreshDXBInteractCache(){
+  const url=(document.getElementById('dxbRefreshUrl')?.value||'https://dxbinteract.com/').trim();
+  const status=document.getElementById('dxbRefreshStatus');
+  if(status) status.innerHTML='⏳ Trying to pull DXB Interact page. If blocked, paste copied data below.';
+  let txt=''; let method='direct';
+  try{
+    const res=await fetch(url,{method:'GET',mode:'cors',cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    txt=await res.text();
+  }catch(e1){
+    try{
+      method='cors-proxy';
+      const proxy='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
+      const res=await fetch(proxy,{cache:'no-store'});
+      if(!res.ok) throw new Error('Proxy HTTP '+res.status);
+      txt=await res.text();
+    }catch(e2){
+      dxbStatus('⚠️ Direct pull blocked/failed. This is normal for DXB Interact due to browser/CORS or dynamic site rendering. Open DXB, copy/export the table/report text, paste it here, then click Apply Cached Data.', false);
+      return;
+    }
+  }
+  const box=document.getElementById('dxbRefreshText');
+  if(box) box.value=txt.slice(0,120000);
+  localStorage.setItem('crm_dxb_raw_cache', txt.slice(0,120000));
+  localStorage.setItem('crm_dxb_raw_cache_at', new Date().toISOString());
+  const rows=dxbParseAreaMetrics(txt);
+  if(rows.length){
+    dxbStatus(`✅ DXB page pulled via <b>${method}</b>. Detected <b>${rows.length}</b> possible area price rows. Review text, then click Apply Cached Data.`, true);
+  }else{
+    dxbStatus(`⚠️ DXB page pulled via <b>${method}</b>, but no usable area price rows were detected. Site may render data with JavaScript. Paste/export table text manually, then click Apply Cached Data.`, false);
+  }
+}
+function applyDXBTextToAreaPrices(){
+  try{
+    const text=document.getElementById('dxbRefreshText')?.value||localStorage.getItem('crm_dxb_raw_cache')||'';
+    const period=document.getElementById('dxbRefreshPeriod')?.value||'Weekly DXB cached refresh';
+    const rows=dxbParseAreaMetrics(text);
+    if(!rows.length){ dxbStatus('No area price rows detected. Paste cleaner data or use CSV format: area,property_type,price_per_sqft,transactions,period', false); return; }
+    seedAreaPricesIfEmpty();
+    const byKey=new Map((areaPriceRows||[]).map(r=>[wmdKey(r.area)+'__'+wmdKey(r.type||'Apartment'), r]));
+    rows.forEach(r=>{
+      const key=wmdKey(r.area)+'__'+wmdKey(r.type||'Apartment');
+      const old=byKey.get(key) || (areaPriceRows||[]).find(x=>wmdKey(x.area)===wmdKey(r.area));
+      const oldPrice=Number(old?.price)||0;
+      const trend=oldPrice ? ((r.price-oldPrice)/oldPrice*100) : 0;
+      byKey.set(key,{
+        ...(old||{}),
+        id: old?.id || ('area_'+wmdKey(r.area)+'_'+wmdKey(r.type||'apartment')),
+        area:r.area,
+        type:r.type||old?.type||'Apartment',
+        price:r.price,
+        trend:oldPrice ? `${trend>=0?'↑':'↓'} ${Math.abs(trend).toFixed(1)}% vs previous` : 'New DXB cache',
+        transactions:r.transactions||0,
+        confidence: r.transactions ? areaConfidenceFromTransactions(r.transactions) : 'reference',
+        period:r.period||period,
+        source:'DXB Interact cached refresh',
+        sourceUrl:document.getElementById('dxbRefreshUrl')?.value||'https://dxbinteract.com/',
+        updatedAt:Date.now(),
+        importMethod:'dxb_cached_refresh'
+      });
+    });
+    areaPriceRows=[...byKey.values()];
+    localStorage.setItem('crm_area_price_rows', JSON.stringify(areaPriceRows));
+    localStorage.setItem('crm_dxb_area_cache_at', new Date().toISOString());
+    settings={...(settings||{}), __areaPriceBackup: areaPriceRows, __dxbCacheAt: new Date().toISOString()};
+    save(); renderAreaPricesPage(); renderDashboardAreaIntel();
+    dxbStatus(`✅ Applied <b>${rows.length}</b> DXB cached area price rows. Rows without transaction count are marked REFERENCE, not HIGH confidence.`, true);
+  }catch(e){ console.error(e); dxbStatus('DXB cached apply failed: '+e.message, false); }
+}
+function loadDXBCachedRefresh(){
+  const cached=localStorage.getItem('crm_dxb_raw_cache');
+  const box=document.getElementById('dxbRefreshText');
+  if(cached && box && !box.value) box.value=cached;
+  const at=localStorage.getItem('crm_dxb_area_cache_at');
+  const st=document.getElementById('dxbRefreshStatus');
+  if(at && st) st.innerHTML='Last DXB cached update: <b>'+new Date(at).toLocaleString()+'</b>';
+}
+setTimeout(loadDXBCachedRefresh,1200);
 
 setTimeout(()=>showAreaPopup(),3000);
 
