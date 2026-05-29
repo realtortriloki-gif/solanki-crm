@@ -6216,5 +6216,81 @@ function convertCurrency(){
 })();
 </script>
 
+
+
+<script>
+// Dashboard clickability hard-fix: all KPI cards open their data reliably on desktop/mobile.
+(function(){
+  const DASH_TYPES = ['total','contacted','interested','hot','followups','closed','commission'];
+  const DASH_LABELS = {
+    total:'All contacts', contacted:'Contacted leads', interested:'Interested leads', hot:'Hot leads',
+    followups:'Due follow-ups', closed:'Closed deals', commission:'Commission register'
+  };
+  function enhanceDashboardCards(){
+    const grid=document.getElementById('statsGrid');
+    if(!grid) return;
+    const cards=[...grid.querySelectorAll('.stat-card')];
+    cards.forEach((card,i)=>{
+      const type = card.dataset.dashOpen || DASH_TYPES[i];
+      if(!type) return;
+      card.dataset.dashOpen = type;
+      card.setAttribute('role','button');
+      card.setAttribute('tabindex','0');
+      card.setAttribute('aria-label','Open '+(DASH_LABELS[type]||'dashboard data'));
+      card.style.cursor='pointer';
+      card.style.userSelect='none';
+      if(!card.querySelector('.dash-tap-hint')){
+        const hint=document.createElement('div');
+        hint.className='dash-tap-hint';
+        hint.textContent='Tap to open';
+        hint.style.cssText='font-size:10px;color:var(--blue);margin-top:7px;font-weight:700;opacity:.9;';
+        card.appendChild(hint);
+      }
+    });
+  }
+  function openType(type){
+    if(!type) return;
+    if(typeof window.openDashboardData === 'function'){
+      window.openDashboardData(type);
+      return;
+    }
+    // Emergency fallback if modal function is missing.
+    const map={
+      total:()=>{ if(typeof navToContacts==='function') navToContacts(''); else if(typeof nav==='function') nav('contacts',document.querySelector('.nav-item[onclick*=contacts]')||document.body); },
+      contacted:()=>{ if(typeof navToContacts==='function') navToContacts('contacted'); else if(typeof nav==='function') nav('contacts',document.querySelector('.nav-item[onclick*=contacts]')||document.body); },
+      interested:()=>{ if(typeof navToContacts==='function') navToContacts('interested'); else if(typeof nav==='function') nav('contacts',document.querySelector('.nav-item[onclick*=contacts]')||document.body); },
+      hot:()=>{ if(typeof navToContactsPriority==='function') navToContactsPriority('hot'); else if(typeof nav==='function') nav('contacts',document.querySelector('.nav-item[onclick*=contacts]')||document.body); },
+      followups:()=>{ if(typeof navToFollowup==='function') navToFollowup(); else if(typeof nav==='function') nav('followup',document.querySelector('.nav-item[onclick*=followup]')||document.body); },
+      closed:()=>{ if(typeof nav==='function') nav('deals',document.querySelector('.nav-item[onclick*=deals]')||document.body); },
+      commission:()=>{ if(typeof nav==='function') nav('commission',document.querySelector('.nav-item[onclick*=commission]')||document.body); }
+    };
+    if(map[type]) map[type]();
+  }
+  document.addEventListener('click', function(e){
+    const card=e.target.closest && e.target.closest('#statsGrid .stat-card');
+    if(!card) return;
+    e.preventDefault(); e.stopPropagation();
+    openType(card.dataset.dashOpen);
+  }, true);
+  document.addEventListener('keydown', function(e){
+    const card=e.target.closest && e.target.closest('#statsGrid .stat-card');
+    if(!card) return;
+    if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openType(card.dataset.dashOpen); }
+  });
+  const oldRender=window.renderDashboard;
+  if(typeof oldRender === 'function'){
+    window.renderDashboard=function(){
+      const result=oldRender.apply(this, arguments);
+      setTimeout(enhanceDashboardCards,0);
+      return result;
+    };
+  }
+  // Also patch current already-rendered dashboard.
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', enhanceDashboardCards);
+  else enhanceDashboardCards();
+  window.enhanceDashboardCards = enhanceDashboardCards;
+})();
+</script>
+
 </body>
 </html>
